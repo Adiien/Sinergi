@@ -15,6 +15,7 @@
   </head>
   <body>
     <div class="relative w-full h-screen bg-white">
+      <img class="absolute top-0 left-0 w-full h-full" src="./assets/vector.png" alt="Logo" />
       <nav
         class="absolute top-0 left-0 w-full h-[14%] bg-[#36364c] shadow-[0px_5px_5px_rgba(0,0,0,0.25)] flex items-center justify-between px-8"
       >
@@ -58,7 +59,6 @@
           >
         </div>
       </nav>
-      <img class="absolute top-10 left-0 w-full h-full object-fit" src="./assets/vector.png" alt="Logo" />
     </div>
   </body>
 </html>
