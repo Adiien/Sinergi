@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SINERGI</title>
-    <link href="./src/output.css" rel="stylesheet" />
+    <link href="./assets/css/output.css" rel="stylesheet" />
     <style>
       /* Anda dapat menambahkan font kustom seperti Poppins di sini jika diperlukan */
       @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap");
@@ -54,7 +54,7 @@
 
           <a
             href="#"
-            class="bg-white text-black text-xl font-normal tracking-[1px] whitespace-nowrap rounded-[12px] py-3 px-5 hover:bg-gray-200 transition-colors"
+            class="bg-white text-black text-xl font-normal tracking-[1px] whitespace-nowrap rounded-[14px] py-3 px-10 hover:bg-gray-200 transition-colors"
             >Registrasi</a
           >
         </div>
