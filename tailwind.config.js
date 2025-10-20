@@ -1,11 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./views/**/*.php", // Ini akan memindai semua file .php di dalam folder views
-    "./src/**/*.php", // Anda bisa tambahkan folder lain jika perlu
-  ],
+  content: ["./views/**/*.php", "./src/**/*.php"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "aqua-gray": "var(--aqua-gray)",
+        blue: "var(--blue)",
+        "blue-gray": "var(--blue-gray)",
+        gray: "var(--gray)",
+        lavender: "var(--lavender)",
+        "variable-collection-aqua-gray": "var(--variable-collection-aqua-gray)",
+        "variable-collection-blue-gray": "var(--variable-collection-blue-gray)",
+        "variable-collection-color": "var(--variable-collection-color)",
+        "variable-collection-lavender": "var(--variable-collection-lavender)",
+        "variable-collection-netral-gray":
+          "var(--variable-collection-netral-gray)",
+        "variable-collection-white": "var(--variable-collection-white)",
+        white: "var(--white)",
+      },
+    },
   },
   plugins: [],
 };

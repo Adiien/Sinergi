@@ -14,51 +14,39 @@
     </style>
   </head>
   <body>
-    <div class="relative w-full h-screen bg-white">
-      <img class="absolute top-0 left-0 w-full h-full" src="./assets/vector.png" alt="Logo" />
-      <nav
-        class="absolute top-0 left-0 w-full h-[14%] bg-[#36364c] shadow-[0px_5px_5px_rgba(0,0,0,0.25)] flex items-center justify-between px-8"
-      >
-        <div class="flex items-center gap-2">
-          <div
-            class="relative flex items-center justify-center w-12 h-12 bg-white rounded-full"
-          >
-            <div
-              class="absolute text-center text-sm font-bold text-[#36364c] leading-none"
-            >
-              LO<br />GO
-            </div>
-          </div>
-          <div class="text-white text-2xl font-bold tracking-wider">
-            SINERGI
-          </div>
+  <nav class="bg-gray-800 p-4 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="#" class="flex items-center space-x-3">
+        <div class="bg-white rounded-full p-1.5">
+          <span class="text-[#36344B] text-xs font-bold">LOGO</span>
         </div>
+          <span class="text-white text-xl font-semibold tracking-widest">SINERGI</span>
+      </a>
 
-        <div class="flex items-center gap-8">
-          <a
-            href="#"
-            class="text-white text-xl font-normal tracking-[1px] leading-tight hover:text-gray-300 transition-colors"
-            >Home</a
-          >
-          <a
-            href="#"
-            class="text-white text-xl font-normal tracking-[1px] leading-tight hover:text-gray-300 transition-colors"
-            >About</a
-          >
-
-          <a
-            href="#"
-            class="bg-white text-black text-xl font-normal tracking-[1px] whitespace-nowrap rounded-[14px] py-3 px-10 hover:bg-gray-200 transition-colors"
-            >Login</a
-          >
-
-          <a
-            href="#"
-            class="bg-white text-black text-xl font-normal tracking-[1px] whitespace-nowrap rounded-[14px] py-3 px-10 hover:bg-gray-200 transition-colors"
-            >Registrasi</a
-          >
-        </div>
-      </nav>
+ 
+    <div class="hidden md:flex items-center space-x-8">
+      <div class="space-x-8">
+        <a href="#" class="text-gray-300 hover:text-white transition duration-300">Home</a>
+        <a href="#" class="text-gray-300 hover:text-white transition duration-300">About</a>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="#" class="bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-200 transition duration-300">
+          Login
+        </a>
+        <a href="#" class="bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-200 transition duration-300">
+          Registrasi
+        </a>
+      </div>
     </div>
+    
+      <div class="md:hidden">
+        <button id="menu-button" class="text-white focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
   </body>
 </html>
