@@ -4,16 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SINERGI</title>
-    <link href="./assets/css/output.css" rel="stylesheet" />
-    <style>
-      /* Anda dapat menambahkan font kustom seperti Poppins di sini jika diperlukan */
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap");
-      body {
-        font-family: "Poppins", sans-serif;
-      }
-    </style>
+    <link href="<?= BASE_URL ?>/assets/css/output.css" rel="stylesheet" />
   </head>
-  <body>
+  <body class="h-screen overflow-hidden">
   <nav class="bg-gray-800 p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-3">
@@ -49,10 +42,10 @@
     </div>
   </nav>
 
-  <section class="bg-[#36344B] py-20 md:py-32">
+  <section class="bg-[#ffffff] h-screen flex items-center justify-center">
   <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-6">
     <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
-      <h1 class="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-[#36344B] leading-tight mb-6">
         Judul Besar yang Menarik Perhatian Pengunjung
       </h1>
       <p class="text-lg text-gray-300 mb-8">
@@ -70,9 +63,9 @@
 
     <div class="md:w-1/2 flex justify-center md:justify-end">
       <img 
-        src="./assets/vector.png" 
+        src="<?= BASE_URL ?>/assets/vector.png" 
         alt="Hero Image" 
-        class="rounded-lg shadow-xl max-w-full h-full"
+        class="rounded-lg max-w-full h-full"
       >
     </div>
   </div>
