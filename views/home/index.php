@@ -48,5 +48,34 @@
       </div>
     </div>
   </nav>
+
+  <section class="bg-[#36344B] py-20 md:py-32">
+  <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-6">
+    <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6">
+        Judul Besar yang Menarik Perhatian Pengunjung
+      </h1>
+      <p class="text-lg text-gray-300 mb-8">
+        Deskripsi singkat atau slogan yang menjelaskan nilai utama atau tujuan dari situs web Anda.
+      </p>
+      <div class="flex justify-center md:justify-start space-x-4">
+        <a href="#" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full hover:bg-indigo-700 transition duration-300">
+          Mulai Sekarang
+        </a>
+        <a href="#" class="text-white border border-white py-3 px-8 rounded-full hover:bg-white hover:text-[#36344B] transition duration-300">
+          Pelajari Lebih Lanjut
+        </a>
+      </div>
+    </div>
+
+    <div class="md:w-1/2 flex justify-center md:justify-end">
+      <img 
+        src="./assets/vector.png" 
+        alt="Hero Image" 
+        class="rounded-lg shadow-xl max-w-full h-full"
+      >
+    </div>
+  </div>
+</section>
   </body>
 </html>
