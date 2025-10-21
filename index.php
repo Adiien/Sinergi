@@ -2,7 +2,7 @@
 
 define('BASE_URL', '/PBL/public');
 
-// URL PARSING
+
 function parseUrl() {
     if (isset($_GET['url'])) {
         $url = rtrim($_GET['url'], '/');
@@ -31,7 +31,7 @@ if (isset($url[2])) {
     $params = array_slice($url, 2);
 }
 
-$controllerFile = '../src/controllers/' . $controllerName . '.php';
+$controllerFile = 'src/controllers/' . $controllerName . '.php';
 
 if (file_exists($controllerFile)) {
     require_once $controllerFile;
@@ -49,7 +49,7 @@ if (file_exists($controllerFile)) {
     }
 } else {
     // Arahkan ke halaman utama jika controller tidak ada, untuk menghindari error 'Not Found'
-    require_once '../src/controllers/HomeController.php';
+    require_once 'src/controllers/HomeController.php';
     $controller = new HomeController();
     $controller->index();
 }
