@@ -3,6 +3,11 @@ module.exports = {
   content: ["./views/**/*.php", "./src/**/*.php"],
   theme: {
     extend: {
+      fontFamily: {
+        poppins: ['"Poppins"', "sans-serif"],
+        helvetica: ['"Helvetica"', "sans-serif"],
+        azeret: ['"Azeret Mono"', "monospace"],
+      },
       colors: {
         "aqua-gray": "var(--aqua-gray)",
         blue: "var(--blue)",

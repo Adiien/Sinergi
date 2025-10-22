@@ -7,19 +7,20 @@
     <link href="<?= BASE_URL ?>/assets/css/output.css" rel="stylesheet" />
   </head>
   <body class="h-screen overflow-hidden">
-  <nav class="bg-gray-800 p-4 shadow-lg">
+
+  <nav class="bg-[#36364c] p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-3">
         <div class="bg-white rounded-full p-1.5">
-          <span class="text-[#36344B] text-xs font-bold">LOGO</span>
+          <span class="text-[#36364c] text-xs font-bold">LOGO</span>
         </div>
-          <span class="text-white text-xl font-semibold tracking-widest">SINERGI</span>
+          <span class="text-white text-xl tracking-widest font-azeret">SINERGI</span>
       </a>
 
  
     <div class="hidden md:flex items-center space-x-8">
       <div class="space-x-8">
-        <a href="#" class="text-gray-300 hover:text-white transition duration-300">Home</a>
+        <a href="#" class="text-gray-300 hover:text-white transition duration-300 font-helvetica">Home</a>
         <a href="#" class="text-gray-300 hover:text-white transition duration-300">About</a>
       </div>
       <div class="flex items-center space-x-4">
