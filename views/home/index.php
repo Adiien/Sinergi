@@ -8,7 +8,7 @@
   </head>
   <body class="h-screen overflow-hidden">
 
-  <nav class="bg-[#36364c] p-4 shadow-lg">
+  <nav class="bg-(--blue-gray) p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-3">
         <div class="bg-white rounded-full p-1.5">
@@ -18,7 +18,7 @@
       </a>
 
  
-    <div class="hidden md:flex items-center space-x-8">
+    <div class="hidden md:flex items-center space-x-8 mr-8">
       <div class="space-x-8">
         <a href="#" class="text-gray-300 hover:text-white transition duration-300 font-helvetica">Home</a>
         <a href="#" class="text-gray-300 hover:text-white transition duration-300">About</a>
@@ -43,9 +43,9 @@
     </div>
   </nav>
 
-  <section class="bg-[#ffffff] h-screen flex items-center justify-center">
-  <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-6">
-    <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
+  <section class="bg-[#ffffff] h-screen ">
+  <div class="flex flex-col md:flex-row items-center h-full">
+    <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 px-6 md:px-12">
       <h1 class="text-4xl md:text-5xl font-extrabold text-[#36344B] leading-tight mb-6">
         Judul Besar yang Menarik Perhatian Pengunjung
       </h1>
@@ -56,17 +56,14 @@
         <a href="#" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full hover:bg-indigo-700 transition duration-300">
           Mulai Sekarang
         </a>
-        <a href="#" class="text-white border border-white py-3 px-8 rounded-full hover:bg-white hover:text-[#36344B] transition duration-300">
-          Pelajari Lebih Lanjut
-        </a>
       </div>
     </div>
 
-    <div class="md:w-1/2 flex justify-center md:justify-end">
+    <div class="md:w-7/12 flex justify-center md:justify-end h-full">
       <img 
         src="<?= BASE_URL ?>/assets/vector.png" 
         alt="Hero Image" 
-        class="rounded-lg max-w-full h-full"
+        class="rounded-lg w-auto h-auto"
       >
     </div>
   </div>
