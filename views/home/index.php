@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SINERGI</title>
     <link href="<?= BASE_URL ?>/assets/css/output.css" rel="stylesheet" />
+    <style>
+      .section-fade {
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+      }
+    </style>
   </head>
   <body class="h-screen overflow-hidden">
 
@@ -27,7 +32,7 @@
         <a href="#" class="bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-200 transition duration-300">
           Login
         </a>
-        <a href="#" class="bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-200 transition duration-300">
+        <a id="register-button-nav" href="<?= BASE_URL ?>/register/index" class="bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-200 transition duration-300">
           Registrasi
         </a>
       </div>
@@ -43,7 +48,7 @@
     </div>
   </nav>
 
-  <section class="bg-[#ffffff] h-screen ">
+  <section id="hero-section" class="bg-[#ffffff] h-screen ">
   <div class="flex flex-col md:flex-row items-center h-full">
     <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 px-6 md:px-12">
       <h1 class="text-4xl md:text-5xl font-extrabold text-[#36344B] leading-tight mb-6">
@@ -68,5 +73,6 @@
     </div>
   </div>
 </section>
+  <script src="<?= BASE_URL ?>/assets/js/transitions.js"></script>
   </body>
 </html>
