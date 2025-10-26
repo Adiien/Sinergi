@@ -1,42 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
   const heroSection = document.getElementById("hero-section");
   const registerSection = document.getElementById("register-section");
+  const navSection = document.getElementById("main-nav");
 
-  if (!heroSection || !registerSection) {
+  if (!heroSection || !registerSection || !navSection) {
     console.error("One or more sections are missing!");
     return;
   }
 
-  const sections = [heroSection, registerSection];
-
   const showHeroButton = document.getElementById("home-button");
   const showLogoButton = document.getElementById("logo-button");
   const showRegisterButton = document.getElementById("register-button-nav");
-
   const showRegisterFromLogin = document.getElementById(
     "show-register-from-login"
   );
 
-  function showSection(sectionToShow) {
-    sections.forEach((section) => {
-      if (section === sectionToShow) {
-        section.classList.remove("hidden");
-        setTimeout(() => {
-          section.classList.remove("opacity-0", "scale-95");
-        }, 20);
-      } else {
-        section.classList.add("opacity-0", "scale-95");
-        setTimeout(() => {
-          section.classList.add("hidden");
-        }, 500);
-      }
-    });
+  function showRegister() {
+    registerSection.classList.remove("hidden");
+    setTimeout(() => {
+      registerSection.classList.remove("opacity-0", "scale-95");
+    }, 20);
+
+    heroSection.classList.add("blur-sm", "pointer-events-none");
+    navSection.classList.add("blur-sm", "pointer-events-none");
   }
 
   if (showRegisterButton) {
     showRegisterButton.addEventListener("click", (e) => {
       e.preventDefault();
-      showSection(registerSection);
+      showRegister();
     });
   }
 

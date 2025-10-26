@@ -6,14 +6,17 @@
     <title>SINERGI</title>
     <link href="<?= BASE_URL ?>/assets/css/output.css" rel="stylesheet" />
     <style>
-      .section-fade {
-        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+      .section_fade {
+        transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+      }
+      #main-section {
+        transition: filter 0.5s ease-in-out
       }
     </style>
   </head>
   <body class="h-screen overflow-hidden">
-
-  <nav class="bg-(--blue-gray) p-4 shadow-lg">
+  
+    <nav id="main-nav" class="bg-(--blue-gray) p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-3">
         <div class="bg-white rounded-full p-1.5">
@@ -72,6 +75,84 @@
       >
     </div>
   </div>
+</section>
+
+<section id="register-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
+    <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Registrasi</h2>
+    <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-3xl">
+        <div class="flex items-center justify-center space-x-2 mb-2">
+        <button type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
+            Dosen
+        </button>
+        <button type="button" class="bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md">
+            Mahasiswa
+        </button>
+        <button type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
+            Alumni
+        </button>
+        </div>
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Create an account</h2>
+        <form action="#" method="POST">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                <div>
+                    <label for="nim" class="block text-gray-700 font-semibold mb-2 text-sm">NIM</label>
+                    <input type="text" id="nim" name="nim" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                
+                <div>
+                    <label for="study_program" class="block text-gray-700 font-semibold mb-2 text-sm">study program</label>
+                    <select id="study_program" name="study_program" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" required>
+                        <option value="" disabled selected>Pilih program studi</option>
+                        <option value="ti">Teknik Informatika</option>
+                        <option value="si">Sistem Informasi</option>
+                        <option value="dkv">Desain Komunikasi Visual</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="full_name" class="block text-gray-700 font-semibold mb-2 text-sm">Full name</label>
+                    <input type="text" id="full_name" name="full_name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="email_reg" class="block text-gray-700 font-semibold text-sm">Email</label>
+                        <a href="#" class="text-sm text-indigo-600 hover:underline">use phone instead</a>
+                    </div>
+                    <input type="email" id="email_reg" name="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2 text-sm">Date of Admission</label>
+                    <div class="flex space-x-2">
+                        <select name="admission_day" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option>06</option>
+                            </select>
+                        <select name="admission_month" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option>Oct</option>
+                            </select>
+                        <select name="admission_year" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option>2025</option>
+                            </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password_reg" class="block text-gray-700 font-semibold mb-2 text-sm">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password_reg" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                        </div>
+                </div>
+            </div> <button type="submit" class="w-full bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-800 transition duration-300 mt-8">
+                Create Account
+            </button>
+        </form>
+
+        <p class="text-center text-gray-600 mt-6">
+            Already have an account?
+            <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-login-from-register">Login</a>
+        </p>
+    </div>
 </section>
   <script src="<?= BASE_URL ?>/assets/js/transitions.js"></script>
   </body>

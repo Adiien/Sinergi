@@ -1,6 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./views/**/*.php", "./src/**/*.php"],
+  safelist: [
+    "hidden",
+    "blur-sm",
+    "pointer-events-none",
+    "opacity-0",
+    "scale-95",
+  ],
   theme: {
     extend: {
       fontFamily: {

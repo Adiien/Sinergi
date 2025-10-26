@@ -1,0 +1,9 @@
+{
+  "name": "adiien/sinergi",
+  "description": "Proyek Sinergi",
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}
