@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginSection = document.getElementById("login-section");
   const navSection = document.getElementById("main-nav");
 
+  const section = [loginSection, registerSection];
+
   if (!heroSection || !registerSection || !loginSection || !navSection) {
     console.error("One or more sections are missing!");
     return;
@@ -19,58 +21,80 @@ document.addEventListener("DOMContentLoaded", () => {
   const showLoginFromRegister = document.getElementById(
     "show-login-from-register"
   );
-
-  function showRegister() {
-    registerSection.classList.remove("hidden");
-    setTimeout(() => {
-      registerSection.classList.remove("opacity-0", "scale-95");
-    }, 20);
-
-    heroSection.classList.add("blur-sm", "pointer-events-none");
+  function blurBackground() {
     navSection.classList.add("blur-sm", "pointer-events-none");
+    heroSection.classList.add("blur-sm", "pointer-events-none");
   }
 
-  function showLogin() {
-    loginSection.classList.remove("hidden");
-    setTimeout(() => {
-      loginSection.classList.remove("opacity-0", "scale-95");
-    }, 20);
-
-    heroSection.classList.add("blur-sm", "pointer-events-none");
-    navSection.classList.add("blur-sm", "pointer-events-none");
+  function unblurBackground() {
+    navSection.classList.remove("blur-sm", "pointer-events-none");
+    heroSection.classList.remove("blur-sm", "pointer-events-none");
   }
 
-  if (showRegisterButton) {
-    showRegisterButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      showRegister();
+  function showSection(SectionToShow) {
+    blurBackground();
+
+    section.forEach((sections) => {
+      if (sections === SectionToShow) {
+        sections.classList.remove("hidden");
+        setTimeout(() => {
+          sections.classList.remove("opacity-0", "scale-95");
+        }, 20);
+      } else {
+        sections.classList.add("hidden", "opacity-0", "scale-95");
+      }
     });
   }
 
-  if (showRegisterFromLogin) {
-    showRegisterFromLogin.addEventListener("click", (e) => {
-      e.preventDefault();
-      showRegister();
+  function showHero() {
+    unblurBackground();
+
+    section.forEach((sections) => {
+      sections.classList.add("opacity-0", "scale-95");
+      setTimeout(() => {
+        sections.classList.add("hidden");
+      }, 300);
     });
   }
   if (showLoginButton) {
     showLoginButton.addEventListener("click", (e) => {
       e.preventDefault();
-      showLogin();
+      showSection(loginSection);
     });
   }
-
+  if (showLoginFromRegister) {
+    showLoginFromRegister.addEventListener("click", (e) => {
+      e.preventDefault();
+      showSection(loginSection);
+    });
+  }
+  if (showRegisterButton) {
+    showRegisterButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      showSection(registerSection);
+    });
+  }
+  if (showRegisterFromLogin) {
+    showRegisterFromLogin.addEventListener("click", (e) => {
+      e.preventDefault();
+      showSection(registerSection);
+    });
+  }
   if (showHeroButton) {
     showHeroButton.addEventListener("click", (e) => {
       e.preventDefault();
-      showSection(heroSection);
+      showHero();
     });
   }
-
   if (showLogoButton) {
     showLogoButton.addEventListener("click", (e) => {
       e.preventDefault();
-      showSection(heroSection);
+      showHero();
     });
   }
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" || event.key === "Esc") {
+      showHero();
+    }
+  });
 });

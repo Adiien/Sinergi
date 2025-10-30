@@ -46,7 +46,7 @@
       </div>
     </div>
   </nav>
-
+  <!-- Hero Section -->
   <section id="hero-section" class="bg-[#ffffff] h-screen ">
     <div class="flex flex-col md:flex-row items-center h-full">
       <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 px-6 md:px-12">
@@ -70,19 +70,20 @@
       >
       </div>
     </div>
-</section>
-<!-- Register Section -->
-<section id="register-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
+  </section>
+
+  <!-- Register Section -->
+  <section id="register-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Registrasi</h2>
     <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-2xl">
         <div class="flex items-center justify-center space-x-2 mb-4">
-          <button type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
+          <button id="btn-dosen" type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
             Dosen
           </button>
-          <button type="button" class="bg-[#5e5e8f] text-white font-semibold px-6 py-3 rounded-lg shadow-md">
+          <button id="btn-mahasiswa" type="button" class="bg-[#5e5e8f] text-white font-semibold px-6 py-3 rounded-lg shadow-md">
             Mahasiswa
           </button>
-          <button type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
+          <button id="btn-alumni" type="button" class="text-gray-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors">
             Alumni
           </button>
         </div>
@@ -90,10 +91,9 @@
         <form action="#" method="POST">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-11/12 mx-auto">
                 <div class="relative">
-                    <input type="text" id="nim" name="nim" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="NIM" required>
+                    <input type="text" id="nim-nip-input" name="nim" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="NIM" required>
                 </div>
-                
-                <div class="relative">
+                <div id="study-program-field" class="relative transition-all duration-300">
                     <select id="study_program" name="study_program" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" required>
                         <option value="" disabled selected>Pilih program studi</option>
                         <option value="ti">Teknik Informatika</option>
@@ -111,18 +111,18 @@
                       <a href="#" class="text-sm text-indigo-600 hover:underline">use phone instead</a>
                     </div>
                 </div>
-                <div class="relative">
+                <div id="admission-date-field" class="relative transition-all duration-300">
                     <label class="block text-gray-700 font-semibold mb-2 text-sm">Date of Admission</label>
                     <div class="flex space-x-2">
                         <select name="admission_day" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                             <option>06</option>
-                            </select>
+                        </select>
                         <select name="admission_month" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                             <option>Oct</option>
-                            </select>
+                        </select>
                         <select name="admission_year" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                             <option>2025</option>
-                            </select>
+                        </select>
                     </div>
                 </div>
 
@@ -130,7 +130,7 @@
                     <label for="password_reg" class="block text-gray-700 font-semibold mb-2 text-sm">Password</label>
                     <div class="relative">
                         <input type="password" id="password_reg" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
-                        </div>
+                    </div>
                 </div>
             </div> 
             <button type="submit" class="w-11/12 block mx-auto bg-[#5e5e8f] text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-800 transition duration-300 mt-8">
@@ -143,9 +143,10 @@
             <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-login-from-register">Login</a>
         </p>
     </div>
-</section>
-<!-- Login Section -->
-<section id="login-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
+  </section>
+
+  <!-- Login Section -->
+  <section id="login-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Login</h2>
     <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-2xl">
         <div class="flex flex-col items-center mb-6">
@@ -156,19 +157,15 @@
         </div>
         <form action="#" method="POST">
             <div class="grid grid-cols-1 gap-y-5">
-                
                 <div class="relative w-3/4 mx-auto">
                     <input type="text" id="nim" name="nim" class="w-full pl-4 pr-28 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 " placeholder="Username/Email" required>
-                    
                     <div class="absolute inset-y-0 right-4 flex items-center">
                         <a href="#" class="text-sm text-indigo-600 hover:underline">use phone instead</a>
                     </div>
                 </div>                  
-                
                 <div class="relative w-3/4 mx-auto">
-                    <input type="password" id="password_reg" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
+                    <input type="password" id="password_log" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
                 </div>
-
                 <div class="w-3/4 mx-auto text-right">
                     <a href="#" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password</a>
                 </div>
@@ -179,10 +176,11 @@
         </form>
         <p class="text-center text-gray-600 mt-6">
             Don't have an account?
-            <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-login-from-register">Register</a>
+            <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-register-from-login">Register</a>
         </p>
     </div>
-</section>
+  </section>
+  <script src="<?= BASE_URL ?>/assets/js/register.js"></script>
   <script src="<?= BASE_URL ?>/assets/js/transitions.js"></script>
   </body>
 </html>
