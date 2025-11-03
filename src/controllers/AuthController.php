@@ -1,15 +1,8 @@
 <?php
 
 class AuthController {
-  public function register() {
-    include_once __DIR__ . '/../../views/register/index.php';
-  }
-
-  public function login() {
-    
-  }
-
-  public function logout() {
-    
-  }
+    public function index() {
+        $data['pageTitle'] = 'Auth Sinergi Page';
+        require_once __DIR__ . '/../../views/auth/index.php';
+    }
 }

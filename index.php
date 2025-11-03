@@ -1,6 +1,6 @@
 <?php
 
-define('BASE_URL', '/PBL/public');
+define('BASE_URL', '/Sinergi/public');
 
 
 function parseUrl() {
@@ -16,7 +16,7 @@ function parseUrl() {
 $url = parseUrl();
 
 // ROUTING
-$controllerName = 'HomeController'; // Controller default
+$controllerName = 'AuthController'; // Controller default
 if (!empty($url[0])) {
     $controllerName = ucfirst($url[0]) . 'Controller';
 }
@@ -49,7 +49,7 @@ if (file_exists($controllerFile)) {
     }
 } else {
     // Arahkan ke halaman utama jika controller tidak ada, untuk menghindari error 'Not Found'
-    require_once 'src/controllers/HomeController.php';
-    $controller = new HomeController();
+    require_once 'src/controllers/AuthController.php';
+    $controller = new AuthController();
     $controller->index();
 }
