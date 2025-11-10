@@ -1,4 +1,9 @@
 <?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once 'database copy.php';
 
 define('BASE_URL', '/Sinergi/public');
 
@@ -47,9 +52,4 @@ if (file_exists($controllerFile)) {
     } else {
         echo "Error: Class controller '$controllerName' tidak ditemukan.";
     }
-} else {
-    // Arahkan ke halaman utama jika controller tidak ada, untuk menghindari error 'Not Found'
-    require_once 'src/controllers/AuthController.php';
-    $controller = new AuthController();
-    $controller->index();
 }
