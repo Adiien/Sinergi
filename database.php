@@ -1,9 +1,9 @@
 <?php
 function koneksi_oracle() {
-    $username = 'system';
-    $password = '123';
-    $conn_str = 'localhost/freepdb1';
-    $conn = oci_connect($username, $password, $conn_str, 'AL32UTF8');
+    $username = 'Adien';
+    $password = 'Sinergi_7';
+    $conn_str = 'localhost:1522/sinergi';
+    $conn = oci_connect($username, $password, $conn_str);
 
     if (!$conn) {
         $e = oci_error();

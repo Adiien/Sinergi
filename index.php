@@ -1,55 +1,39 @@
 <?php
+// SELALU mulai session di barIS PALING ATAS
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once 'database copy.php';
+// Baru sertakan file lain
+require_once 'database.php';
 
-define('BASE_URL', '/Sinergi/public');
+define('BASE_URL', 'http://localhost/Sinergi');
 
 
-function parseUrl() {
-    if (isset($_GET['url'])) {
-        $url = rtrim($_GET['url'], '/');
-        $url = filter_var($url, FILTER_SANITIZE_URL);
-        $url = explode('/', $url);
-        return $url;
-    }
-    return [];
+$route = $_GET['url'] ?? '';// tangkap parameter dari .htaccess
+
+switch ($route) {
+    case '':
+    case 'login':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->index(); // misalnya tampilkan halaman login
+        break;
+
+    case 'home':
+        require_once 'src/Controllers/HomeController.php';
+        $controller = new HomeController();
+        $controller->index(); // tampilkan views/home/index.php
+        break;
+
+    case 'logout':
+        session_destroy();
+        header('Location: ' . BASE_URL . '/login');
+        break;
+
+    default:
+        http_response_code(404);
+        echo "404 Not Found";
+        break;
 }
-
-$url = parseUrl();
-
-// ROUTING
-$controllerName = 'AuthController'; // Controller default
-if (!empty($url[0])) {
-    $controllerName = ucfirst($url[0]) . 'Controller';
-}
-
-$methodName = 'index'; // Method default
-if (isset($url[1])) {
-    $methodName = $url[1];
-}
-
-$params = [];
-if (isset($url[2])) {
-    $params = array_slice($url, 2);
-}
-
-$controllerFile = 'src/controllers/' . $controllerName . '.php';
-
-if (file_exists($controllerFile)) {
-    require_once $controllerFile;
-
-    if (class_exists($controllerName)) {
-        $controller = new $controllerName;
-
-        if (method_exists($controller, $methodName)) {
-            call_user_func_array([$controller, $methodName], $params);
-        } else {
-            echo "Error: Method '$methodName' tidak ditemukan di controller '$controllerName'.";
-        }
-    } else {
-        echo "Error: Class controller '$controllerName' tidak ditemukan.";
-    }
-}
+?>

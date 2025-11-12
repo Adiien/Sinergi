@@ -15,6 +15,31 @@
     </style>
   </head>
   <body class="h-screen overflow-hidden">
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div id="alert-box" class="fixed top-20 right-5 bg-red-500 text-white p-4 rounded-lg shadow-lg z-[100]">
+            <?php echo $_SESSION['error_message']; ?>
+            <?php unset($_SESSION['error_message']); // Hapus pesan setelah ditampilkan ?>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <div id="alert-box" class="fixed top-20 right-5 bg-green-500 text-white p-4 rounded-lg shadow-lg z-[100]">
+            <?php echo $_SESSION['success_message']; ?>
+            <?php unset($_SESSION['success_message']); // Hapus pesan setelah ditampilkan ?>
+        </div>
+    <?php endif; ?>
+    
+    <script>
+      setTimeout(function() {
+        const alertBox = document.getElementById('alert-box');
+        if (alertBox) {
+          // Buat transisi fade out
+          alertBox.style.transition = 'opacity 0.5s ease-out';
+          alertBox.style.opacity = '0';
+          // Hapus elemen setelah transisi selesai
+          setTimeout(() => alertBox.remove(), 500);
+        }
+      }, 3000); // 3000 milidetik = 3 detik
+    </script>
   <nav id="main-nav" class="bg-(--blue-gray) p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-3">
@@ -64,7 +89,7 @@
       </div>
       <div class="md:w-7/12 flex justify-center md:justify-end h-full">
       <img 
-        src="<?= BASE_URL ?>/assets/vector.png" 
+        src="<?= BASE_URL ?>/public/assets/vector.png" 
         alt="Hero Image" 
         class="rounded-lg w-auto h-auto"
       >
@@ -72,6 +97,13 @@
     </div>
   </section>
 
+      setTimeout(function() {
+        const alertBox = document.getElementById('alert-box');
+        if (alertBox) {
+          alertBox.style.display = 'none';
+        }
+      }, 3000);
+    </script>
   <!-- Register Section -->
   <section id="register-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Registrasi</h2>
@@ -88,10 +120,11 @@
           </button>
         </div>
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Create an account</h2>
-        <form action="/Sinergi/config/simpan_user.php" method="POST">
+        <form action="<?= BASE_URL ?>/auth/register" method="POST">
+          <input type="hidden" id="role_name" name="role_name" value="mahasiswa">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-11/12 mx-auto">
                 <div class="relative">
-                    <input type="text" id="nim-nip-input" name="nim" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="NIM" required>
+                    <input type="text" id="nim-nip-input" name="nim-nip-input" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="NIM" required>
                 </div>
                 <div id="study-program-field" class="relative transition-all duration-300">
                     <select id="program_studi" name="program_studi" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" required>
@@ -144,7 +177,7 @@
         </p>
     </div>
   </section>
-
+  <!-- Login Section-->
   <section id="login-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Login</h2>
     <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-2xl">
@@ -154,44 +187,14 @@
             </div>
             <h2 class="text-3xl font-bold tracking-[0.2em] text-gray-800">SINERGI</h2>
         </div>
-        <p class="text-center text-gray-600 mb-6 -mt-2">
-            Selamat datang kembali! Silakan login untuk melanjutkan.
-        </p>
-
-        <?php if (!empty($_SESSION['register_success'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 w-3/4 mx-auto">
-                <?= htmlspecialchars($_SESSION['register_success']) ?>
-            </div>
-            <?php unset($_SESSION['register_success']); ?>
-        <?php endif; ?>
-
-        <?php if (!empty($_SESSION['login_error'])): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-3/4 mx-auto">
-                <?= htmlspecialchars($_SESSION['login_error']) ?>
-            </div>
-            <?php unset($_SESSION['login_error']); ?>
-        <?php endif; ?>
-        
         <form action="<?= BASE_URL ?>/auth/login" method="POST">
             <div class="grid grid-cols-1 gap-y-5">
                 <div class="relative w-3/4 mx-auto">
                     <input type="text" id="identifier" name="identifier" class="w-full pl-4 pr-28 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email / NIM / NIP" required>
                 </div>
-                
                 <div class="relative w-3/4 mx-auto">
-                    <input type="password" id="password_log" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
+                    <input type="password" id="password" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
                 </div>
-
-                <div class="relative w-3/4 mx-auto">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <img id="captcha_image" src="<?= BASE_URL ?>/captcha.php" alt="CAPTCHA" class="border rounded-lg cursor-pointer" title="Klik untuk muat ulang">
-                        <button type="button" id="reload_captcha" class="text-sm text-indigo-600 hover:underline">
-                            Muat Ulang
-                        </button>
-                    </div>
-                    <input type="text" id="captcha_input" name="captcha_input" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Masukkan teks di atas" required autocomplete="off" maxlength="5">
-                </div>
-                
                 <div class="w-3/4 mx-auto text-right">
                     <a href="#" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password</a>
                 </div>
@@ -200,29 +203,13 @@
                 Login
             </button>
         </form>
-
         <p class="text-center text-gray-600 mt-6">
             Don't have an account?
             <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-register-from-login">Register</a>
         </p>
     </div>
 </section>
-
-<script>
-    function reloadCaptcha() {
-        var captchaImg = document.getElementById('captcha_image');
-        if (captchaImg) {
-            captchaImg.src = '<?= BASE_URL ?>/captcha.php?t=' + new Date().getTime();
-        }
-    }
-    var reloadBtn = document.getElementById('reload_captcha');
-    var captchaImg = document.getElementById('captcha_image');
-    if (reloadBtn) reloadBtn.addEventListener('click', reloadCaptcha);
-    if (captchaImg) captchaImg.addEventListener('click', reloadCaptcha);
-</script>
-    </div>
-</section>
-  <script src="<?= BASE_URL ?>/assets/js/register.js"></script>
-  <script src="<?= BASE_URL ?>/assets/js/transitions.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/register.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/transitions.js"></script>
   </body>
 </html>
