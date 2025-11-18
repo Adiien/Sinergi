@@ -1,12 +1,14 @@
 <?php
 require_once 'src/models/User.php';
 
-class AuthController {
+class AuthController
+{
 
     private $userModel;
     private $conn;
 
-    public function __construct() {
+    public function __construct()
+    {
         // Buat koneksi Oracle
         $this->conn = koneksi_oracle();
         $this->userModel = new User($this->conn);
@@ -15,9 +17,10 @@ class AuthController {
     /**
      * Menampilkan halaman login/registrasi (metode default)
      */
-    public function index() {
+    public function index()
+    {
         if (isset($_SESSION['user_id'])) {
-            header('Location: ' . BASE_URL . '/auth');
+            header('Location: ' . BASE_URL . '/home');
             exit;
         }
         require_once 'views/auth/index.php';
@@ -26,7 +29,8 @@ class AuthController {
     /**
      * Memproses registrasi
      */
-    public function register() {
+    public function register()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             try {
                 if ($this->userModel->registerUser($_POST)) {
@@ -45,9 +49,32 @@ class AuthController {
     /**
      * Memproses login
      */
-// ...
-    public function login() {
+    // ...
+    public function login()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+
+            if (
+                !isset($_POST['captcha']) ||
+                !isset($_SESSION['captcha_string']) ||
+                strtolower($_POST['captcha']) != strtolower($_SESSION['captcha_string'])
+            ) {
+
+
+                $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal. Silakan coba lagi.';
+
+                // Kosongkan CAPTCHA lama
+                if (isset($_SESSION['captcha_string'])) {
+                    unset($_SESSION['captcha_string']);
+                }
+
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+            
+            unset($_SESSION['captcha_string']);
+
             try {
                 $identifier = $_POST['identifier'];
                 $password = $_POST['password'];
@@ -55,12 +82,12 @@ class AuthController {
                 $user = $this->userModel->loginUser($identifier, $password);
 
                 if ($user) {
-                    // ===== INI SUDAH BENAR (Gunakan UPPERCASE) =====
-                    // Karena 'user_id', 'nama', 'email' adalah kolom standar
+
+                    $_SESSION['user_id'] = $user['USER_ID'];
                     $_SESSION['nama'] = $user['NAMA'];
                     $_SESSION['email'] = $user['EMAIL'];
                     $_SESSION['role_name'] = $user['ROLE_NAME'];
-                    // ==============================================
+
 
                     header('Location: ' . BASE_URL . '/home');
                     exit;
@@ -81,11 +108,11 @@ class AuthController {
     /**
      * Memproses logout
      */
-    public function logout() {
+    public function logout()
+    {
         session_unset();
         session_destroy();
         header('Location: ' . BASE_URL);
         exit;
     }
 }
-?>

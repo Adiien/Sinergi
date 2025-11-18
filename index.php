@@ -1,34 +1,89 @@
 <?php
-// SELALU mulai session di barIS PALING ATAS
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-// Baru sertakan file lain
 require_once 'database.php';
 
 define('BASE_URL', 'http://localhost/Sinergi');
 
 
-$route = $_GET['url'] ?? '';// tangkap parameter dari .htaccess
+
+$route = $_GET['url'] ?? '';
 
 switch ($route) {
     case '':
     case 'login':
         require_once 'src/Controllers/AuthController.php';
         $controller = new AuthController();
-        $controller->index(); // misalnya tampilkan halaman login
+        $controller->index();
+        break;
+
+    case 'auth/login':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->login();
+        break;
+
+    case 'auth/register':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->register();
+        break;
+        
+    case 'admin':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->index();
+        break;
+    
+    case 'admin/delete':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->delete();
         break;
 
     case 'home':
         require_once 'src/Controllers/HomeController.php';
         $controller = new HomeController();
-        $controller->index(); // tampilkan views/home/index.php
+        $controller->index();
         break;
 
+    case 'post/create':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->create();
+        break;
+    
+    case 'post/delete':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->delete();
+        break;
+
+    case 'post/like':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->like();
+        break;
+
+    case 'post/comment':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->comment();
+        break;
+
+    case 'report/create':
+        require_once 'src/Controllers/ReportController.php';
+        $controller = new ReportController();
+        $controller->create();
+        break;
+
+
     case 'logout':
-        session_destroy();
-        header('Location: ' . BASE_URL . '/login');
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->logout();
         break;
 
     default:
@@ -36,4 +91,3 @@ switch ($route) {
         echo "404 Not Found";
         break;
 }
-?>

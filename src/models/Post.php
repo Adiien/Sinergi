@@ -1,0 +1,328 @@
+<?php
+class Post
+{
+    private $conn;
+
+    public function __construct($db)
+    {
+        $this->conn = $db;
+    }
+
+    /**
+     * Membuat postingan baru
+     */
+    public function createPost($user_id, $content)
+    {
+        // Gunakan CLOB untuk tipe data teks yang panjang
+        $query = 'INSERT INTO posts (post_id, user_id, content, created_at)
+                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), SYSTIMESTAMP)
+                  RETURNING content INTO :content_clob';
+
+        $stmt = oci_parse($this->conn, $query);
+
+        // Buat descriptor CLOB baru
+        $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
+
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
+
+        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT); // Jangan auto-commit
+
+        if (!$result) {
+            oci_rollback($this->conn); // Batalkan jika query insert gagal
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            $clob->free();
+            throw new Exception("Error Database (Insert): " . $e['message']);
+        }
+
+        // Simpan data CLOB
+        if (!$clob->save($content)) {
+            oci_rollback($this->conn); // Batalkan jika save CLOB gagal
+            oci_free_statement($stmt);
+            $clob->free();
+            throw new Exception("Error Database (Save CLOB): Gagal menyimpan data konten.");
+        }
+
+        // Jika semua berhasil, commit
+        oci_commit($this->conn);
+
+        $clob->free();
+        oci_free_statement($stmt);
+        return true;
+    }
+
+    /**
+     * [BARU] Menghitung total postingan milik seorang user
+     */
+    public function getPostCountByUserId($user_id)
+    {
+        $query = 'SELECT COUNT(*) AS POST_COUNT FROM posts WHERE user_id = :user_id';
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+
+        if (!oci_execute($stmt)) {
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            throw new Exception("Error Database (getPostCount): " . $e['message']);
+        }
+
+        $row = oci_fetch_array($stmt, OCI_ASSOC);
+        oci_free_statement($stmt);
+
+        return $row ? (int)$row['POST_COUNT'] : 0;
+    }
+
+    /**
+     * [BARU] Menghapus postingan berdasarkan ID
+     * Memerlukan ID postingan, ID pengguna yang mencoba menghapus,
+     * dan status admin pengguna tersebut.
+     */
+    public function deletePostById($post_id, $user_id, $is_admin = false)
+    {
+        // Admin bisa menghapus postingan siapa saja
+        if ($is_admin) {
+            $query = 'DELETE FROM posts WHERE post_id = :post_id';
+        } else {
+            // Pengguna biasa hanya bisa menghapus postingan mereka sendiri
+            $query = 'DELETE FROM posts WHERE post_id = :post_id AND user_id = :user_id';
+        }
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':post_id', $post_id);
+
+        // Hanya bind user_id jika bukan admin
+        if (!$is_admin) {
+            oci_bind_by_name($stmt, ':user_id', $user_id);
+        }
+
+        $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+
+        if (!$result) {
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            throw new Exception("Error Database (Delete Post): " . $e['message']);
+        }
+
+        // oci_num_rows() akan mengembalikan jumlah baris yang terpengaruh
+        $rows_affected = oci_num_rows($stmt);
+
+        oci_free_statement($stmt);
+
+        // Mengembalikan true jika 1 baris (postingan) terhapus
+        return $rows_affected > 0;
+    }
+
+    /**
+     * Menambah atau menghapus (toggle) like
+     * (Versi ini DIPERBARUI untuk mengembalikan data JSON)
+     */
+    public function toggleLike($post_id, $user_id)
+    {
+        // 1. Cek dulu apakah user sudah like post ini
+        $query_check = 'SELECT COUNT(*) AS LIKE_COUNT FROM post_likes 
+                        WHERE post_id = :post_id AND user_id = :user_id';
+
+        $stmt_check = oci_parse($this->conn, $query_check);
+        oci_bind_by_name($stmt_check, ':post_id', $post_id);
+        oci_bind_by_name($stmt_check, ':user_id', $user_id);
+        oci_execute($stmt_check);
+
+        $row = oci_fetch_array($stmt_check, OCI_ASSOC);
+        $is_liked = ($row && $row['LIKE_COUNT'] > 0);
+        oci_free_statement($stmt_check);
+
+        if ($is_liked) {
+            // 2. Jika sudah like, hapus like (unlike)
+            $query_toggle = 'DELETE FROM post_likes 
+                             WHERE post_id = :post_id AND user_id = :user_id';
+        } else {
+            // 3. Jika belum, tambahkan like
+            $query_toggle = 'INSERT INTO post_likes (like_id, post_id, user_id) 
+                             VALUES (post_likes_seq.NEXTVAL, :post_id, :user_id)';
+        }
+
+        $stmt_toggle = oci_parse($this->conn, $query_toggle);
+        oci_bind_by_name($stmt_toggle, ':post_id', $post_id);
+        oci_bind_by_name($stmt_toggle, ':user_id', $user_id);
+        $result = oci_execute($stmt_toggle, OCI_COMMIT_ON_SUCCESS);
+
+        if (!$result) {
+            $e = oci_error($stmt_toggle);
+            oci_free_statement($stmt_toggle);
+            throw new Exception("Error Database (Toggle Like): " . $e['message']);
+        }
+        oci_free_statement($stmt_toggle);
+
+        // --- [BAGIAN BARU] ---
+        // 4. Ambil jumlah like yang baru setelah di-toggle
+        $query_count = 'SELECT COUNT(*) AS NEW_LIKE_COUNT FROM post_likes WHERE post_id = :post_id';
+        $stmt_count = oci_parse($this->conn, $query_count);
+        oci_bind_by_name($stmt_count, ':post_id', $post_id);
+        oci_execute($stmt_count);
+
+        $row_count = oci_fetch_array($stmt_count, OCI_ASSOC);
+        $new_like_count = $row_count ? (int)$row_count['NEW_LIKE_COUNT'] : 0;
+        oci_free_statement($stmt_count);
+
+        // 5. Kembalikan data sebagai array
+        //    Status 'isLiked' yang baru adalah kebalikan dari status 'is_liked' yang lama
+        return [
+            'isLiked' => !$is_liked,
+            'newLikeCount' => $new_like_count
+        ];
+        // --- [AKHIR BAGIAN BARU] ---
+    }
+    /**
+     * Menambahkan komentar baru
+     */
+    public function addComment($post_id, $user_id, $content)
+    {
+        // Mirip dengan createPost, kita pakai CLOB
+        $query = 'INSERT INTO comments (comment_id, post_id, user_id, content, created_at)
+                  VALUES (comments_seq.NEXTVAL, :post_id, :user_id, EMPTY_CLOB(), SYSTIMESTAMP)
+                  RETURNING content INTO :content_clob';
+
+        $stmt = oci_parse($this->conn, $query);
+
+        $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
+
+        oci_bind_by_name($stmt, ':post_id', $post_id);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
+
+        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+
+        if (!$result) {
+            oci_rollback($this->conn);
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            $clob->free();
+            throw new Exception("Error Database (Insert Comment): " . $e['message']);
+        }
+
+        if (!$clob->save($content)) {
+            oci_rollback($this->conn);
+            oci_free_statement($stmt);
+            $clob->free();
+            throw new Exception("Error Database (Save Comment CLOB): Gagal menyimpan data komentar.");
+        }
+
+        oci_commit($this->conn);
+        $clob->free();
+        oci_free_statement($stmt);
+        return true;
+    }
+
+    /**
+     * Mengambil semua komentar untuk sekumpulan ID postingan
+     * (Versi ini mengambil SEMUA komentar, tidak dibatasi 3)
+     */
+    public function getCommentsForPosts(array $post_ids)
+    {
+        if (empty($post_ids)) {
+            return [];
+        }
+
+        // Membuat placeholder binding: (:id_0, :id_1, :id_2, ...)
+        $placeholders = [];
+        foreach ($post_ids as $key => $id) {
+            $placeholders[] = ":id_$key";
+        }
+        $in_clause = implode(',', $placeholders);
+
+        // Kueri mengambil komentar DAN nama user yang berkomentar
+        $query = 'SELECT 
+                    c.comment_id, 
+                    c.post_id, 
+                    c.content, 
+                    TO_CHAR(c.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS created_at,
+                    u.user_id,
+                    u.nama
+                  FROM 
+                    comments c
+                  JOIN 
+                    users u ON c.user_id = u.user_id
+                  WHERE 
+                    c.post_id IN (' . $in_clause . ')
+                  ORDER BY 
+                    c.created_at ASC'; // Komentar terlama di atas
+
+        $stmt = oci_parse($this->conn, $query);
+
+        // Bind semua ID di array $post_ids
+        foreach ($post_ids as $key => $id) {
+            // Kita perlu meneruskan nilai aktual ke oci_bind_by_name
+            // jadi kita simpan dulu di variabel
+            // <-- MASALAHNYA DI SINI
+            oci_bind_by_name($stmt, ":id_$key", $post_ids[$key]);
+        }
+
+        $exec = oci_execute($stmt);
+
+        if (!$exec) {
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            throw new Exception("Error Database (getCommentsForPosts): " . $e['message']);
+        }
+
+        $comments = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            // Baca data CLOB
+            if (is_object($row['CONTENT'])) {
+                $row['CONTENT'] = $row['CONTENT']->load();
+            }
+            $comments[] = $row;
+        }
+
+        oci_free_statement($stmt);
+        return $comments;
+    }
+
+    /**
+     * Mengambil semua postingan untuk feed
+     * (Menggabungkan posts, users, dan hitungan likes/comments)
+     */
+    public function getFeedPosts()
+    {
+        $query = 'SELECT 
+                    p.post_id, 
+                    p.content, 
+                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
+                    u.user_id, 
+                    u.nama, 
+                    u.email,
+                    u.role_name,
+                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count
+                  FROM 
+                    posts p
+                  JOIN 
+                    users u ON p.user_id = u.user_id
+                  ORDER BY 
+                    p.created_at DESC';
+
+        $stmt = oci_parse($this->conn, $query);
+        $exec = oci_execute($stmt);
+
+        if (!$exec) {
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            throw new Exception("Error Database: " . $e['message'] . " (Query: " . $e['sqltext'] . ")");
+        }
+
+        $posts = [];
+        // Ambil semua baris
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            // Baca data CLOB
+            if (is_object($row['CONTENT'])) {
+                $row['CONTENT'] = $row['CONTENT']->load();
+            }
+            $posts[] = $row;
+        }
+
+        oci_free_statement($stmt);
+        return $posts;
+    }
+}

@@ -1,5 +1,6 @@
 <?php
-function koneksi_oracle() {
+function koneksi_oracle()
+{
     $username = 'Adien';
     $password = 'Sinergi_7';
     $conn_str = 'localhost:1522/sinergi';
@@ -12,4 +13,3 @@ function koneksi_oracle() {
 
     return $conn;
 }
-?>

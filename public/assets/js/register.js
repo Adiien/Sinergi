@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allButtons = [btnDosen, btnMahasiswa, btnAlumni];
 
   const nimNipInput = document.getElementById("nim-nip-input");
+  const roleNameInput = document.getElementById("role_name"); // Ambil hidden input
 
   const activeClasses = ["bg-[#5e5e8f]", "text-white", "shadow-md"];
   const inactiveClasses = ["text-gray-600", "hover:bg-gray-200"];
@@ -24,22 +25,28 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedButton.classList.remove(...inactiveClasses);
 
     let placeholderText = "NIM";
-    let inputName = "nim";
+    let inputName = "nim-nip-input"; // Biarkan name tetap sama untuk simplicity, kita handle di controller
 
     if (role === "dosen") {
       placeholderText = "NIP";
-      inputName = "nip";
     } else if (role === "alumni") {
       placeholderText = "NIM/NIP";
-      inputName = "nim_nip";
     }
 
     if (nimNipInput) {
       nimNipInput.placeholder = placeholderText;
-      nimNipInput.name = inputName;
+      // nimNipInput.name = inputName; // Kita tidak perlu ganti nama input
+    }
+
+    // UPDATE NILAI HIDDEN INPUT
+    if (roleNameInput) {
+      roleNameInput.value = role;
     }
   }
   btnDosen.addEventListener("click", () => switchRole("dosen"));
   btnMahasiswa.addEventListener("click", () => switchRole("mahasiswa"));
   btnAlumni.addEventListener("click", () => switchRole("alumni"));
+
+  // Set default role saat load
+  switchRole("mahasiswa");
 });
