@@ -30,13 +30,13 @@ switch ($route) {
         $controller = new AuthController();
         $controller->register();
         break;
-        
+
     case 'admin':
         require_once 'src/Controllers/AdminController.php';
         $controller = new AdminController();
         $controller->index();
         break;
-    
+
     case 'admin/delete':
         require_once 'src/Controllers/AdminController.php';
         $controller = new AdminController();
@@ -54,7 +54,7 @@ switch ($route) {
         $controller = new PostController();
         $controller->create();
         break;
-    
+
     case 'post/delete':
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
@@ -79,6 +79,47 @@ switch ($route) {
         $controller->create();
         break;
 
+    case 'user/follow':
+        require_once 'src/Controllers/UserController.php';
+        $controller = new UserController();
+        $controller->follow();
+        break;
+
+    case 'messages':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->index();
+        break;
+
+    case 'forum':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->index();
+        break;
+    
+    case 'forum/create':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->create();
+        break;
+    
+    case 'profile':
+        require_once 'src/Controllers/ProfileController.php';
+        $controller = new ProfileController();
+        $controller->index();
+        break;
+
+    case 'api/updates':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->getUpdates();
+        break;
+
+    case 'api/search/users':
+        require_once 'src/Controllers/UserController.php';
+        $controller = new UserController();
+        $controller->ajaxSearch();
+        break;
 
     case 'logout':
         require_once 'src/Controllers/AuthController.php';

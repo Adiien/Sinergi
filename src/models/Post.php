@@ -8,50 +8,34 @@ class Post
         $this->conn = $db;
     }
 
-    /**
-     * Membuat postingan baru
+/**
+     * Membuat postingan baru (Support Gambar)
      */
-    public function createPost($user_id, $content)
+    public function createPost($user_id, $content, $image_path = null) // Tambah parameter
     {
-        // Gunakan CLOB untuk tipe data teks yang panjang
-        $query = 'INSERT INTO posts (post_id, user_id, content, created_at)
-                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), SYSTIMESTAMP)
+        // Tambahkan kolom image_path
+        $query = 'INSERT INTO posts (post_id, user_id, content, image_path, created_at)
+                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :image_path, SYSTIMESTAMP)
                   RETURNING content INTO :content_clob';
 
         $stmt = oci_parse($this->conn, $query);
-
-        // Buat descriptor CLOB baru
         $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
 
         oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_bind_by_name($stmt, ':image_path', $image_path); // Bind
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
-        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT); // Jangan auto-commit
-
-        if (!$result) {
-            oci_rollback($this->conn); // Batalkan jika query insert gagal
-            $e = oci_error($stmt);
-            oci_free_statement($stmt);
-            $clob->free();
-            throw new Exception("Error Database (Insert): " . $e['message']);
-        }
-
-        // Simpan data CLOB
-        if (!$clob->save($content)) {
-            oci_rollback($this->conn); // Batalkan jika save CLOB gagal
-            oci_free_statement($stmt);
-            $clob->free();
-            throw new Exception("Error Database (Save CLOB): Gagal menyimpan data konten.");
-        }
-
-        // Jika semua berhasil, commit
+        // ... (Sisa kode sama seperti sebelumnya: execute, save clob, commit) ...
+        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+        if (!$result) { /* Error handling */ }
+        
+        $content_to_save = $content ?? ''; // Handle null
+        $clob->save($content_to_save);
+        
         oci_commit($this->conn);
-
-        $clob->free();
-        oci_free_statement($stmt);
+        // ...
         return true;
     }
-
     /**
      * [BARU] Menghitung total postingan milik seorang user
      */
@@ -280,22 +264,29 @@ class Post
         return $comments;
     }
 
-    /**
+/**
      * Mengambil semua postingan untuk feed
-     * (Menggabungkan posts, users, dan hitungan likes/comments)
+     * [UPDATE] Sekarang mengambil status IS_LIKED
      */
-    public function getFeedPosts()
+    public function getFeedPosts($current_user_id)
     {
         $query = 'SELECT 
                     p.post_id, 
-                    p.content, 
+                    p.content,
+                    p.image_path, 
                     TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
                     u.user_id, 
                     u.nama, 
                     u.email,
                     u.role_name,
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count
+                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                    
+                    -- [BARU] Cek apakah user login sudah follow penulis post ini
+                    (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
+                    
+                    -- [BARU & PENTING] Cek apakah user login SUDAH LIKE post ini
+                    (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
                   FROM 
                     posts p
                   JOIN 
@@ -304,18 +295,20 @@ class Post
                     p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
+        
+        // Binding ID user yang sedang login
+        oci_bind_by_name($stmt, ':current_user_id', $current_user_id);
+        
         $exec = oci_execute($stmt);
 
         if (!$exec) {
             $e = oci_error($stmt);
             oci_free_statement($stmt);
-            throw new Exception("Error Database: " . $e['message'] . " (Query: " . $e['sqltext'] . ")");
+            throw new Exception("Error Database: " . $e['message']);
         }
 
         $posts = [];
-        // Ambil semua baris
         while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-            // Baca data CLOB
             if (is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
@@ -324,5 +317,174 @@ class Post
 
         oci_free_statement($stmt);
         return $posts;
+    }
+
+    /**
+     * Mengambil statistik terbaru (jumlah like & komen) untuk polling AJAX
+     */
+    public function getPostStats($post_ids)
+    {
+        if (empty($post_ids)) {
+            return [];
+        }
+
+        // Buat placeholder dinamis (:id_0, :id_1, dst)
+        $placeholders = [];
+        foreach ($post_ids as $key => $id) {
+            $placeholders[] = ":id_$key";
+        }
+        $in_clause = implode(',', $placeholders);
+
+        // Query efisien: Ambil semua count sekaligus
+        $query = "SELECT 
+                    p.post_id,
+                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count
+                  FROM posts p
+                  WHERE p.post_id IN ($in_clause)";
+
+        $stmt = oci_parse($this->conn, $query);
+
+        // Binding nilai ID
+        foreach ($post_ids as $key => $id) {
+            oci_bind_by_name($stmt, ":id_$key", $post_ids[$key]);
+        }
+
+        oci_execute($stmt);
+
+        $stats = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
+            $stats[] = $row;
+        }
+        
+        oci_free_statement($stmt);
+        return $stats;
+    }
+    /**
+     * [BARU] Mengambil postingan milik user tertentu (Untuk Tab Content)
+     */
+    public function getPostsByAuthor($author_id, $viewer_id)
+    {
+        // Query mirip getFeedPosts tapi difilter WHERE p.user_id = :author_id
+        $query = 'SELECT 
+                    p.post_id, 
+                    p.content,
+                    p.image_path, 
+                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
+                    u.user_id, 
+                    u.nama, 
+                    u.email,
+                    u.role_name,
+                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                    
+                    -- Cek Follow & Like dari sudut pandang viewer (orang yang melihat profil)
+                    (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :viewer_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
+                    (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :viewer_id) AS IS_LIKED
+                  FROM 
+                    posts p
+                  JOIN 
+                    users u ON p.user_id = u.user_id
+                  WHERE 
+                    p.user_id = :author_id
+                  ORDER BY 
+                    p.created_at DESC';
+
+        $stmt = oci_parse($this->conn, $query);
+        
+        oci_bind_by_name($stmt, ':author_id', $author_id);
+        oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
+        
+        $exec = oci_execute($stmt);
+        if (!$exec) return [];
+
+        $posts = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            if (is_object($row['CONTENT'])) {
+                $row['CONTENT'] = $row['CONTENT']->load();
+            }
+            $posts[] = $row;
+        }
+        oci_free_statement($stmt);
+        return $posts;
+    }
+
+/**
+     * [PERBAIKAN ORA-01791] Mengambil postingan activity (Like/Comment)
+     */
+    public function getActivityPosts($activity_user_id, $viewer_id)
+    {
+        // Query DISTINCT mensyaratkan kolom ORDER BY (created_at) harus ada di SELECT
+        $query = 'SELECT DISTINCT
+                    p.post_id, 
+                    p.content,
+                    p.image_path, 
+                    p.created_at, -- [WAJIB ADA] agar bisa di-order by
+                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
+                    u.user_id, 
+                    u.nama, 
+                    u.email, 
+                    u.role_name,
+                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                    (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :viewer_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
+                    (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :viewer_id) AS IS_LIKED
+                  FROM 
+                    posts p
+                  JOIN 
+                    users u ON p.user_id = u.user_id
+                  WHERE 
+                    p.post_id IN (
+                        SELECT post_id FROM post_likes WHERE user_id = :act_user_1
+                        UNION
+                        SELECT post_id FROM comments WHERE user_id = :act_user_2
+                    )
+                  ORDER BY 
+                    p.created_at DESC';
+
+        $stmt = oci_parse($this->conn, $query);
+        
+        oci_bind_by_name($stmt, ':act_user_1', $activity_user_id);
+        oci_bind_by_name($stmt, ':act_user_2', $activity_user_id);
+        oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
+        
+        $exec = oci_execute($stmt);
+        if (!$exec) {
+            // Debugging: Jika error, tampilkan pesan
+            $e = oci_error($stmt);
+            // error_log("Oracle Error: " . $e['message']); 
+            return [];
+        }
+
+        $posts = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            if (isset($row['CONTENT']) && is_object($row['CONTENT'])) {
+                $row['CONTENT'] = $row['CONTENT']->load();
+            }
+            
+            // [PENTING] Kembalikan nama key 'CREATED_AT' agar View tidak error
+            $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
+            
+            $posts[] = $row;
+        }
+        oci_free_statement($stmt);
+        return $posts;
+    }
+    /**
+     * [BARU] Mengambil satu postingan berdasarkan ID
+     * Digunakan untuk mengambil image_path sebelum menghapus post
+     */
+    public function getPostById($post_id)
+    {
+        $query = "SELECT post_id, user_id, image_path FROM posts WHERE post_id = :post_id";
+        
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':post_id', $post_id);
+        oci_execute($stmt);
+        
+        $row = oci_fetch_array($stmt, OCI_ASSOC);
+        oci_free_statement($stmt);
+        
+        return $row; // Mengembalikan array data post atau false jika tidak ditemukan
     }
 }

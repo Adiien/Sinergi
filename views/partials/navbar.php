@@ -1,119 +1,265 @@
-    <nav id="main-nav" class="bg-[#36364c] p-4 shadow-lg fixed top-0 w-full z-40">
-      <div
-        class="container mx-auto px-6 py-3 flex justify-between items-center">
-        <a href="<?= BASE_URL ?>/home" class="flex items-center space-x-1">
-          <div class="p-0.5">
-            <img src="<?= BASE_URL ?>/public/assets/images/LOGOSINERGIBORDER.png" alt="Logo" class="w-10 h-10" />
-          </div>
-          <span class="text-white text-xl tracking-widest font-azeret">SINERGI</span>
-        </a>
+ <?php
+  // Cek URL
+  $current_uri = $_SERVER['REQUEST_URI'];
+  $is_home = strpos($current_uri, '/home') !== false;
+  $is_message = strpos($current_uri, '/messages') !== false;
+  $is_forum = strpos($current_uri, '/forum') !== false;
 
-        <div class="relative w-1/3">
-          <input
-            type="text"
-            class="bg-gray-100 rounded-lg py-2 px-4 pl-10 w-full focus:outline-none"
-            placeholder="Search...." />
-          <svg
-            class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          </svg>
-        </div>
+  // 1. Style untuk TEKS (Home) - Tetap pakai Underline
+  $activeText = 'text-white font-semibold border-b-2 border-white pb-1';
+  $inactiveText = 'text-gray-300 hover:text-white border-b-2 border-transparent pb-1 transition-all';
 
-        <div class="flex items-center space-x-6">
-          <a
-            href="<?= BASE_URL ?>/home"
-            class="text-white font-semibold border-b-2 border-white pb-1">Home</a>
-          <a href="#" class="text-gray-300 hover:text-white">Discussion</a>
-          <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
-            <a href="<?= BASE_URL ?>/admin" class="text-yellow-400 hover:text-white font-bold pb-1">
-              Admin Panel
-            </a>
-          <?php endif; ?>
-          <a
-            href="#"
-            class="text-gray-300 hover:text-white">
-            <img src="<?= BASE_URL ?>/public/assets/images/MessageIcon.png" alt="Messages" class="w-6 h-6" />
-          </a>
-          <a
-            href="#"
-            class="text-gray-300 hover:text-white">
-            <img src="<?= BASE_URL ?>/public/assets/images/NotifIcon.png" alt="Notifications" class="w-6 h-6" />
-          </a>
+  // 2. Style untuk IKON (Messages) - Pakai Background & Rounded
+  // Aktif: Ada background putih transparan, rounded
+  $activeIcon = 'bg-white/20 text-white rounded-lg p-1.5 shadow-inner transition-all';
+  // Tidak Aktif: Transparan, tapi hover ada efek sedikit
+  $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
+  ?>
+ <nav id="main-nav" class="bg-[#36364c] p-4 shadow-lg fixed top-0 w-full z-40">
+   <div
+     class="container mx-auto px-6 py-3 flex justify-between items-center">
+     <a href="<?= BASE_URL ?>/home" class="flex items-center space-x-1">
+       <div class="p-0.5">
+         <img src="<?= BASE_URL ?>/public/assets/image/LOGOSINERGIBORDER.png" alt="Logo" class="w-10 h-10" />
+       </div>
+       <span class="text-white text-xl tracking-widest font-azeret">SINERGI</span>
+     </a>
 
-          <div class="relative" id="profile-dropdown-container">
-            <button
-              id="profile-dropdown-button"
-              class="w-9 h-9 bg-white rounded-full flex items-center justify-center font-bold text-indigo-900 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#36364c] focus:ring-white">
-              <?php if (isset($_SESSION['nama'])): ?>
-                <span class="text-lg"><?php echo strtoupper(substr($_SESSION['nama'], 0, 1)); ?></span>
-              <?php else: ?>
-                <svg
-                  class="w-8 h-8 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              <?php endif; ?>
-            </button>
+     <div class="relative w-1/3" id="search-container">
 
-            <div
-              id="profile-dropdown-menu"
-              class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-              role="menu"
-              aria-orientation="vertical"
-              aria-labelledby="profile-dropdown-button">
-              <a
-                href="#"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                role="menuitem">
-                <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                </svg>
-                My Profile
-              </a>
-              <a
-                href="#"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                role="menuitem">
-                <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0l-1.5-1.5a2 2 0 010-2.828l3-3z" />
-                  <path d="M11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-                Edit Setting
-              </a>
-              <a
-                href="#"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                role="menuitem">
-                <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                My Bin
-              </a>
-              <a
-                href="<?= BASE_URL ?>/logout"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                role="menuitem">
-                <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
-                </svg>
-                Logout
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
-    <script src="<?= BASE_URL ?>/public/assets/js/profiledropdown.js"></script>
+       <div class="relative">
+         <input
+           type="text"
+           id="search-input"
+           class="bg-gray-100 rounded-lg py-2 px-4 pl-10 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+           placeholder="Search people..."
+           autocomplete="off" />
+         <img src="<?= BASE_URL ?>/public/assets/image/SearchIcon.png" alt="Search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
+
+         <div id="search-loading" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
+           <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+           </svg>
+         </div>
+       </div>
+
+       <div id="search-dropdown" class="hidden absolute top-full left-0 w-full bg-white rounded-xl shadow-xl mt-2 border border-gray-100 overflow-hidden z-50">
+         <div id="search-results-list" class="max-h-80 overflow-y-auto custom-scroll"></div>
+       </div>
+
+     </div>
+
+     <script>
+       document.addEventListener("DOMContentLoaded", () => {
+         const searchInput = document.getElementById('search-input');
+         const searchDropdown = document.getElementById('search-dropdown');
+         const resultsList = document.getElementById('search-results-list');
+         const loadingIcon = document.getElementById('search-loading');
+         const searchContainer = document.getElementById('search-container');
+         let debounceTimeout = null;
+
+         // Fungsi menampilkan user di dropdown
+         // Fungsi menampilkan user di dropdown
+         function renderUser(user) {
+           const initial = user.NAMA.charAt(0).toUpperCase();
+           const handle = '@' + user.NAMA.replace(/\s+/g, '').toLowerCase();
+
+           // Badge Role Logic
+           let roleBadge = '';
+           const role = (user.ROLE_NAME || 'mahasiswa').toLowerCase();
+           if (role === 'dosen') roleBadge = '<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">Dosen</span>';
+           else if (role === 'admin') roleBadge = '<span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full ml-2">Admin</span>';
+
+           // --- [LOGIKA BARU: STATUS FOLLOW] ---
+           const isFollowing = (user.IS_FOLLOWING > 0); // Cek data dari database
+
+           let buttonText = "Follow";
+           let buttonClass = "border-blue-500 text-blue-500 hover:bg-blue-50"; // Style Default (Biru)
+
+           if (isFollowing) {
+             buttonText = "Following";
+             // Style Abu-abu (Sudah Follow)
+             buttonClass = "bg-gray-100 text-gray-500 border-gray-200";
+           }
+           // -------------------------------------
+
+           return `
+                    <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-none">
+                        <div class="flex items-center space-x-3 overflow-hidden">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                ${initial}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center">
+                                    <h4 class="font-bold text-gray-800 text-sm truncate">${user.NAMA}</h4>
+                                    ${roleBadge}
+                                </div>
+                                <p class="text-xs text-gray-500 truncate">${handle}</p>
+                            </div>
+                        </div>
+                        
+                        <button 
+                            class="follow-button text-xs border px-3 py-1 rounded-full font-bold transition ${buttonClass}" 
+                            data-user-id="${user.USER_ID}">
+                            ${buttonText}
+                        </button>
+                    </div>
+                `;
+         }
+         // Event Listener saat mengetik
+         searchInput.addEventListener('input', (e) => {
+           const query = e.target.value.trim();
+
+           // Reset debounce timer
+           clearTimeout(debounceTimeout);
+
+           if (query.length === 0) {
+             searchDropdown.classList.add('hidden');
+
+             // [PERBAIKAN] Wajib sembunyikan loading jika input kosong!
+             loadingIcon.classList.add('hidden');
+
+             return;
+           }
+
+           // Tampilkan loading
+           loadingIcon.classList.remove('hidden');
+
+           // Tunggu 300ms setelah user selesai mengetik (Debounce)
+           debounceTimeout = setTimeout(() => {
+             fetch(`<?= BASE_URL ?>/api/search/users?q=${encodeURIComponent(query)}`)
+               .then(response => response.json())
+               .then(data => {
+                 resultsList.innerHTML = ''; // Bersihkan hasil lama
+
+                 if (data.length > 0) {
+                   data.forEach(user => {
+                     resultsList.innerHTML += renderUser(user);
+                   });
+                   searchDropdown.classList.remove('hidden');
+                 } else {
+                   resultsList.innerHTML = `
+                                    <div class="px-4 py-6 text-center text-gray-500">
+                                        <p class="text-sm">No users found.</p>
+                                    </div>
+                                `;
+                   searchDropdown.classList.remove('hidden');
+                 }
+               })
+               .catch(err => {
+                 console.error("Search Error:", err);
+               })
+               .finally(() => {
+                 // Sembunyikan loading setelah selesai (sukses/gagal)
+                 loadingIcon.classList.add('hidden');
+               });
+           }, 300);
+         });
+
+         // Tutup dropdown jika klik di luar
+         document.addEventListener('click', (e) => {
+           if (!searchContainer.contains(e.target)) {
+             searchDropdown.classList.add('hidden');
+           }
+         });
+
+         // Buka kembali dropdown jika input diklik dan ada isinya
+         searchInput.addEventListener('focus', () => {
+           if (searchInput.value.trim().length > 0) {
+             searchDropdown.classList.remove('hidden');
+           }
+         });
+       });
+     </script>
+
+     <div class="flex items-center space-x-6">
+       <a href="<?= BASE_URL ?>/home"
+         class="<?= $is_home ? $activeText : $inactiveText ?>">
+         Home
+       </a>
+       <a href="<?= BASE_URL ?>/forum" class="<?= $is_forum ? $activeText : $inactiveText ?>">Forums</a>
+       <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
+         <a href="<?= BASE_URL ?>/admin" class="text-yellow-400 hover:text-white font-bold pb-1">
+           Admin Panel
+         </a>
+       <?php endif; ?>
+       <a href="<?= BASE_URL ?>/messages"
+         class="<?= $is_message ? $activeIcon : $inactiveIcon ?> flex items-center justify-center">
+         <img src="<?= BASE_URL ?>/public/assets/image/MessageIcon.png" alt="Messages" class="w-6 h-6" />
+       </a>
+       <a
+         href="#"
+         class="text-gray-300 hover:text-white">
+         <img src="<?= BASE_URL ?>/public/assets/image/NotifIcon.png" alt="Notifications" class="w-6 h-6" />
+       </a>
+
+       <div class="relative" id="profile-dropdown-container">
+         <button
+           id="profile-dropdown-button"
+           class="w-9 h-9 bg-white rounded-full flex items-center justify-center font-bold text-indigo-900 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#36364c] focus:ring-white">
+           <?php if (isset($_SESSION['nama'])): ?>
+             <span class="text-lg"><?php echo strtoupper(substr($_SESSION['nama'], 0, 1)); ?></span>
+           <?php else: ?>
+             <svg
+               class="w-8 h-8 text-gray-400"
+               xmlns="http://www.w3.org/2000/svg"
+               fill="currentColor"
+               viewBox="0 0 24 24">
+               <path
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+             </svg>
+           <?php endif; ?>
+         </button>
+
+         <div
+           id="profile-dropdown-menu"
+           class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+           role="menu"
+           aria-orientation="vertical"
+           aria-labelledby="profile-dropdown-button">
+           <a
+             href="<?= BASE_URL ?>/profile"
+             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             role="menuitem">
+             <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+               <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+             </svg>
+             My Profile
+           </a>
+           <a
+             href="#"
+             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             role="menuitem">
+             <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+               <path d="M13.586 3.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0l-1.5-1.5a2 2 0 010-2.828l3-3z" />
+               <path d="M11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+             </svg>
+             Edit Setting
+           </a>
+           <a
+             href="#"
+             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             role="menuitem">
+             <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+               <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+             </svg>
+             My Bin
+           </a>
+           <a
+             href="<?= BASE_URL ?>/logout"
+             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+             role="menuitem">
+             <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+               <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+             </svg>
+             Logout
+           </a>
+         </div>
+       </div>
+     </div>
+   </div>
+ </nav>
+ <script src="<?= BASE_URL ?>/public/assets/js/profiledropdown.js"></script>

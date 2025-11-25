@@ -1,63 +1,70 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Definisikan BASE_URL (harus ada di HTML)
-  //    Kita akan tambahkan di home/index.php
   const BASE_URL = window.BASE_URL || "";
 
-  // 2. Temukan semua tombol like
-  const likeButtons = document.querySelectorAll(".like-button");
+  // Gunakan Event Delegation pada document body agar elemen dinamis juga tercover
+  document.body.addEventListener("click", (event) => {
+    // Cek apakah yang diklik adalah tombol like (atau icon di dalamnya)
+    const likeButton = event.target.closest(".like-button");
 
-  likeButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const currentButton = event.currentTarget;
-      const postId = currentButton.dataset.postId;
+    if (likeButton) {
+      event.preventDefault();
+      const postId = likeButton.dataset.postId;
 
-      if (!postId) {
-        console.error("Like button missing data-post-id");
-        return;
-      }
+      // --- [BAGIAN 1: OPTIMISTIC UI - UPDATE SEMUA DUPLIKAT] ---
+      // Kita cari SEMUA elemen (tombol & angka) yang punya ID Postingan ini
+      const allLikeButtons = document.querySelectorAll(
+        `.like-button[data-post-id="${postId}"]`
+      );
+      const allLikeCounts = document.querySelectorAll(
+        `.like-count[data-post-id="${postId}"]`
+      );
 
-      const url = `${BASE_URL}/post/like?id=${postId}`;
+      // Cek status saat ini dari tombol yang diklik
+      const isCurrentlyLiked = likeButton.classList.contains("text-blue-500");
 
-      // 3. Kirim request ke server
+      // Update Tampilan SEMUA Tombol (Content & Activity)
+      allLikeButtons.forEach((btn) => {
+        if (isCurrentlyLiked) {
+          // Jadi Unlike
+          btn.classList.remove("text-blue-500", "font-bold");
+          btn.classList.add("text-gray-600");
+        } else {
+          // Jadi Like
+          btn.classList.add("text-blue-500", "font-bold");
+          btn.classList.remove("text-gray-600");
+        }
+      });
+
+      // Update Tampilan SEMUA Angka
+      allLikeCounts.forEach((span) => {
+        let currentCount = parseInt(span.innerText) || 0;
+        if (isCurrentlyLiked) {
+          span.innerText = Math.max(0, currentCount - 1);
+        } else {
+          span.innerText = currentCount + 1;
+        }
+      });
+
+      // --- [BAGIAN 2: KIRIM KE SERVER] ---
+      const url = `${BASE_URL}/post/like?id=${postId}&_=${new Date().getTime()}`;
+
       fetch(url)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
+        .then((response) => response.json())
         .then((data) => {
-          // 4. Proses balasan JSON dari server
           if (data.success) {
-            // 4a. Update angka like count
-            const countSpan = document.querySelector(
-              `.like-count[data-post-id="${postId}"]`
-            );
-            if (countSpan) {
-              countSpan.innerText = data.newLikeCount;
-            }
-
-            // 4b. Update tampilan tombol (styling)
-            if (data.isLiked) {
-              // User sekarang me-like
-              currentButton.classList.add("text-blue-500", "font-bold");
-              currentButton.classList.remove("text-gray-600");
-            } else {
-              // User sekarang tidak me-like
-              currentButton.classList.remove("text-blue-500", "font-bold");
-              currentButton.classList.add("text-gray-600");
-            }
+            // Sinkronisasi ulang angka dari server ke SEMUA tempat
+            allLikeCounts.forEach((span) => {
+              span.innerText = data.newLikeCount;
+            });
           } else {
-            // Tampilkan error jika server gagal
-            console.error("Like failed:", data.message);
-            alert("Gagal melakukan like: " + data.message);
+            // Jika GAGAL, Rollback (kembalikan tampilan)
+            alert("Gagal like: " + data.message);
+            location.reload();
           }
         })
         .catch((error) => {
-          // Tampilkan error jika fetch gagal
-          console.error("Fetch error:", error);
-          alert("Terjadi kesalahan. Coba lagi.");
+          console.error("Error:", error);
         });
-    });
+    }
   });
 });

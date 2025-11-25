@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SINERGI</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="<?= BASE_URL ?>/public/assets/css/output.css" rel="stylesheet" />
   <style>
     .section_fade {
       transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
@@ -49,7 +49,7 @@
     <div class="container mx-auto flex justify-between items-center">
       <a href="#" class="flex items-center space-x-1">
         <div class="p-1.5">
-          <img src="<?= BASE_URL ?>/public/assets/images/LOGOSINERGIBORDER.png" alt="Logo" class="w-10 h-10" />
+          <img src="<?= BASE_URL ?>/public/assets/image/LOGOSINERGIBORDER.png" alt="Logo" class="w-10 h-10" />
         </div>
         <span class="text-white text-xl tracking-widest font-azeret">SINERGI</span>
       </a>
@@ -82,11 +82,6 @@
         <p class="text-lg text-gray-300 mb-8">
           Deskripsi singkat atau slogan yang menjelaskan nilai utama atau tujuan dari situs web Anda.
         </p>
-        <div class="flex justify-center md:justify-start space-x-4">
-          <a href="#" class="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full hover:bg-indigo-700 transition duration-300">
-            Mulai Sekarang
-          </a>
-        </div>
       </div>
       <div class="md:w-7/12 flex justify-center md:justify-end h-full">
         <img
@@ -96,14 +91,6 @@
       </div>
     </div>
   </section>
-
-  setTimeout(function() {
-  const alertBox = document.getElementById('alert-box');
-  if (alertBox) {
-  alertBox.style.display = 'none';
-  }
-  }, 3000);
-  </script>
   <!-- Register Section -->
   <section id="register-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Registrasi</h2>
@@ -122,12 +109,28 @@
       <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Create an account</h2>
       <form action="<?= BASE_URL ?>/auth/register" method="POST">
         <input type="hidden" id="role_name" name="role_name" value="mahasiswa">
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-11/12 mx-auto">
+
           <div class="relative">
             <input type="text" id="nim-nip-input" name="nim-nip-input" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="NIM" required>
           </div>
+
+          <div class="relative">
+            <input type="text" name="nama" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nama Lengkap" required>
+          </div>
+
+          <div class="relative">
+            <input type="email" name="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email : nama@stu.pnj.ac.id" required>
+          </div>
+
+          <div class="relative">
+            <input type="password" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
+          </div>
+
           <div id="study-program-field" class="relative transition-all duration-300">
-            <select id="program_studi" name="program_studi" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" required>
+            <label class="block text-gray-700 font-semibold mb-2 text-sm">Study Program</label>
+            <select id="program_studi" name="program_studi" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="" disabled selected>Pilih program studi</option>
               <option value="Teknik Informatika">Teknik Informatika</option>
               <option value="Teknik Multimedia dan Jaringan">Teknik Multimedia dan Jaringan</option>
@@ -135,37 +138,24 @@
               <option value="Teknik Komputer dan Jaringan">Teknik Komputer dan Jaringan</option>
             </select>
           </div>
-          <div class="relative">
-            <input type="text" name="nama" placeholder="Nama Lengkap" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Full name" required>
-          </div>
-          <div class="relative">
-            <input type="email" name="email" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email" required>
-            <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-              <a href="#" class="text-sm text-indigo-600 hover:underline">use phone instead</a>
-            </div>
-          </div>
+
           <div id="admission-date-field" class="relative transition-all duration-300">
-            <label class="block text-gray-700 font-semibold mb-2 text-sm">Date of Admission</label>
-            <div class="flex space-x-2">
-              <select name="admission_day" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option>06</option>
-              </select>
-              <select name="admission_month" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option>Oct</option>
-              </select>
-              <select name="admission_year" class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option>2025</option>
+            <label class="block text-gray-700 font-semibold mb-2 text-sm">Tahun Masuk / Angkatan</label>
+            <div class="relative">
+              <select name="admission_year" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <?php
+                $currentYear = date("Y");
+                // Tampilkan 20 tahun ke belakang
+                for ($i = $currentYear; $i >= $currentYear - 20; $i--) {
+                  echo "<option value='$i'>$i</option>";
+                }
+                ?>
               </select>
             </div>
           </div>
 
-          <div class="relative">
-            <label for="password_reg" class="block text-gray-700 font-semibold mb-2 text-sm">Password</label>
-            <div class="relative">
-              <input type="password" name="password" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
-            </div>
-          </div>
         </div>
+
         <button type="submit" class="w-11/12 block mx-auto bg-[#5e5e8f] text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-800 transition duration-300 mt-8">
           Create Account
         </button>
@@ -180,59 +170,95 @@
   <!-- Login Section-->
   <section id="login-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50">
     <h2 class="text-3xl font-bold text-center text-[#ffffff] mb-8">Login</h2>
-    <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-2xl">
+
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md relative">
       <div class="flex flex-col items-center mb-6">
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center border border-gray-300 mb-2">
-          <img src="<?= BASE_URL ?>/public/assets/images/logo.png" alt="Logo" class="w-8 h-8" />
+          <img src="<?= BASE_URL ?>/public/assets/image/logo.png" alt="Logo" class="w-8 h-8" />
         </div>
         <h2 class="text-3xl font-bold tracking-[0.2em] text-gray-800">SINERGI</h2>
       </div>
-      <?php
-      // // Buat daftar karakter yang mudah dibaca (tanpa O, 0, I, l)
-      $karakter = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      // Acak karakter dan ambil 5 karakter pertama
-      $captcha_string = substr(str_shuffle($karakter), 0, 5);
 
-      // Simpan string yang benar ke dalam session
+      <?php
+      // Logika Captcha (Tetap sama)
+      $karakter = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      $captcha_string = substr(str_shuffle($karakter), 0, 5);
       $_SESSION['captcha_string'] = $captcha_string;
       ?>
+
       <form action="<?= BASE_URL ?>/auth/login" method="POST">
-        <div class="grid grid-cols-1 gap-y-5">
-          <div class="relative w-3/4 mx-auto">
-            <input type="text" id="identifier" name="identifier" class="w-full pl-4 pr-28 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email / NIM / NIP" required>
+        <div class="flex flex-col gap-y-4 w-11/12 mx-auto">
+
+          <div class="relative">
+            <input type="text" id="identifier" name="identifier" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Email / NIM / NIP" required>
           </div>
-          <div class="relative w-3/4 mx-auto">
+
+          <div class="relative">
             <input type="password" id="password" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
           </div>
-          <div class="relative w-3/4 mx-auto">
-            <label for="captcha" class="block text-sm font-medium text-gray-700 text-center mb-1">
-              Verifikasi (tulis 5 karakter di bawah):
+
+          <div class="relative bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <label for="captcha" class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide text-center">
+              Security Check
             </label>
-            <div class="w-full px-4 py-2 border rounded-lg bg-gray-200 text-center">
-              <strong class="text-xl tracking-widest font-mono">
-                <?php echo $captcha_string; ?>
-              </strong>
+
+            <div class="flex items-center gap-2">
+              <div class="w-1/3 px-2 py-2 border border-gray-300 bg-gray-200 text-center rounded-lg select-none">
+                <strong class="text-lg tracking-widest font-mono text-gray-700 decoration-dashed">
+                  <?php echo $captcha_string; ?>
+                </strong>
+              </div>
+
+              <input type="text" id="captcha" name="captcha"
+                class="w-2/3 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Tulis kode di samping" required autocomplete="off" maxlength="5">
             </div>
-            <input type="text" id="captcha" name="captcha"
-              class="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Tulis 5 karakter di atas" required autocomplete="off" maxlength="5">
           </div>
-          <div class="w-3/4 mx-auto text-right">
-            <a href="#" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password</a>
+
+          <div class="text-right">
+            <a href="#" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
           </div>
+
         </div>
-        <button type="submit" class="w-3/4 block mx-auto bg-[#5e5e8f] text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-800 transition duration-300 mt-8">
+
+        <button type="submit" class="w-11/12 block mx-auto bg-[#5e5e8f] text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-800 transition duration-300 mt-6 shadow-md">
           Login
         </button>
       </form>
-      <p class="text-center text-gray-600 mt-6">
+
+      <p class="text-center text-sm text-gray-600 mt-6">
         Don't have an account?
-        <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-register-from-login">Register</a>
+        <a href="#" class="text-indigo-600 hover:underline font-bold" id="show-register-from-login">Register</a>
       </p>
     </div>
   </section>
   <script src="<?= BASE_URL ?>/public/assets/js/register.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/transitions.js"></script>
 </body>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const loginSection = document.getElementById("login-section");
+    const registerSection = document.getElementById("register-section");
+
+    // Fungsi helper dari transitions.js (pastikan fungsi showSection bisa diakses atau copy logikanya)
+    function openSection(section) {
+      section.classList.remove("hidden");
+      setTimeout(() => {
+        section.classList.remove("opacity-0", "scale-95");
+      }, 20);
+    }
+
+    <?php if (isset($_SESSION['open_modal'])): ?>
+      <?php if ($_SESSION['open_modal'] == 'register'): ?>
+        openSection(registerSection);
+      <?php elseif ($_SESSION['open_modal'] == 'login'): ?>
+        openSection(loginSection);
+      <?php endif; ?>
+
+      <?php unset($_SESSION['open_modal']); // Hapus session agar tidak terbuka terus 
+      ?>
+    <?php endif; ?>
+  });
+</script>
 
 </html>

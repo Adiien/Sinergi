@@ -33,9 +33,15 @@ class HomeController
             $current_user_id = $_SESSION['user_id'];
 
             $myPostCount = $this->postModel->getPostCountByUserId($current_user_id);
+            $followStats = $this->userModel->getFollowStats($current_user_id);
+            $followerCount = $followStats['followers'];
+            $followingCount = $followStats['following'];
 
-            // 1. Ambil data postingan
-            $posts = $this->postModel->getFeedPosts();
+            // 2. [BARU] Ambil saran teman (3 orang)
+            $suggestedUsers = $this->userModel->getSuggestedUsers($current_user_id, 3);
+
+            // [UPDATE] Kirim $current_user_id ke model
+            $posts = $this->postModel->getFeedPosts($current_user_id);
 
             // 2. Ambil ID dari postingan yang didapat
             $post_ids = array_column($posts, 'POST_ID');

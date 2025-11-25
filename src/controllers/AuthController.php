@@ -32,15 +32,87 @@ class AuthController
     public function register()
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+            // 1. AMBIL DATA & BERSIHKAN
+            $nama = htmlspecialchars(trim($_POST['nama'] ?? ''));
+            $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+            $password = $_POST['password'] ?? '';
+            $role_name = $_POST['role_name'] ?? 'mahasiswa';
+            $nim_nip = trim($_POST['nim-nip-input'] ?? '');
+            $program_studi = $_POST['program_studi'] ?? '';
+            $admission_year = $_POST['admission_year'] ?? null;
+
+            // --- [BARU] VALIDASI DOMAIN EMAIL ---
+            if ($role_name == 'mahasiswa') {
+                if (!preg_match("/@stu\.pnj\.ac\.id$/", $email)) {
+                    $_SESSION['error_message'] = 'Mahasiswa wajib menggunakan email @stu.pnj.ac.id';
+                    $_SESSION['open_modal'] = 'register';
+                    header('Location: ' . BASE_URL);
+                    exit;
+                }
+            } elseif ($role_name == 'dosen') {
+                if (!preg_match("/@tik\.pnj\.ac\.id$/", $email)) {
+                    $_SESSION['error_message'] = 'Dosen wajib menggunakan email @tik.pnj.ac.id';
+                    $_SESSION['open_modal'] = 'register';
+                    header('Location: ' . BASE_URL);
+                    exit;
+                }
+            } elseif ($role_name == 'alumni') {
+                // Validasi gmail.com (atau bisa dihapus jika Alumni bebas)
+                if (!preg_match("/@gmail\.com$/", $email)) {
+                    $_SESSION['error_message'] = 'Alumni wajib menggunakan email @gmail.com';
+                    $_SESSION['open_modal'] = 'register';
+                    header('Location: ' . BASE_URL);
+                    exit;
+                }
+            }
+            // ------------------------------------
+
+            // 2. VALIDASI FIELD KOSONG
+            if (empty($nama) || empty($email) || empty($password) || empty($nim_nip)) {
+                $_SESSION['error_message'] = 'Semua kolom wajib diisi!';
+                $_SESSION['open_modal'] = 'register';
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+            // Validasi khusus Role
+            if ($role_name == 'mahasiswa' && empty($program_studi)) {
+                $_SESSION['error_message'] = 'Mahasiswa wajib memilih Program Studi.';
+                $_SESSION['open_modal'] = 'register';
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+
+            // 3. SIAPKAN DATA UNTUK MODEL
+            $data = [
+                'nama' => $nama,
+                'email' => $email,
+                'password' => $password,
+                'role_name' => $role_name,
+                'nim-nip-input' => $nim_nip,
+                'program_studi' => $program_studi,
+                'admission_year' => $admission_year
+            ];
+
+            // 4. EKSEKUSI KE MODEL
             try {
-                if ($this->userModel->registerUser($_POST)) {
+                if ($this->userModel->registerUser($data)) {
                     $_SESSION['success_message'] = 'Registrasi berhasil! Silakan login.';
+                    $_SESSION['open_modal'] = 'login'; // Buka modal login
                 } else {
-                    $_SESSION['error_message'] = 'Registrasi gagal. Coba lagi.';
+                    $_SESSION['error_message'] = 'Registrasi gagal. Silakan coba lagi.';
+                    $_SESSION['open_modal'] = 'register';
                 }
             } catch (Exception $e) {
-                $_SESSION['error_message'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                // Cek pesan error Oracle untuk duplikat data (ORA-00001)
+                if (strpos($e->getMessage(), 'ORA-00001') !== false) {
+                    $_SESSION['error_message'] = 'Email atau NIM/NIP sudah terdaftar!';
+                } else {
+                    $_SESSION['error_message'] = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+                }
+                $_SESSION['open_modal'] = 'register';
             }
+
             header('Location: ' . BASE_URL);
             exit;
         }
@@ -63,6 +135,7 @@ class AuthController
 
 
                 $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal. Silakan coba lagi.';
+                $_SESSION['open_modal'] = 'login';
 
                 // Kosongkan CAPTCHA lama
                 if (isset($_SESSION['captcha_string'])) {
@@ -72,7 +145,7 @@ class AuthController
                 header('Location: ' . BASE_URL);
                 exit;
             }
-            
+
             unset($_SESSION['captcha_string']);
 
             try {
@@ -93,6 +166,7 @@ class AuthController
                     exit;
                 } else {
                     $_SESSION['error_message'] = 'Login Gagal. Periksa kembali email/NIM/NIP dan password Anda.';
+                    $_SESSION['open_modal'] = 'login';
                     header('Location: ' . BASE_URL);
                     exit;
                 }

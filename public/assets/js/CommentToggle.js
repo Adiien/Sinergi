@@ -1,28 +1,26 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Temukan SEMUA tombol 'comment' di halaman
+  // Ambil semua tombol comment
   const toggleButtons = document.querySelectorAll(".comment-toggle-button");
 
-  // 2. Tambahkan event listener ke setiap tombol
   toggleButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      // 3. Ambil post ID dari data-attribut tombol yang diklik
-      const postId = button.dataset.postId;
-      if (!postId) {
-        console.error("Tombol tidak memiliki data-post-id");
-        return;
-      }
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
 
-      // 4. Bangun ID unik untuk section komentar
-      const commentSectionId = "comments-section-" + postId;
-      const commentSection = document.getElementById(commentSectionId);
+      // 1. Cari elemen pembungkus kartu (post-card) terdekat dari tombol yang diklik
+      const card = button.closest(".post-card");
 
-      if (commentSection) {
-        // 5. Tampilkan/sembunyikan (toggle) section komentar
-        commentSection.classList.toggle("hidden");
+      if (card) {
+        // 2. Cari div komentar (.comments-section) HANYA di dalam kartu tersebut
+        const commentSection = card.querySelector(".comments-section");
+
+        if (commentSection) {
+          // 3. Toggle visibility
+          commentSection.classList.toggle("hidden");
+        } else {
+          console.error("Section komentar tidak ditemukan di dalam kartu ini.");
+        }
       } else {
-        console.error(
-          "Section komentar " + commentSectionId + " tidak ditemukan"
-        );
+        console.error("Elemen kartu (.post-card) tidak ditemukan.");
       }
     });
   });
