@@ -2,13 +2,50 @@
 // Impor model baru Anda
 require_once 'src/models/Post.php';
 require_once 'src/models/User.php'; // (Jika diperlukan untuk data user lain)
+    
+function buildCommentTree($comments_raw) {
+    $comments_by_id = [];
+    $comment_tree = [];
+
+    // 1. Indeks komentar berdasarkan COMMENT_ID
+    foreach ($comments_raw as $comment) {
+        $comment['REPLIES'] = []; // Inisialisasi array balasan
+        // Pastikan key cocok dengan hasil query (huruf besar)
+        $comments_by_id[$comment['COMMENT_ID']] = $comment;
+    }
+
+    // 2. Bangun pohon
+    foreach ($comments_by_id as $id => &$comment) {
+        // Jika memiliki parent ID (bukan komentar utama)
+        if ($comment['PARENT_COMMENT_ID'] !== null) {
+            $parentId = $comment['PARENT_COMMENT_ID'];
+            
+            // Masukkan komentar saat ini ke dalam array REPLIES milik parent
+            if (isset($comments_by_id[$parentId])) {
+                $comments_by_id[$parentId]['REPLIES'][] = &$comment;
+            } else {
+                // FALLBACK: Jika parent tidak ditemukan, perlakukan sebagai komentar utama
+                $comment_tree[] = &$comment;
+            }
+        } else {
+            // Jika tidak memiliki parent ID, itu adalah komentar utama (root)
+            $comment_tree[] = &$comment;
+        }
+    }
+    unset($comment); // Hapus reference untuk menghindari bug
+
+    return $comment_tree;
+}
 
 class HomeController
 {
 
+
     private $postModel;
     private $userModel;
     private $conn;
+
+    
 
     public function __construct()
     {
@@ -51,27 +88,27 @@ class HomeController
                 $all_comments_raw = $this->postModel->getCommentsForPosts($post_ids);
 
                 // 4. Petakan komentar ke ID postingan agar mudah dicari
-                $comments_by_post_id = [];
+                $raw_comments_by_post_id = [];
                 foreach ($all_comments_raw as $comment) {
-                    // $comment['POST_ID'] adalah kuncinya
-                    $comments_by_post_id[$comment['POST_ID']][] = $comment;
+                    $raw_comments_by_post_id[$comment['POST_ID']][] = $comment;
                 }
 
-                // 5. Lampirkan daftar komentar ke setiap post
-                //    Kita gunakan & (reference) agar array $posts asli berubah
+// 5. [UPDATE] Konversi komentar datar menjadi struktur bersarang (tree)
+//    Dan lampirkan hasil 'tree' ke setiap post
                 foreach ($posts as $key => &$post) {
                     $current_post_id = $post['POST_ID'];
 
-                    if (isset($comments_by_post_id[$current_post_id])) {
-                        // Jika ada komentar, lampirkan
-                        $posts[$key]['comments_list'] = $comments_by_post_id[$current_post_id];
+                    if (isset($raw_comments_by_post_id[$current_post_id])) {
+                        // Gunakan fungsi yang baru ditambahkan
+                        $comment_tree = buildCommentTree($raw_comments_by_post_id[$current_post_id]); 
+                        $posts[$key]['comments_list'] = $comment_tree;
                     } else {
-                        // Jika tidak ada, lampirkan array kosong
+ // Jika tidak ada, lampirkan array kosong
                         $posts[$key]['comments_list'] = [];
+                        }
                     }
-                }
-                unset($post); // Hapus referensi setelah loop selesai
-            }
+                    unset($post); // Hapus referensi setelah loop selesai
+             }
         } catch (Exception $e) {
             // Tangani error jika gagal mengambil post
             $_SESSION['error_message'] = 'Gagal memuat feed: ' . $e->getMessage();

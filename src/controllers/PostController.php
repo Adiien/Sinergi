@@ -27,6 +27,15 @@ class PostController
             try {
                 $user_id = $_SESSION['user_id'];
                 $content = $_POST['content'];
+                
+                // [BARU] Ambil visibility dari form, default ke 'public' jika kosong
+                $visibility = $_POST['visibility'] ?? 'public';
+                
+                // [BARU] Validasi keamanan sederhana
+                if ($visibility !== 'private') {
+                    $visibility = 'public';
+                }
+
                 $image_path = null;
 
                 // --- LOGIKA UPLOAD GAMBAR ---
@@ -64,19 +73,22 @@ class PostController
                     $_SESSION['error_message'] = 'Postingan (teks atau gambar) tidak boleh kosong.';
                 } else {
                     // Update pemanggilan model untuk mengirim image_path
-                    if ($this->postModel->createPost($user_id, $content, $image_path)) {
-                        $_SESSION['success_message'] = 'Postingan berhasil dibuat!';
-                    } else {
-                        $_SESSION['error_message'] = 'Gagal membuat postingan.';
-                    }
+                    if ($this->postModel->createPost($user_id, $content, $image_path, $visibility)) {
+                    $_SESSION['success_message'] = "Postingan berhasil dibuat!";
+                } else {
+                    $_SESSION['error_message'] = "Gagal membuat postingan.";
                 }
-            } catch (Exception $e) {
-                $_SESSION['error_message'] = 'Terjadi kesalahan: ' . $e->getMessage();
             }
-        }
 
-        header('Location: ' . BASE_URL . '/home');
-        exit;
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = "Terjadi kesalahan: " . $e->getMessage();
+            }
+            
+
+            // Redirect kembali
+            header('Location: ' . BASE_URL . '/home');
+            exit;
+        }
     }
 
     /**
@@ -203,14 +215,25 @@ class PostController
                 $user_id = $_SESSION['user_id'];
                 $post_id = $_POST['post_id'];
                 $content = $_POST['content'];
+                
+                // [BARU] Ambil parent_id. Nilainya bisa NULL jika ini komentar utama
+                $parent_comment_id = $_POST['parent_id'] ?? null; 
+                
+                // Sanitasi parent_comment_id: harus angka positif atau null
+                if (!is_numeric($parent_comment_id) || (int)$parent_comment_id <= 0) {
+                    $parent_comment_id = null;
+                } else {
+                    $parent_comment_id = (int)$parent_comment_id;
+                }
 
                 if (empty($content)) {
                     $_SESSION['error_message'] = 'Komentar tidak boleh kosong.';
                 } elseif (empty($post_id) || !is_numeric($post_id)) {
                     $_SESSION['error_message'] = 'Postingan tidak valid.';
                 } else {
-                    if ($this->postModel->addComment($post_id, $user_id, $content)) {
-                        $_SESSION['success_message'] = 'Komentar ditambahkan!';
+                    // [UBAH] Panggil model dengan parameter parent_comment_id
+                    if ($this->postModel->addComment($post_id, $user_id, $content, $parent_comment_id)) {
+                        $_SESSION['success_message'] = $parent_comment_id ? 'Balasan berhasil ditambahkan!' : 'Komentar ditambahkan!';
                     } else {
                         $_SESSION['error_message'] = 'Gagal menambahkan komentar.';
                     }
@@ -220,7 +243,8 @@ class PostController
             }
         }
 
-        header('Location: ' . BASE_URL . '/home');
+        // Redirect ke halaman sebelumnya. Jika tidak ada, fallback ke home.
+        header('Location: ' . $_SERVER['HTTP_REFERER'] ?? BASE_URL . '/home');
         exit;
     }
 

@@ -49,7 +49,7 @@
 
 <body class="bg-gray-100 pt-24 no-scrollbar">
 
-  <?php require_once 'views/partials/navbar.php'; ?>
+  <?php require_once 'views/partials/navbar.php'; ?>
 
   <main id="main-content" class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
@@ -144,12 +144,15 @@
         </div>
         <div>
           <h4 class="font-bold text-gray-900"><?php echo htmlspecialchars($_SESSION['nama']); ?></h4>
-          <button class="flex items-center space-x-1 bg-gray-100 rounded-md px-2 py-1 text-xs text-gray-700 hover:bg-gray-200">
-            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          
+          <button type="button" onclick="toggleVisibility()" class="flex items-center space-x-1 bg-gray-100 rounded-md px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 cursor-pointer">
+            <svg id="visibilityIcon" class="w-3 h-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.55a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.89 5.67a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM15 9.25a.75.75 0 01.75.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.05 16.45a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 010 1.06zM13.89 14.33a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06z" clip-rule="evenodd" />
             </svg>
-            <span>Public</span>
-            <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            
+            <span id="visibilityText" class="font-medium">Public</span>
+            
+            <svg class="w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
           </button>
@@ -157,6 +160,8 @@
       </div>
 
       <form action="<?= BASE_URL ?>/post/create" method="POST" enctype="multipart/form-data" class="mt-4 flex-1 flex flex-col">
+
+        <input type="hidden" name="visibility" id="visibilityInput" value="public">
 
         <input type="file" name="post_image" id="post_image_input" class="hidden" accept="image/*">
 
@@ -216,7 +221,33 @@
       </form>
 
     </div>
-  </section>
+</section>
+
+<script>
+    function toggleVisibility() {
+        const input = document.getElementById('visibilityInput');
+        const textSpan = document.getElementById('visibilityText');
+        const iconSvg = document.getElementById('visibilityIcon');
+
+        // SVG Gembok (Private)
+        const lockIcon = '<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />';
+        
+        // SVG Globe (Public)
+        const globeIcon = '<path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.55a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.89 5.67a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM15 9.25a.75.75 0 01.75.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.05 16.45a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 010 1.06zM13.89 14.33a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06z" clip-rule="evenodd" />';
+
+        if (input.value === 'public') {
+            // Ubah ke Private
+            input.value = 'private';
+            textSpan.textContent = 'Private';
+            iconSvg.innerHTML = lockIcon;
+        } else {
+            // Ubah ke Public
+            input.value = 'public';
+            textSpan.textContent = 'Public';
+            iconSvg.innerHTML = globeIcon;
+        }
+    }
+</script>
 
   <section id="report-modal"
     class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden fixed inset-0 z-50 bg-[#5e5e8f]/50 transition-all duration-300"
@@ -292,6 +323,7 @@
   <script src="<?= BASE_URL ?>/public/assets/js/LikeToggle.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/ModalPost.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/CommentToggle.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/CommentReply.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/Report.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/PostMenu.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/RealTime.js"></script>

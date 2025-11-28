@@ -8,32 +8,40 @@ class Post
         $this->conn = $db;
     }
 
-/**
-     * Membuat postingan baru (Support Gambar)
+
+    /**
+     * Membuat postingan baru (Support Gambar & Visibility)
      */
-    public function createPost($user_id, $content, $image_path = null) // Tambah parameter
+    // [UBAH] Tambahkan parameter $visibility dengan default 'public'
+    public function createPost($user_id, $content, $image_path = null, $visibility = 'public') 
     {
-        // Tambahkan kolom image_path
-        $query = 'INSERT INTO posts (post_id, user_id, content, image_path, created_at)
-                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :image_path, SYSTIMESTAMP)
+        // [UBAH] Tambahkan kolom visibility di INSERT dan :visibility di VALUES
+        $query = 'INSERT INTO posts (post_id, user_id, content, image_path, visibility, created_at)
+                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :image_path, :visibility, SYSTIMESTAMP)
                   RETURNING content INTO :content_clob';
 
         $stmt = oci_parse($this->conn, $query);
         $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
 
         oci_bind_by_name($stmt, ':user_id', $user_id);
-        oci_bind_by_name($stmt, ':image_path', $image_path); // Bind
+        oci_bind_by_name($stmt, ':image_path', $image_path);
+        
+        // [UBAH] Bind parameter visibility
+        oci_bind_by_name($stmt, ':visibility', $visibility);
+        
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
-        // ... (Sisa kode sama seperti sebelumnya: execute, save clob, commit) ...
+        // Eksekusi
         $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
-        if (!$result) { /* Error handling */ }
         
-        $content_to_save = $content ?? ''; // Handle null
-        $clob->save($content_to_save);
-        
-        oci_commit($this->conn);
-        // ...
+        if (!$result) {
+            $e = oci_error($stmt);
+            throw new Exception($e['message']);
+        }
+
+        $clob->save($content);
+        oci_commit($this->conn); // Commit perubahan
+
         return true;
     }
     /**
@@ -161,12 +169,13 @@ class Post
     /**
      * Menambahkan komentar baru
      */
-    public function addComment($post_id, $user_id, $content)
+    public function addComment($post_id, $user_id, $content, $parent_comment_id = null) // <--- PERUBAHAN
     {
         // Mirip dengan createPost, kita pakai CLOB
-        $query = 'INSERT INTO comments (comment_id, post_id, user_id, content, created_at)
-                  VALUES (comments_seq.NEXTVAL, :post_id, :user_id, EMPTY_CLOB(), SYSTIMESTAMP)
-                  RETURNING content INTO :content_clob';
+        // [UBAH] Tambahkan parent_comment_id ke INSERT dan :parent_id ke VALUES
+        $query = 'INSERT INTO comments (comment_id, post_id, user_id, content, parent_comment_id, created_at)
+                  VALUES (comments_seq.NEXTVAL, :post_id, :user_id, EMPTY_CLOB(), :parent_id, SYSTIMESTAMP)
+                  RETURNING content INTO :content_clob'; // <--- PERUBAHAN
 
         $stmt = oci_parse($this->conn, $query);
 
@@ -174,6 +183,10 @@ class Post
 
         oci_bind_by_name($stmt, ':post_id', $post_id);
         oci_bind_by_name($stmt, ':user_id', $user_id);
+        
+        // [BARU] Bind parameter parent_comment_id
+        oci_bind_by_name($stmt, ':parent_id', $parent_comment_id); // <--- BARU
+        
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
         $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
@@ -216,11 +229,12 @@ class Post
         }
         $in_clause = implode(',', $placeholders);
 
-        // Kueri mengambil komentar DAN nama user yang berkomentar
+        // Kueri mengambil komentar, nama user, DAN parent_comment_id
         $query = 'SELECT 
                     c.comment_id, 
                     c.post_id, 
                     c.content, 
+                    c.parent_comment_id, -- <--- BARU: Ambil ID komentar induk
                     TO_CHAR(c.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS created_at,
                     u.user_id,
                     u.nama
@@ -231,7 +245,9 @@ class Post
                   WHERE 
                     c.post_id IN (' . $in_clause . ')
                   ORDER BY 
-                    c.created_at ASC'; // Komentar terlama di atas
+                    c.post_id ASC, 
+                    c.parent_comment_id NULLS FIRST, -- Agar komentar utama di atas
+                    c.created_at ASC'; // <--- PERUBAHAN ORDER BY
 
         $stmt = oci_parse($this->conn, $query);
 
@@ -274,7 +290,9 @@ class Post
                     p.post_id, 
                     p.content,
                     p.image_path, 
-                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
+                    p.visibility,
+                    -- [FIXED] Ganti alias menjadi CREATED_AT_FMT (sesuai yang diakses di PHP)
+                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
                     u.user_id, 
                     u.nama, 
                     u.email,
@@ -282,39 +300,48 @@ class Post
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
                     (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
                     
-                    -- [BARU] Cek apakah user login sudah follow penulis post ini
                     (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
-                    
-                    -- [BARU & PENTING] Cek apakah user login SUDAH LIKE post ini
                     (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
                   FROM 
                     posts p
                   JOIN 
                     users u ON p.user_id = u.user_id
+                  WHERE 
+                    -- 1. Postingan Public (Semua bisa lihat)
+                    p.visibility = \'public\'
+                    
+                    -- 2. ATAU Postingan milik saya sendiri (Private pun saya bisa lihat)
+                    OR p.user_id = :current_user_id
+                    
+                    -- 3. ATAU Postingan Private orang lain, tapi SAYA SUDAH FOLLOW DIA
+                    OR (
+                        p.visibility = \'private\' 
+                        AND EXISTS (
+                            SELECT 1 FROM follows f 
+                            WHERE f.follower_id = :current_user_id 
+                            AND f.following_id = p.user_id
+                        )
+                    )
                   ORDER BY 
                     p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
-        
-        // Binding ID user yang sedang login
-        oci_bind_by_name($stmt, ':current_user_id', $current_user_id);
-        
-        $exec = oci_execute($stmt);
 
-        if (!$exec) {
-            $e = oci_error($stmt);
-            oci_free_statement($stmt);
-            throw new Exception("Error Database: " . $e['message']);
-        }
+        oci_bind_by_name($stmt, ":current_user_id", $current_user_id);
+
+        oci_execute($stmt);
 
         $posts = [];
         while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-            if (is_object($row['CONTENT'])) {
+            if (isset($row['CONTENT']) && is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
+            
+            // [AMAN] Sekarang key 'CREATED_AT_FMT' sudah ada di array $row
+            $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
+            
             $posts[] = $row;
         }
-
         oci_free_statement($stmt);
         return $posts;
     }
@@ -363,14 +390,19 @@ class Post
     /**
      * [BARU] Mengambil postingan milik user tertentu (Untuk Tab Content)
      */
+    /**
+     * [BARU] Mengambil postingan milik user tertentu (Untuk Tab Content)
+     * [FIXED] Perbaikan alias tanggal di SQL dan penambahan konversi key
+     */
     public function getPostsByAuthor($author_id, $viewer_id)
     {
-        // Query mirip getFeedPosts tapi difilter WHERE p.user_id = :author_id
         $query = 'SELECT 
                     p.post_id, 
                     p.content,
                     p.image_path, 
-                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
+                    p.visibility, 
+                    -- [FIXED] Ganti alias menjadi CREATED_AT_FMT
+                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
                     u.user_id, 
                     u.nama, 
                     u.email,
@@ -378,7 +410,6 @@ class Post
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
                     (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
                     
-                    -- Cek Follow & Like dari sudut pandang viewer (orang yang melihat profil)
                     (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :viewer_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
                     (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :viewer_id) AS IS_LIKED
                   FROM 
@@ -386,7 +417,25 @@ class Post
                   JOIN 
                     users u ON p.user_id = u.user_id
                   WHERE 
-                    p.user_id = :author_id
+                    p.user_id = :author_id 
+                    
+                    AND (
+                        -- 1. Tampilkan jika Public
+                        p.visibility = \'public\' 
+                        
+                        -- 2. ATAU yang melihat adalah pemilik post itu sendiri
+                        OR p.user_id = :viewer_id
+                        
+                        -- 3. ATAU Private dan viewer sudah follow author
+                        OR (
+                            p.visibility = \'private\' 
+                            AND EXISTS (
+                                SELECT 1 FROM follows f 
+                                WHERE f.follower_id = :viewer_id 
+                                AND f.following_id = p.user_id
+                            )
+                        )
+                    )
                   ORDER BY 
                     p.created_at DESC';
 
@@ -403,6 +452,10 @@ class Post
             if (is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
+            
+            // [BARU DITAMBAHKAN] Konversi key agar View tidak error
+            $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
+            
             $posts[] = $row;
         }
         oci_free_statement($stmt);
