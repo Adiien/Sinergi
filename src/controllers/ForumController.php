@@ -15,15 +15,19 @@ class ForumController
     public function index()
     {
         if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . BASE_URL . '/login');
-            exit;
-        }
+        header('Location: ' . BASE_URL . '/login');
+        exit;
+    }
 
-        $myForums = $this->forumModel->getAllForums();
+    // HANYA forum yang dibuat user ini
+        $myForums = $this->forumModel->getForumsByCreator($_SESSION['user_id']);
+
+    // Sidebar: forum yang dia join
         $joinedForums = $this->forumModel->getUserJoinedForums($_SESSION['user_id']);
 
-        require 'views/forum/index.php';
+        require 'views/forum/index.php';   // view yang sudah kamu kirim tadi
     }
+
 
     /**
      * [UPDATE] Dengan Debugging Error
@@ -72,4 +76,19 @@ class ForumController
             exit;
         }
     }
+
+public function explore()
+{
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ' . BASE_URL . '/login');
+        exit;
+    }
+
+    // semua forum public (pakai fungsi yang tadi sudah kita bahas)
+    $forums = $this->forumModel->getAllPublicForums();
+
+    require 'views/forum/explore.php';
+}
+
+
 }

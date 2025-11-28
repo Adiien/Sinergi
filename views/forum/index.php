@@ -109,9 +109,11 @@
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">My Forums</h2>
                         </div>
-                        <a href="#" class="text-sm font-bold text-blue-600 hover:underline flex items-center">
+                        <a href="<?= BASE_URL ?>views/forum/explore" 
+                            class="text-sm font-bold text-blue-600 hover:underline flex items-center">
                             Explore Forums
                         </a>
+
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -152,20 +154,20 @@
                     <div class="flex justify-center">
                         <div class="bg-white rounded-[30px] shadow-sm border border-gray-100 p-10 w-full max-w-2xl relative">
                             <div class="text-center mb-6">
-                                <h2 class="text-2xl font-extrabold text-[#1e293b]">Create Classroom</h2>
+                                <h2 class="text-2xl font-extrabold text-[#1e293b]">Create Forum</h2>
                             </div>
                             <div class="border-b border-gray-100 -mx-10 mb-8"></div>
 
                             <form action="<?= BASE_URL ?>/forum/create" method="POST">
                                 <div class="mb-8">
-                                    <input type="text" name="name" class="w-full border border-gray-300 rounded-lg px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-gray-800 text-sm font-medium" placeholder="Classroom Name" required autocomplete="off">
+                                    <input type="text" name="name" class="w-full border border-gray-300 rounded-lg px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-gray-800 text-sm font-medium" placeholder="Forum Name" required autocomplete="off">
                                 </div>
                                 <div class="hidden">
                                     <input type="text" name="description" value="New Classroom">
                                 </div>
 
                                 <div class="mb-10">
-                                    <label class="block text-[#1e293b] font-bold mb-4 text-sm">Classroom Visibility</label>
+                                    <label class="block text-[#1e293b] font-bold mb-4 text-sm">Forum Visibility</label>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <label class="cursor-pointer group relative">
                                             <input type="radio" name="visibility" value="public" class="peer sr-only" checked>

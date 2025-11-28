@@ -103,6 +103,12 @@ switch ($route) {
         $controller->create();
         break;
     
+    case 'forum/explore':                               
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->explore();
+        break;
+    
     case 'profile':
         require_once 'src/Controllers/ProfileController.php';
         $controller = new ProfileController();

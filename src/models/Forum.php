@@ -74,4 +74,43 @@ class ForumModel
         oci_free_statement($stmt);
         return true;
     }
+
+    public function getForumsByCreator($user_id)
+    {
+        $query = "SELECT f.*, 
+                    (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) AS member_count
+                    FROM forums f
+                    WHERE f.created_by = :user_id
+                    ORDER BY f.created_at DESC";
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_execute($stmt);
+
+        $forums = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            $forums[] = $row;
+        }
+
+        return $forums;
+    }
+    public function getAllPublicForums()
+    {
+        $query = "SELECT f.*, 
+                    (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) AS member_count
+                    FROM forums f
+                    WHERE f.visibility = 'public'
+                    ORDER BY f.created_at DESC";
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_execute($stmt);
+
+        $forums = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+        $forums[] = $row;
+    }
+
+    return $forums;
+    }
+
 }
