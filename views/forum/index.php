@@ -109,7 +109,7 @@
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">My Forums</h2>
                         </div>
-                        <a href="<?= BASE_URL ?>views/forum/explore" 
+                        <a href="<?= BASE_URL ?>views+/forum/explore" 
                             class="text-sm font-bold text-blue-600 hover:underline flex items-center">
                             Explore Forums
                         </a>

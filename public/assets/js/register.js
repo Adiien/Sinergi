@@ -32,12 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedButton.classList.remove(...inactiveClasses);
     }
 
-    // 2. Atur Placeholder Input NIM/NIP
+    // 2. Atur Placeholder Input NIM
     let placeholderText = "NIM";
     if (role === "dosen") {
       placeholderText = "NIP";
     } else if (role === "alumni") {
-      placeholderText = "NIM/NIP";
+      placeholderText = "NIM";
     }
 
     if (nimNipInput) {

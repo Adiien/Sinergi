@@ -12,17 +12,20 @@ class ForumModel
     public function getAllForums()
     {
         $query = "SELECT f.*, 
-                  (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) as member_count
-                  FROM forums f ORDER BY created_at DESC";
-        
+                    (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) AS member_count
+                    FROM forums f
+                    WHERE f.visibility = 'public'
+                    ORDER BY f.created_at DESC";
+
         $stmt = oci_parse($this->conn, $query);
         oci_execute($stmt);
-        
+
         $forums = [];
         while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-            $forums[] = $row;
-        }
-        return $forums;
+        $forums[] = $row;
+    }
+
+    return $forums;
     }
 
     // Ambil forum yang diikuti user (untuk Sidebar)
@@ -93,24 +96,6 @@ class ForumModel
         }
 
         return $forums;
-    }
-    public function getAllPublicForums()
-    {
-        $query = "SELECT f.*, 
-                    (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) AS member_count
-                    FROM forums f
-                    WHERE f.visibility = 'public'
-                    ORDER BY f.created_at DESC";
-
-        $stmt = oci_parse($this->conn, $query);
-        oci_execute($stmt);
-
-        $forums = [];
-        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-        $forums[] = $row;
-    }
-
-    return $forums;
     }
 
 }

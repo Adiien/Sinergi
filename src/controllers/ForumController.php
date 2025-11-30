@@ -85,7 +85,7 @@ public function explore()
     }
 
     // semua forum public (pakai fungsi yang tadi sudah kita bahas)
-    $forums = $this->forumModel->getAllPublicForums();
+    $forums = $this->forumModel->getAllForums();
 
     require 'views/forum/explore.php';
 }

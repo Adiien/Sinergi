@@ -77,10 +77,9 @@
     <div class="flex flex-col md:flex-row items-center h-full">
       <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 px-6 md:px-12">
         <h1 class="text-4xl md:text-5xl font-extrabold text-[#36344B] leading-tight mb-6">
-          Judul Besar yang Menarik Perhatian Pengunjung
+                 Sistem SINERGI
         </h1>
-        <p class="text-lg text-gray-300 mb-8">
-          Deskripsi singkat atau slogan yang menjelaskan nilai utama atau tujuan dari situs web Anda.
+        <p class="text-lg text-gray-300 mb-8">       Sistem interaksi edukasi riset gagasan inovasi
         </p>
       </div>
       <div class="md:w-7/12 flex justify-center md:justify-end h-full">
