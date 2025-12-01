@@ -8,39 +8,61 @@ class Post
         $this->conn = $db;
     }
 
-
     /**
      * Membuat postingan baru (Support Gambar & Visibility)
      */
-    // [UBAH] Tambahkan parameter $visibility dengan default 'public'
-    public function createPost($user_id, $content, $image_path = null, $visibility = 'public') 
+    // [UBAH] Tambahkan parameter $forum_id = null
+    public function createPost($user_id, $content, $images = [], $visibility = 'public', $forum_id = null)
     {
-        // [UBAH] Tambahkan kolom visibility di INSERT dan :visibility di VALUES
-        $query = 'INSERT INTO posts (post_id, user_id, content, image_path, visibility, created_at)
-                  VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :image_path, :visibility, SYSTIMESTAMP)
-                  RETURNING content INTO :content_clob';
+        // A. Insert Postingan Utama
+        // [UBAH] Tambahkan kolom forum_id di Query
+        $query = 'INSERT INTO posts (post_id, user_id, content, visibility, forum_id, created_at)
+              VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :visibility, :forum_id, SYSTIMESTAMP)
+              RETURNING post_id, content INTO :post_id, :content_clob';
 
         $stmt = oci_parse($this->conn, $query);
         $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
 
+        $new_post_id = 0;
+
         oci_bind_by_name($stmt, ':user_id', $user_id);
-        oci_bind_by_name($stmt, ':image_path', $image_path);
-        
-        // [UBAH] Bind parameter visibility
         oci_bind_by_name($stmt, ':visibility', $visibility);
-        
+        // [BARU] Bind forum_id
+        oci_bind_by_name($stmt, ':forum_id', $forum_id);
+
+        oci_bind_by_name($stmt, ':post_id', $new_post_id, -1, SQLT_INT);
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
-        // Eksekusi
+        // Gunakan NO_AUTO_COMMIT
         $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
-        
+
         if (!$result) {
             $e = oci_error($stmt);
             throw new Exception($e['message']);
         }
 
         $clob->save($content);
-        oci_commit($this->conn); // Commit perubahan
+
+        // B. Insert Gambar (Kode sama seperti sebelumnya)
+        if (!empty($images) && $new_post_id > 0) {
+            $queryImg = "INSERT INTO post_images (image_id, post_id, image_path) 
+                     VALUES (post_images_seq.NEXTVAL, :p_id, :p_img)";
+            $stmtImg = oci_parse($this->conn, $queryImg);
+
+            foreach ($images as $imgName) {
+                oci_bind_by_name($stmtImg, ':p_id', $new_post_id);
+                oci_bind_by_name($stmtImg, ':p_img', $imgName);
+                $resImg = oci_execute($stmtImg, OCI_NO_AUTO_COMMIT);
+                if (!$resImg) {
+                    oci_rollback($this->conn);
+                    throw new Exception("Gagal menyimpan gambar.");
+                }
+            }
+            oci_free_statement($stmtImg);
+        }
+
+        oci_commit($this->conn);
+        oci_free_statement($stmt);
 
         return true;
     }
@@ -166,6 +188,7 @@ class Post
         ];
         // --- [AKHIR BAGIAN BARU] ---
     }
+
     /**
      * Menambahkan komentar baru
      */
@@ -183,10 +206,10 @@ class Post
 
         oci_bind_by_name($stmt, ':post_id', $post_id);
         oci_bind_by_name($stmt, ':user_id', $user_id);
-        
+
         // [BARU] Bind parameter parent_comment_id
         oci_bind_by_name($stmt, ':parent_id', $parent_comment_id); // <--- BARU
-        
+
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
         $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
@@ -210,6 +233,50 @@ class Post
         $clob->free();
         oci_free_statement($stmt);
         return true;
+    }
+
+    /**
+     * Menambah atau menghapus (toggle) like pada komentar
+     * Mengembalikan data dalam format JSON
+     * (DIAMBIL DARI FILE ASLI)
+     */
+    public function toggleCommentLike($comment_id, $user_id)
+    {
+        // 1. Cek apakah sudah like
+        $query_check = 'SELECT COUNT(*) AS LIKE_COUNT FROM comment_likes 
+                        WHERE comment_id = :comment_id AND user_id = :user_id';
+        $stmt_check = oci_parse($this->conn, $query_check);
+        oci_bind_by_name($stmt_check, ':comment_id', $comment_id);
+        oci_bind_by_name($stmt_check, ':user_id', $user_id);
+        oci_execute($stmt_check);
+        $row = oci_fetch_array($stmt_check, OCI_ASSOC);
+        $is_liked = ($row && $row['LIKE_COUNT'] > 0);
+        oci_free_statement($stmt_check);
+
+        // 2. Toggle
+        if ($is_liked) {
+            $query = 'DELETE FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id';
+        } else {
+            $query = 'INSERT INTO comment_likes (like_id, comment_id, user_id) 
+                      VALUES (comment_likes_seq.NEXTVAL, :comment_id, :user_id)';
+        }
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':comment_id', $comment_id);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+        oci_free_statement($stmt);
+
+        // 3. Hitung total like baru
+        $query_count = 'SELECT COUNT(*) AS TOTAL FROM comment_likes WHERE comment_id = :comment_id';
+        $stmt_count = oci_parse($this->conn, $query_count);
+        oci_bind_by_name($stmt_count, ':comment_id', $comment_id);
+        oci_execute($stmt_count);
+        $row_count = oci_fetch_array($stmt_count, OCI_ASSOC);
+
+        return [
+            'isLiked' => !$is_liked,
+            'count' => $row_count['TOTAL'] ?? 0
+        ];
     }
 
     /**
@@ -253,9 +320,6 @@ class Post
 
         // Bind semua ID di array $post_ids
         foreach ($post_ids as $key => $id) {
-            // Kita perlu meneruskan nilai aktual ke oci_bind_by_name
-            // jadi kita simpan dulu di variabel
-            // <-- MASALAHNYA DI SINI
             oci_bind_by_name($stmt, ":id_$key", $post_ids[$key]);
         }
 
@@ -280,55 +344,52 @@ class Post
         return $comments;
     }
 
-/**
+    /**
      * Mengambil semua postingan untuk feed
-     * [UPDATE] Sekarang mengambil status IS_LIKED
+     * [UPDATE] Sekarang mengambil status IS_LIKED dan Filter Visibility
      */
     public function getFeedPosts($current_user_id)
     {
         $query = 'SELECT 
-                    p.post_id, 
-                    p.content,
-                    p.image_path, 
-                    p.visibility,
-                    -- [FIXED] Ganti alias menjadi CREATED_AT_FMT (sesuai yang diakses di PHP)
-                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
-                    u.user_id, 
-                    u.nama, 
-                    u.email,
-                    u.role_name,
-                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
-                    
-                    (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
-                    (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
-                  FROM 
-                    posts p
-                  JOIN 
-                    users u ON p.user_id = u.user_id
-                  WHERE 
-                    -- 1. Postingan Public (Semua bisa lihat)
-                    p.visibility = \'public\'
-                    
-                    -- 2. ATAU Postingan milik saya sendiri (Private pun saya bisa lihat)
-                    OR p.user_id = :current_user_id
-                    
-                    -- 3. ATAU Postingan Private orang lain, tapi SAYA SUDAH FOLLOW DIA
-                    OR (
-                        p.visibility = \'private\' 
-                        AND EXISTS (
-                            SELECT 1 FROM follows f 
-                            WHERE f.follower_id = :current_user_id 
-                            AND f.following_id = p.user_id
-                        )
+                p.post_id, 
+                p.content,
+                p.visibility,
+                p.forum_id,  -- [BARU] Ambil ID Forum
+                f.name AS forum_name, -- [BARU] Ambil Nama Forum
+                TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
+                u.user_id, 
+                u.nama, 
+                u.role_name,
+                
+                (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
+                 FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
+
+                (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
+                (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
+              FROM 
+                posts p
+              JOIN 
+                users u ON p.user_id = u.user_id
+              LEFT JOIN  -- [BARU] Join ke tabel forums
+                forums f ON p.forum_id = f.forum_id
+              WHERE 
+                p.visibility = \'public\'
+                OR p.user_id = :current_user_id
+                OR (
+                    p.visibility = \'private\' 
+                    AND EXISTS (
+                        SELECT 1 FROM follows f 
+                        WHERE f.follower_id = :current_user_id 
+                        AND f.following_id = p.user_id
                     )
-                  ORDER BY 
-                    p.created_at DESC';
+                )
+              ORDER BY 
+                p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
-
         oci_bind_by_name($stmt, ":current_user_id", $current_user_id);
-
         oci_execute($stmt);
 
         $posts = [];
@@ -336,10 +397,7 @@ class Post
             if (isset($row['CONTENT']) && is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
-            
-            // [AMAN] Sekarang key 'CREATED_AT_FMT' sudah ada di array $row
             $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
-            
             $posts[] = $row;
         }
         oci_free_statement($stmt);
@@ -383,13 +441,11 @@ class Post
         while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
             $stats[] = $row;
         }
-        
+
         oci_free_statement($stmt);
         return $stats;
     }
-    /**
-     * [BARU] Mengambil postingan milik user tertentu (Untuk Tab Content)
-     */
+
     /**
      * [BARU] Mengambil postingan milik user tertentu (Untuk Tab Content)
      * [FIXED] Perbaikan alias tanggal di SQL dan penambahan konversi key
@@ -407,6 +463,13 @@ class Post
                     u.nama, 
                     u.email,
                     u.role_name,
+                    (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
+                 FROM 
+                 post_images pi 
+                 WHERE 
+                 pi.post_id = p.post_id) 
+                 AS 
+                 IMAGE_PATHS,
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
                     (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
                     
@@ -440,10 +503,10 @@ class Post
                     p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
-        
+
         oci_bind_by_name($stmt, ':author_id', $author_id);
         oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
-        
+
         $exec = oci_execute($stmt);
         if (!$exec) return [];
 
@@ -452,17 +515,17 @@ class Post
             if (is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
-            
+
             // [BARU DITAMBAHKAN] Konversi key agar View tidak error
             $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
-            
+
             $posts[] = $row;
         }
         oci_free_statement($stmt);
         return $posts;
     }
 
-/**
+    /**
      * [PERBAIKAN ORA-01791] Mengambil postingan activity (Like/Comment)
      */
     public function getActivityPosts($activity_user_id, $viewer_id)
@@ -478,6 +541,8 @@ class Post
                     u.nama, 
                     u.email, 
                     u.role_name,
+                    (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
+                 FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
                     (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
                     (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
                     (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :viewer_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
@@ -496,11 +561,11 @@ class Post
                     p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
-        
+
         oci_bind_by_name($stmt, ':act_user_1', $activity_user_id);
         oci_bind_by_name($stmt, ':act_user_2', $activity_user_id);
         oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
-        
+
         $exec = oci_execute($stmt);
         if (!$exec) {
             // Debugging: Jika error, tampilkan pesan
@@ -514,15 +579,16 @@ class Post
             if (isset($row['CONTENT']) && is_object($row['CONTENT'])) {
                 $row['CONTENT'] = $row['CONTENT']->load();
             }
-            
+
             // [PENTING] Kembalikan nama key 'CREATED_AT' agar View tidak error
             $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
-            
+
             $posts[] = $row;
         }
         oci_free_statement($stmt);
         return $posts;
     }
+
     /**
      * [BARU] Mengambil satu postingan berdasarkan ID
      * Digunakan untuk mengambil image_path sebelum menghapus post
@@ -530,15 +596,70 @@ class Post
     public function getPostById($post_id)
     {
         $query = "SELECT post_id, user_id, image_path FROM posts WHERE post_id = :post_id";
-        
+
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':post_id', $post_id);
         oci_execute($stmt);
-        
+
         $row = oci_fetch_array($stmt, OCI_ASSOC);
         oci_free_statement($stmt);
-        
+
         return $row; // Mengembalikan array data post atau false jika tidak ditemukan
     }
 
+    /**
+     * Mengambil postingan khusus untuk forum tertentu
+     * (DIAMBIL DARI FILE ASLI)
+     */
+    public function getPostsByForum($forum_id, $current_user_id)
+    {
+        $query = 'SELECT 
+                p.post_id, p.content, p.image_path, 
+                TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
+                u.user_id, u.nama, u.email, u.role_name,
+                (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
+                 FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
+                (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
+                (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
+              FROM posts p
+              JOIN users u ON p.user_id = u.user_id
+              WHERE p.forum_id = :forum_id
+              ORDER BY p.created_at DESC';
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':forum_id', $forum_id);
+        oci_bind_by_name($stmt, ':current_user_id', $current_user_id);
+        oci_execute($stmt);
+
+        $posts = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            if (is_object($row['CONTENT'])) {
+                $row['CONTENT'] = $row['CONTENT']->load();
+            }
+            $posts[] = $row;
+        }
+        return $posts;
+    }
+    /**
+     * [BARU] Mengambil semua path gambar dari tabel post_images berdasarkan post_id
+     * Digunakan untuk menghapus file fisik saat postingan dihapus.
+     */
+    public function getImagePathsByPostId($post_id)
+    {
+        $query = "SELECT image_path FROM post_images WHERE post_id = :post_id";
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':post_id', $post_id);
+        oci_execute($stmt);
+
+        $images = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            $images[] = $row['IMAGE_PATH'];
+        }
+        oci_free_statement($stmt);
+
+        return $images; // Mengembalikan array ['img1.jpg', 'img2.jpg', ...]
+    }
 }

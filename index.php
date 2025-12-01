@@ -5,7 +5,7 @@ if (session_status() == PHP_SESSION_NONE) {
 
 require_once 'database.php';
 
-define('BASE_URL', 'http://localhost/Sinergi');
+define('BASE_URL', 'http://localhost/coba8');
 
 
 
@@ -73,6 +73,12 @@ switch ($route) {
         $controller->comment();
         break;
 
+    case 'post/comment/like': // Tambah ini di index.php
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->likeComment();
+        break;
+
     case 'report/create':
         require_once 'src/Controllers/ReportController.php';
         $controller = new ReportController();
@@ -96,23 +102,41 @@ switch ($route) {
         $controller = new ForumController();
         $controller->index();
         break;
-    
+
     case 'forum/create':
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->create();
         break;
-    
-    case 'forum/explore':                               
+
+    case 'forum/show':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->show();
+        break;
+
+    case 'forum/explore':
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->explore();
         break;
-    
+
     case 'profile':
         require_once 'src/Controllers/ProfileController.php';
         $controller = new ProfileController();
         $controller->index();
+        break;
+
+    case 'settings':
+        require_once 'src/Controllers/SettingsController.php';
+        $controller = new SettingsController();
+        $controller->index();
+        break;
+
+    case 'settings/update':
+        require_once 'src/Controllers/SettingsController.php';
+        $controller = new SettingsController();
+        $controller->update();
         break;
 
     case 'api/updates':
@@ -125,6 +149,24 @@ switch ($route) {
         require_once 'src/Controllers/UserController.php';
         $controller = new UserController();
         $controller->ajaxSearch();
+        break;
+
+    case 'api/search/forums':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->ajaxSearch();
+        break;
+
+    case 'api/notifications':
+        require_once 'src/Controllers/NotificationController.php';
+        $controller = new NotificationController();
+        $controller->getNotifications();
+        break;
+
+    case 'api/notifications/read':
+        require_once 'src/Controllers/NotificationController.php';
+        $controller = new NotificationController();
+        $controller->markRead();
         break;
 
     case 'logout':

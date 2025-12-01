@@ -278,4 +278,42 @@ class User
         oci_free_statement($stmt);
         return $users;
     }
+    /**
+     * [TAMBAHAN] Ambil data user lengkap berdasarkan ID
+     */
+    public function getUserById($user_id)
+    {
+        $query = "SELECT * FROM users WHERE user_id = :user_id";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_execute($stmt);
+
+        $row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS);
+        oci_free_statement($stmt);
+
+        return $row;
+    }
+
+    /**
+     * [TAMBAHAN] Update satu kolom user
+     */
+    public function updateUserField($user_id, $column, $value)
+    {
+        // Whitelist kolom agar aman dari SQL Injection
+        $allowed_columns = ['nama', 'email', 'pass_user'];
+        if (!in_array($column, $allowed_columns)) {
+            return false;
+        }
+
+        $query = "UPDATE users SET $column = :val WHERE user_id = :user_id";
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':val', $value);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+
+        $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+        oci_free_statement($stmt);
+
+        return $result;
+    }
 }

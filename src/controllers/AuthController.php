@@ -130,7 +130,7 @@ class AuthController
             if (
                 !isset($_POST['captcha']) ||
                 !isset($_SESSION['captcha_string']) ||
-                strtolower($_POST['captcha']) != strtolower($_SESSION['captcha_string'])
+                trim($_POST['captcha']) !== $_SESSION['captcha_string']
             ) {
 
 

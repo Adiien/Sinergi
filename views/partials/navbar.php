@@ -32,7 +32,7 @@
            type="text"
            id="search-input"
            class="bg-gray-100 rounded-lg py-2 px-4 pl-10 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-           placeholder="Search people..."
+           placeholder="Search ..."
            autocomplete="off" />
          <img src="<?= BASE_URL ?>/public/assets/image/SearchIcon.png" alt="Search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
 
@@ -59,8 +59,7 @@
          const searchContainer = document.getElementById('search-container');
          let debounceTimeout = null;
 
-         // Fungsi menampilkan user di dropdown
-         // Fungsi menampilkan user di dropdown
+         // --- TEMPLATE RENDER USER ---
          function renderUser(user) {
            const initial = user.NAMA.charAt(0).toUpperCase();
            const handle = '@' + user.NAMA.replace(/\s+/g, '').toLowerCase();
@@ -71,89 +70,138 @@
            if (role === 'dosen') roleBadge = '<span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">Dosen</span>';
            else if (role === 'admin') roleBadge = '<span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full ml-2">Admin</span>';
 
-           // --- [LOGIKA BARU: STATUS FOLLOW] ---
-           const isFollowing = (user.IS_FOLLOWING > 0); // Cek data dari database
-
+           // Status Follow
+           const isFollowing = (user.IS_FOLLOWING > 0);
            let buttonText = "Follow";
-           let buttonClass = "border-blue-500 text-blue-500 hover:bg-blue-50"; // Style Default (Biru)
+           let buttonClass = "border-blue-500 text-blue-500 hover:bg-blue-50";
 
            if (isFollowing) {
              buttonText = "Following";
-             // Style Abu-abu (Sudah Follow)
              buttonClass = "bg-gray-100 text-gray-500 border-gray-200";
            }
-           // -------------------------------------
 
            return `
-                    <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-none">
-                        <div class="flex items-center space-x-3 overflow-hidden">
-                            <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-                                ${initial}
-                            </div>
-                            <div class="min-w-0">
-                                <div class="flex items-center">
-                                    <h4 class="font-bold text-gray-800 text-sm truncate">${user.NAMA}</h4>
-                                    ${roleBadge}
-                                </div>
-                                <p class="text-xs text-gray-500 truncate">${handle}</p>
-                            </div>
-                        </div>
-                        
-                        <button 
-                            class="follow-button text-xs border px-3 py-1 rounded-full font-bold transition ${buttonClass}" 
-                            data-user-id="${user.USER_ID}">
-                            ${buttonText}
-                        </button>
+            <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-none">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                        ${initial}
                     </div>
-                `;
+                    <div class="min-w-0">
+                        <div class="flex items-center">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">${user.NAMA}</h4>
+                            ${roleBadge}
+                        </div>
+                        <p class="text-xs text-gray-500 truncate">${handle}</p>
+                    </div>
+                </div>
+                
+                <button 
+                    class="follow-button text-xs border px-3 py-1 rounded-full font-bold transition ${buttonClass}" 
+                    data-user-id="${user.USER_ID}">
+                    ${buttonText}
+                </button>
+            </div>
+           `;
          }
+
+         // --- [BARU] TEMPLATE RENDER FORUM ---
+         function renderForum(forum) {
+           const initial = forum.NAME.charAt(0).toUpperCase();
+           // Gunakan cover image jika ada, jika tidak pakai inisial
+           let iconHtml = '';
+           if (forum.COVER_IMAGE) {
+             iconHtml = `<img src="<?= BASE_URL ?>/public/uploads/forums/${forum.COVER_IMAGE}" class="w-full h-full object-cover">`;
+           } else {
+             iconHtml = `${initial}`;
+           }
+
+           return `
+            <a href="<?= BASE_URL ?>/forum/show?id=${forum.FORUM_ID}" class="block">
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-none">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden">
+                            ${iconHtml}
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">${forum.NAME}</h4>
+                            <p class="text-xs text-gray-500 truncate">${forum.MEMBER_COUNT} members</p>
+                        </div>
+                    </div>
+                    
+                    <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-bold hover:bg-gray-200 transition">
+                        View
+                    </span>
+                </div>
+            </a>
+            `;
+         }
+
          // Event Listener saat mengetik
          searchInput.addEventListener('input', (e) => {
            const query = e.target.value.trim();
 
-           // Reset debounce timer
            clearTimeout(debounceTimeout);
 
            if (query.length === 0) {
              searchDropdown.classList.add('hidden');
-
-             // [PERBAIKAN] Wajib sembunyikan loading jika input kosong!
              loadingIcon.classList.add('hidden');
-
              return;
            }
 
-           // Tampilkan loading
            loadingIcon.classList.remove('hidden');
 
-           // Tunggu 300ms setelah user selesai mengetik (Debounce)
-           debounceTimeout = setTimeout(() => {
-             fetch(`<?= BASE_URL ?>/api/search/users?q=${encodeURIComponent(query)}`)
-               .then(response => response.json())
-               .then(data => {
-                 resultsList.innerHTML = ''; // Bersihkan hasil lama
+           debounceTimeout = setTimeout(async () => {
+             try {
+               // [BARU] Fetch Users DAN Forums secara paralel
+               const [usersRes, forumsRes] = await Promise.all([
+                 fetch(`<?= BASE_URL ?>/api/search/users?q=${encodeURIComponent(query)}`),
+                 fetch(`<?= BASE_URL ?>/api/search/forums?q=${encodeURIComponent(query)}`)
+               ]);
 
-                 if (data.length > 0) {
-                   data.forEach(user => {
-                     resultsList.innerHTML += renderUser(user);
-                   });
-                   searchDropdown.classList.remove('hidden');
-                 } else {
-                   resultsList.innerHTML = `
-                                    <div class="px-4 py-6 text-center text-gray-500">
-                                        <p class="text-sm">No users found.</p>
-                                    </div>
-                                `;
-                   searchDropdown.classList.remove('hidden');
-                 }
-               })
-               .catch(err => {
-                 console.error("Search Error:", err);
-               })
-               .finally(() => {
-                 // Sembunyikan loading setelah selesai (sukses/gagal)
-                 loadingIcon.classList.add('hidden');
-               });
+               const users = await usersRes.json();
+               const forums = await forumsRes.json();
+
+               resultsList.innerHTML = '';
+
+               let hasResults = false;
+
+               // 1. Render FORUMS (Tampilkan paling atas)
+               if (forums.length > 0) {
+                 hasResults = true;
+                 resultsList.innerHTML += `<div class="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">Forums</div>`;
+                 forums.forEach(forum => {
+                   resultsList.innerHTML += renderForum(forum);
+                 });
+               }
+
+               // 2. Render USERS
+               if (users.length > 0) {
+                 hasResults = true;
+                 // Tambahkan header jika ada hasil forum sebelumnya
+                 const mt = forums.length > 0 ? 'mt-2' : '';
+                 resultsList.innerHTML += `<div class="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider ${mt}">People</div>`;
+
+                 users.forEach(user => {
+                   resultsList.innerHTML += renderUser(user);
+                 });
+               }
+
+               // 3. Handle No Results
+               if (!hasResults) {
+                 resultsList.innerHTML = `
+                        <div class="px-4 py-6 text-center text-gray-500">
+                            <p class="text-sm">No results found for "${query}".</p>
+                        </div>
+                    `;
+               }
+
+               searchDropdown.classList.remove('hidden');
+
+             } catch (err) {
+               console.error("Search Error:", err);
+             } finally {
+               loadingIcon.classList.add('hidden');
+             }
            }, 300);
          });
 
@@ -188,11 +236,38 @@
          class="<?= $is_message ? $activeIcon : $inactiveIcon ?> flex items-center justify-center">
          <img src="<?= BASE_URL ?>/public/assets/image/MessageIcon.png" alt="Messages" class="w-6 h-6" />
        </a>
-       <a
-         href="#"
-         class="text-gray-300 hover:text-white">
-         <img src="<?= BASE_URL ?>/public/assets/image/NotifIcon.png" alt="Notifications" class="w-6 h-6" />
-       </a>
+       <div class="relative" id="notification-container">
+         <button id="notification-btn" class="relative text-gray-300 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-all focus:outline-none">
+           <img src="<?= BASE_URL ?>/public/assets/image/NotifIcon.png" alt="Notifications" class="w-6 h-6" />
+
+         </button>
+
+         <div id="notification-dropdown" class="hidden absolute right-0 mt-3 w-[360px] bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden origin-top-right transform transition-all duration-200">
+
+           <div class="absolute top-0 right-3 -mt-2 w-4 h-4 bg-white transform rotate-45 border-t border-l border-gray-100"></div>
+
+           <div class="px-4 py-3 flex justify-between items-center bg-white relative z-10">
+             <h3 class="font-bold text-gray-900 text-lg">Notifications</h3>
+           </div>
+
+           <div class="bg-white relative z-10 min-h-[100px] flex flex-col items-center justify-center text-center p-6">
+
+             <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+               <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+               </svg>
+             </div>
+
+             <p class="text-gray-600 font-medium text-base">No new notifications</p>
+           </div>
+
+           <div class="p-3 text-center bg-white border-t border-gray-100 relative z-10">
+             <a href="#" class="text-blue-600 font-bold text-sm hover:bg-blue-50 py-2 px-4 rounded-lg transition block">
+               See All
+             </a>
+           </div>
+         </div>
+       </div>
 
        <div class="relative" id="profile-dropdown-container">
          <button
@@ -230,7 +305,7 @@
              My Profile
            </a>
            <a
-             href="#"
+             href="<?= BASE_URL ?>/settings"
              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
              role="menuitem">
              <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

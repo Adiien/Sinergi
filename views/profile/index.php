@@ -272,6 +272,9 @@
     <script src="<?= BASE_URL ?>/public/assets/js/Report.js"></script>
     <script src="<?= BASE_URL ?>/public/assets/js/PostMenu.js"></script>
     <script src="<?= BASE_URL ?>/public/assets/js/profiledropdown.js"></script>
+    <script src="<?= BASE_URL ?>/public/assets/js/CommentAjax.js"></script>
+    <script src="<?= BASE_URL ?>/public/assets/js/Notification.js"></script>
+
 
 </body>
 

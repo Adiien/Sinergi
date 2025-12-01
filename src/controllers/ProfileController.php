@@ -48,7 +48,7 @@ class ProfileController
 
         if (!empty($post_ids)) {
             // Ambil semua komentar dari database untuk ID-ID tersebut
-            $all_comments_raw = $this->postModel->getCommentsForPosts(array_values($post_ids));
+            $all_comments_raw = $this->postModel->getCommentsForPosts(array_values($post_ids), $_SESSION['user_id']);
 
             // Kelompokkan komentar berdasarkan POST_ID agar mudah dicocokkan
             $comments_by_post_id = [];

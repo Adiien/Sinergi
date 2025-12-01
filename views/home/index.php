@@ -9,8 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* --- [BAGIAN BARU: Sembunyikan Scrollbar Utama] --- */
-    /* Target html dan body langsung agar scrollbar browser hilang */
+    /* --- [Sembunyikan Scrollbar Utama] --- */
     html,
     body {
       -ms-overflow-style: none;
@@ -26,7 +25,6 @@
     }
 
     /* --- [Scrollbar Modal] --- */
-    /* Scrollbar khusus untuk modal agar tetap ada tapi rapi */
     .custom-scroll::-webkit-scrollbar {
       width: 6px;
     }
@@ -44,12 +42,23 @@
     .custom-scroll::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
     }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+    }
   </style>
 </head>
 
 <body class="bg-gray-100 pt-24 no-scrollbar">
 
-  <?php require_once 'views/partials/navbar.php'; ?>
+  <?php require_once 'views/partials/navbar.php'; ?>
 
   <main id="main-content" class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
@@ -144,14 +153,14 @@
         </div>
         <div>
           <h4 class="font-bold text-gray-900"><?php echo htmlspecialchars($_SESSION['nama']); ?></h4>
-          
+
           <button type="button" onclick="toggleVisibility()" class="flex items-center space-x-1 bg-gray-100 rounded-md px-2 py-1 text-xs text-gray-700 hover:bg-gray-200 cursor-pointer">
             <svg id="visibilityIcon" class="w-3 h-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.55a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.89 5.67a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM15 9.25a.75.75 0 01.75.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.05 16.45a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 010 1.06zM13.89 14.33a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06z" clip-rule="evenodd" />
             </svg>
-            
+
             <span id="visibilityText" class="font-medium">Public</span>
-            
+
             <svg class="w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
@@ -163,44 +172,31 @@
 
         <input type="hidden" name="visibility" id="visibilityInput" value="public">
 
-        <input type="file" name="post_image" id="post_image_input" class="hidden" accept="image/*">
+        <input type="file" name="post_images[]" id="post_image_input" class="hidden" accept="image/*" multiple>
+
+        <input type="file" name="post_files[]" id="post_file_input" class="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.txt" multiple>
 
         <div class="w-full">
-          <textarea
-            name="content"
-            class="w-full border-none rounded-lg p-2 focus:ring-0 min-h-[100px]"
-            rows="5"
-            placeholder="Write here..."></textarea>
+          <textarea name="content" class="w-full border-none rounded-lg p-2 focus:ring-0 min-h-[100px]" rows="5" placeholder="Write here..."></textarea>
         </div>
 
-
-        <div id="custom-media-preview" class="hidden relative w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-300 mb-4 group shrink-0">
-
-          <div class="absolute top-3 left-3 z-20 flex space-x-2">
-            <button type="button" id="btn-add-more" class="flex items-center space-x-1 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold px-3 py-1.5 rounded-md shadow-sm transition">
-              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-              </svg>
-              <span>Add Photo/Video</span>
-            </button>
-          </div>
-
-          <button type="button" id="btn-remove-media" class="absolute top-3 right-3 z-20 bg-white hover:bg-gray-200 text-gray-600 rounded-full p-1 shadow-sm transition">
+        <div id="custom-media-preview" class="hidden relative w-full bg-gray-50 rounded-lg border border-gray-200 mb-4 p-2">
+          <button type="button" id="btn-remove-media" class="absolute top-2 right-2 z-10 bg-white hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-full p-1 shadow-md transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
-
-          <img id="real-image-preview" src="" class="w-full h-full object-contain bg-black max-h-[400px]" alt="Preview">
+          <div id="preview-grid" class="grid grid-cols-2 gap-2"></div>
         </div>
 
         <div class="flex justify-between items-center border border-gray-200 rounded-lg p-3 mt-2 shrink-0">
           <span class="text-sm font-medium text-gray-700">Add to your post</span>
           <div class="flex space-x-3">
-            <button type="button" id="trigger-upload-btn" class="text-gray-500 hover:text-indigo-600">
+            <button type="button" id="trigger-upload-btn" class="text-gray-500 hover:text-indigo-600 transition p-1 hover:bg-gray-100 rounded-full" title="Add Images">
               <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" alt="post pict" class="w-6 h-6" />
             </button>
-            <button type="button" class="text-gray-500 hover:text-indigo-600">
+
+            <button type="button" id="trigger-file-btn" class="text-gray-500 hover:text-indigo-600 transition p-1 hover:bg-gray-100 rounded-full" title="Add Files">
               <img src="<?= BASE_URL ?>/public/assets/image/postfile.png" alt="post file" class="w-6 h-6" />
             </button>
           </div>
@@ -213,41 +209,88 @@
               <span>Disable Comments</span>
             </label>
           </div>
-
           <button type="submit" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">
             Post
           </button>
         </div>
       </form>
 
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const triggerImgBtn = document.getElementById('trigger-upload-btn');
+          const triggerFileBtn = document.getElementById('trigger-file-btn'); // Tombol File
+
+          const imgInput = document.getElementById('post_image_input');
+          const fileInput = document.getElementById('post_file_input'); // Input File
+
+          const previewArea = document.getElementById('custom-media-preview');
+          const gridContainer = document.getElementById('preview-grid');
+          const removeBtn = document.getElementById('btn-remove-media');
+
+          // 1. Handle Klik Tombol
+          if (triggerImgBtn) triggerImgBtn.addEventListener('click', () => imgInput.click());
+          if (triggerFileBtn) triggerFileBtn.addEventListener('click', () => fileInput.click());
+
+          // Fungsi Render Preview
+          function handlePreview(files, isImage) {
+            if (files.length > 0) {
+              previewArea.classList.remove('hidden');
+
+              Array.from(files).forEach(file => {
+                const wrapper = document.createElement('div');
+                wrapper.className = "relative group border border-gray-200 rounded-lg overflow-hidden bg-white";
+
+                if (isImage) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    wrapper.innerHTML = `<img src="${e.target.result}" class="w-full h-32 object-cover">`;
+                    gridContainer.appendChild(wrapper);
+                  }
+                  reader.readAsDataURL(file);
+                } else {
+                  // Preview untuk File Dokumen
+                  wrapper.innerHTML = `
+                        <div class="flex items-center justify-center h-32 bg-gray-50 p-2 text-center">
+                            <div>
+                                <svg class="w-8 h-8 mx-auto text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <p class="text-xs text-gray-600 font-medium truncate max-w-[120px]">${file.name}</p>
+                                <p class="text-[10px] text-gray-400">${(file.size/1024).toFixed(1)} KB</p>
+                            </div>
+                        </div>
+                    `;
+                  gridContainer.appendChild(wrapper);
+                }
+              });
+            }
+          }
+
+          // 2. Listener Change Input
+          if (imgInput) {
+            imgInput.addEventListener('change', function() {
+              handlePreview(this.files, true);
+            });
+          }
+
+          if (fileInput) {
+            fileInput.addEventListener('change', function() {
+              handlePreview(this.files, false);
+            });
+          }
+
+          // 3. Reset Preview
+          if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+              imgInput.value = '';
+              fileInput.value = '';
+              gridContainer.innerHTML = '';
+              previewArea.classList.add('hidden');
+            });
+          }
+        });
+      </script>
+
     </div>
-</section>
-
-<script>
-    function toggleVisibility() {
-        const input = document.getElementById('visibilityInput');
-        const textSpan = document.getElementById('visibilityText');
-        const iconSvg = document.getElementById('visibilityIcon');
-
-        // SVG Gembok (Private)
-        const lockIcon = '<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />';
-        
-        // SVG Globe (Public)
-        const globeIcon = '<path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.55a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.89 5.67a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM15 9.25a.75.75 0 01.75.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.05 16.45a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 010 1.06zM13.89 14.33a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06z" clip-rule="evenodd" />';
-
-        if (input.value === 'public') {
-            // Ubah ke Private
-            input.value = 'private';
-            textSpan.textContent = 'Private';
-            iconSvg.innerHTML = lockIcon;
-        } else {
-            // Ubah ke Public
-            input.value = 'public';
-            textSpan.textContent = 'Public';
-            iconSvg.innerHTML = globeIcon;
-        }
-    }
-</script>
+  </section>
 
   <section id="report-modal"
     class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden fixed inset-0 z-50 bg-[#5e5e8f]/50 transition-all duration-300"
@@ -323,20 +366,26 @@
   <script src="<?= BASE_URL ?>/public/assets/js/LikeToggle.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/ModalPost.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/CommentToggle.js"></script>
-  <script src="<?= BASE_URL ?>/public/assets/js/CommentReply.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/Report.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/PostMenu.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/RealTime.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/FollowToggle.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/CommentLikeReply.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/Carousel.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/Notification.js"></script>
 
   <script>
+    // GANTI BAGIAN SCRIPT INI DI views/home/index.php
     document.addEventListener("DOMContentLoaded", () => {
       const triggerBtn = document.getElementById('trigger-upload-btn');
       const addMoreBtn = document.getElementById('btn-add-more');
       const fileInput = document.getElementById('post_image_input');
 
+      // Container preview
       const previewArea = document.getElementById('custom-media-preview');
-      const realImage = document.getElementById('real-image-preview');
+      // Hapus img tag ID 'real-image-preview' yang lama, kita akan buat container baru
+      // Ganti struktur HTML previewArea menjadi container grid di kode HTML Anda atau biarkan JS membuatnya
+
       const removeBtn = document.getElementById('btn-remove-media');
 
       function openFile() {
@@ -348,14 +397,37 @@
 
       if (fileInput) {
         fileInput.addEventListener('change', function() {
-          const file = this.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-              realImage.src = e.target.result;
-              previewArea.classList.remove('hidden');
-            }
-            reader.readAsDataURL(file);
+          const files = this.files;
+
+          // Bersihkan preview lama (kecuali tombol action)
+          // Kita akan sembunyikan img lama dan buat grid baru jika belum ada
+          let gridContainer = document.getElementById('preview-grid');
+          if (!gridContainer) {
+            gridContainer = document.createElement('div');
+            gridContainer.id = 'preview-grid';
+            gridContainer.className = 'grid grid-cols-2 gap-2 p-2';
+            previewArea.appendChild(gridContainer);
+
+            // Sembunyikan img preview tunggal yang lama jika ada
+            const oldImg = document.getElementById('real-image-preview');
+            if (oldImg) oldImg.style.display = 'none';
+          }
+
+          gridContainer.innerHTML = ''; // Reset isi grid
+
+          if (files.length > 0) {
+            previewArea.classList.remove('hidden');
+
+            Array.from(files).forEach(file => {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'w-full h-32 object-cover rounded-lg border border-gray-200';
+                gridContainer.appendChild(img);
+              }
+              reader.readAsDataURL(file);
+            });
           }
         });
       }
@@ -363,12 +435,58 @@
       if (removeBtn) {
         removeBtn.addEventListener('click', () => {
           fileInput.value = '';
-          realImage.src = '';
+          const grid = document.getElementById('preview-grid');
+          if (grid) grid.innerHTML = '';
           previewArea.classList.add('hidden');
         });
       }
     });
   </script>
+
+  <script>
+    function toggleVisibility() {
+      const input = document.getElementById('visibilityInput');
+      const textSpan = document.getElementById('visibilityText');
+      const iconSvg = document.getElementById('visibilityIcon');
+
+      // SVG Gembok (Private)
+      const lockIcon = '<path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />';
+
+      // SVG Globe (Public)
+      const globeIcon = '<path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.55a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM13.89 5.67a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06zM10 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM2.75 10a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM15 9.25a.75.75 0 01.75.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.05 16.45a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06a.75.75 0 010 1.06zM13.89 14.33a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 011.06-1.06l1.06 1.06z" clip-rule="evenodd" />';
+
+      if (input.value === 'public') {
+        // Ubah ke Private
+        input.value = 'private';
+        textSpan.textContent = 'Private';
+        iconSvg.innerHTML = lockIcon;
+      } else {
+        // Ubah ke Public
+        input.value = 'public';
+        textSpan.textContent = 'Public';
+        iconSvg.innerHTML = globeIcon;
+      }
+    }
+  </script>
+  <template id="reply-form-template">
+    <form action="<?= BASE_URL ?>/post/comment" method="POST" class="reply-form flex items-start space-x-2 mt-2 animate-fade-in-up">
+      <input type="hidden" name="post_id" value="">
+      <input type="hidden" name="parent_id" value="">
+
+      <div class="flex-1">
+        <textarea name="content" rows="1" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none resize-none" placeholder="Tulis balasan..."></textarea>
+      </div>
+
+      <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">
+        Kirim
+      </button>
+      <button type="button" class="cancel-reply-button text-gray-400 hover:text-red-500 p-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </form>
+  </template>
 </body>
 
 </html>
