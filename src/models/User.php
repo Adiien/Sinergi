@@ -365,29 +365,37 @@ class User
                 ) AS rn
             FROM messages m
             WHERE m.sender_id = :me OR m.receiver_id = :me
+        ),
+        unread AS (
+            SELECT
+                m.sender_id AS contact_id,
+                COUNT(*)    AS unread_count
+            FROM messages m
+            WHERE 
+                m.receiver_id = :me
+                AND m.is_read = 'N'
+            GROUP BY m.sender_id
         )
         SELECT
             u.user_id,
             u.nama,
             u.email,
             u.role_name,
+
             c.content    AS last_content,
             c.msg_type   AS last_msg_type,
-
-            -- RAW untuk sorting
             c.created_at AS last_message_raw,
-
-            -- FORMATTED untuk ditampilkan di UI
             TO_CHAR(
                 c.created_at,
                 'MON DD, HH:MI AM',
                 'NLS_DATE_LANGUAGE=ENGLISH'
-            ) AS last_message_at
+            ) AS last_message_at,
+
+            NVL(unread.unread_count, 0) AS unread_count
 
         FROM users u
-        LEFT JOIN conv c
-          ON c.contact_id = u.user_id
-         AND c.rn = 1
+        LEFT JOIN conv   c   ON c.contact_id = u.user_id AND c.rn = 1
+        LEFT JOIN unread unread ON unread.contact_id = u.user_id
         WHERE u.user_id != :me
         ORDER BY 
           last_message_raw DESC NULLS LAST,
@@ -405,6 +413,7 @@ class User
 
     return $result;
 }
+
 
 
 }
