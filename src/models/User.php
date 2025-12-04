@@ -316,4 +316,31 @@ class User
 
         return $result;
     }
+
+    public function getAllUsersExcept($user_id)
+    {
+        $query = 'SELECT user_id, nama, email, role_name, nim, nip, program_studi
+                  FROM users
+                  WHERE user_id != :user_id
+                  ORDER BY nama ASC';
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
+
+        $exec = oci_execute($stmt);
+
+        if (!$exec) {
+            $e = oci_error($stmt);
+            oci_free_statement($stmt);
+            throw new Exception("Error Database (getAllUsersExcept): " . $e['message']);
+        }
+
+        $users = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            $users[] = $row;
+        }
+
+        oci_free_statement($stmt);
+        return $users;
+    }
 }

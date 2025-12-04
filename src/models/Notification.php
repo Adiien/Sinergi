@@ -9,15 +9,15 @@ class NotificationModel
     }
 
     // Simpan Notifikasi Baru
-    public function create($user_id, $actor_id, $type, $reference_id)
+    public function create($user_id, $actor_id, $type, $reference_id = null)
     {
         // Jangan buat notifikasi jika pelaku adalah diri sendiri
         if ($user_id == $actor_id) {
             return false;
         }
 
-        $query = "INSERT INTO notifications (notification_id, user_id, actor_id, type, reference_id, created_at)
-                  VALUES (notifications_seq.NEXTVAL, :user_id, :actor_id, :type, :ref_id, SYSTIMESTAMP)";
+        $query = "INSERT INTO notifications (notification_id, user_id, actor_id, type, reference_id, is_read, created_at)
+                  VALUES (notifications_seq.NEXTVAL, :user_id, :actor_id, :type, :ref_id, 0, SYSTIMESTAMP)";
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':user_id', $user_id);
@@ -31,12 +31,21 @@ class NotificationModel
     // Ambil Notifikasi User (Join dengan tabel Users untuk nama pelaku)
     public function getUserNotifications($user_id)
     {
-        $query = "SELECT n.*, u.nama as actor_name, 
-                  TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI:SS') as fmt_time
-                  FROM notifications n
-                  JOIN users u ON n.actor_id = u.user_id
-                  WHERE n.user_id = :user_id
-                  ORDER BY n.created_at DESC FETCH FIRST 10 ROWS ONLY";
+        $query = "
+            SELECT 
+                n.notification_id,
+                n.user_id,
+                n.actor_id,
+                n.type,
+                n.reference_id,
+                n.is_read,
+                TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI:SS') AS fmt_time,
+                u.nama AS actor_name
+            FROM notifications n
+            JOIN users u ON n.actor_id = u.user_id
+            WHERE n.user_id = :user_id
+            ORDER BY n.created_at DESC
+            FETCH FIRST 20 ROWS ONLY";
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':user_id', $user_id);
@@ -45,9 +54,10 @@ class NotificationModel
         $results = [];
         while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
             $results[] = $row;
-        }
+    }
         return $results;
     }
+
 
     // Hitung notifikasi belum dibaca
     public function getUnreadCount($user_id)

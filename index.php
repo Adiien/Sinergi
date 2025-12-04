@@ -5,9 +5,7 @@ if (session_status() == PHP_SESSION_NONE) {
 
 require_once 'database.php';
 
-define('BASE_URL', 'http://localhost/coba8');
-
-
+define('BASE_URL', 'http://localhost/Sinergi');
 
 $route = $_GET['url'] ?? '';
 
@@ -97,6 +95,25 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'messages/show':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->show();
+        break;
+
+    case 'messages/send':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->send();
+        break;
+    
+    case 'api/messages/fetch':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->fetch();
+        break;
+
+
     case 'forum':
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
@@ -174,6 +191,8 @@ switch ($route) {
         $controller = new AuthController();
         $controller->logout();
         break;
+
+    
 
     default:
         http_response_code(404);

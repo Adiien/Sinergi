@@ -83,11 +83,9 @@
           Deskripsi singkat atau slogan yang menjelaskan nilai utama atau tujuan dari situs web Anda.
         </p>
       </div>
-      <div class="md:w-7/12 flex justify-center md:justify-end h-full">
-        <img
-          src="<?= BASE_URL ?>/public/assets/vector.png"
-          alt="Hero Image"
-          class="rounded-lg w-auto h-auto">
+      <div class="md:w-7/12 flex justify-end items-center relative mt-10 md:mt-0 -mr-6 md:-mr-12 lg:-mr-24">
+        <img src="<?= BASE_URL ?>/public/assets/vector.png" alt="Hero Image"
+          class="w-[130%] md:w-[150%] max-w-none h-auto object-contain ...">
       </div>
     </div>
   </section>

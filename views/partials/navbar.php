@@ -337,4 +337,7 @@
      </div>
    </div>
  </nav>
+ <script>
+  window.BASE_URL = "<?= BASE_URL ?>";
+</script>
  <script src="<?= BASE_URL ?>/public/assets/js/profiledropdown.js"></script>
