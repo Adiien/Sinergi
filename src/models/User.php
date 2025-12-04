@@ -343,4 +343,68 @@ class User
         oci_free_statement($stmt);
         return $users;
     }
+
+    public function getContactsWithLastMessage($me)
+{
+    $sql = "
+        WITH conv AS (
+            SELECT
+                CASE 
+                    WHEN m.sender_id = :me THEN m.receiver_id
+                    ELSE m.sender_id
+                END AS contact_id,
+                m.content,
+                m.msg_type,
+                m.created_at,
+                ROW_NUMBER() OVER (
+                    PARTITION BY CASE 
+                        WHEN m.sender_id = :me THEN m.receiver_id
+                        ELSE m.sender_id
+                    END
+                    ORDER BY m.created_at DESC
+                ) AS rn
+            FROM messages m
+            WHERE m.sender_id = :me OR m.receiver_id = :me
+        )
+        SELECT
+            u.user_id,
+            u.nama,
+            u.email,
+            u.role_name,
+            c.content    AS last_content,
+            c.msg_type   AS last_msg_type,
+
+            -- RAW untuk sorting
+            c.created_at AS last_message_raw,
+
+            -- FORMATTED untuk ditampilkan di UI
+            TO_CHAR(
+                c.created_at,
+                'MON DD, HH:MI AM',
+                'NLS_DATE_LANGUAGE=ENGLISH'
+            ) AS last_message_at
+
+        FROM users u
+        LEFT JOIN conv c
+          ON c.contact_id = u.user_id
+         AND c.rn = 1
+        WHERE u.user_id != :me
+        ORDER BY 
+          last_message_raw DESC NULLS LAST,
+          u.nama ASC
+    ";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':me', $me);
+    oci_execute($stmt);
+
+    $result = [];
+    while ($row = oci_fetch_assoc($stmt)) {
+        $result[] = $row;
+    }
+
+    return $result;
+}
+
+
 }

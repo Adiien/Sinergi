@@ -100,9 +100,43 @@
                                         <?= htmlspecialchars($contact['ROLE_NAME']) ?>
                                     </span>
                                 </div>
-                                <p class="text-sm text-gray-500 truncate">
-                                    <?= htmlspecialchars($contact['EMAIL']) ?>
-                                </p>
+                                <?php
+    // ambil content
+    $content = $contact['LAST_CONTENT'] ?? null;
+
+    if ($content instanceof OCILob) {
+        $content = $content->load();
+    }
+    if ($content !== null) {
+        $content = trim((string)$content);
+    }
+
+    $type = isset($contact['LAST_MSG_TYPE']) ? strtolower($contact['LAST_MSG_TYPE']) : 'text';
+    $preview = '';
+
+    if ($type === 'image') {
+        $preview = '[Image]';
+        if ($content !== '') {
+            $preview .= ' ' . $content;
+        }
+    } else {
+        $preview = $content !== '' ? $content : '';
+    }
+
+    if ($preview === '') {
+        $preview = 'No messages yet';
+    }
+?>
+<p class="text-sm text-gray-500 truncate">
+    <?= htmlspecialchars($preview) ?>
+</p>
+<?php
+$timeRaw = $contact['LAST_MESSAGE_AT'] ?? null;
+$time    = $timeRaw ? (string)$timeRaw : '';
+?>
+<p class="text-[10px] text-gray-400">
+    <?= htmlspecialchars($time) ?>
+</p>
                             </div>
                         </a>
                     <?php endforeach; ?>

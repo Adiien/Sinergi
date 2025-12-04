@@ -15,8 +15,9 @@ class MessageController
         $db = koneksi_oracle();
         $userModel = new User($db);
 
-        // Ambil semua user kecuali diri sendiri
-        $contacts = $userModel->getAllUsersExcept($_SESSION['user_id']);
+        $me = $_SESSION['user_id'];
+
+        $contacts = $userModel->getContactsWithLastMessage($me);
 
         require_once __DIR__ . '/../../views/messages/index.php';
     }
@@ -39,7 +40,7 @@ class MessageController
     $userModel  = new User($db);
 
     // ⬅ INI PENTING: ambil semua user lain untuk sidebar
-    $contacts     = $userModel->getAllUsersExcept($me);
+    $contacts = $userModel->getContactsWithLastMessage($me);
 
     // data lawan chat
     $conversation = $msg->getConversation($me, $other);
