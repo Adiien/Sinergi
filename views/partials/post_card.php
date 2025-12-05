@@ -75,14 +75,23 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         <div class="flex items-center space-x-3">
 
             <?php
-            // [FITUR BARU] Tombol Follow di Post Card
-            // Hanya tampil jika: Belum Follow DAN Bukan Postingan Sendiri
-            if (!$isFollowing && !$isOwnPost):
+            // [PERBAIKAN FITUR UNFOLLOW]
+            // Tombol tetap ditampilkan meskipun sudah follow, agar bisa di-unfollow.
+            // Hanya sembunyikan jika itu postingan sendiri.
+            if (!$isOwnPost):
+                // Tentukan teks dan style awal berdasarkan status follow saat ini
+                $btnText = $isFollowing ? 'Following' : 'Follow';
+
+                // Style 'Following': Abu-abu solid (sesuai logika JS FollowToggle.js)
+                // Style 'Follow': Biru outline
+                $btnClass = $isFollowing
+                    ? 'bg-gray-100 text-gray-500 border-gray-200'
+                    : 'border-blue-500 text-blue-500 hover:bg-blue-50';
             ?>
                 <button
                     data-user-id="<?php echo $post['USER_ID']; ?>"
-                    class="follow-button border border-blue-500 text-blue-500 hover:bg-blue-50 px-3 py-1 rounded-full text-xs font-bold transition-colors">
-                    Follow
+                    class="follow-button border <?php echo $btnClass; ?> px-3 py-1 rounded-full text-xs font-bold transition-colors">
+                    <?php echo $btnText; ?>
                 </button>
             <?php endif; ?>
 
