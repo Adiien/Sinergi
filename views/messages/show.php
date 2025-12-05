@@ -74,77 +74,106 @@
                 </div>
 
                 <div class="flex justify-between mt-4 text-sm font-medium text-gray-500">
-                    <button class="text-indigo-600 border-b-2 border-indigo-600 pb-1">All</button>
-                    <button class="hover:text-gray-800 pb-1">Unread</button>
-                    <button class="hover:text-gray-800 pb-1">Groups</button>
-                </div>
+    <button
+        class="tab-btn text-indigo-600 border-b-2 border-indigo-600 pb-1"
+        data-tab="all">
+        All
+    </button>
+    <button
+        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
+        data-tab="unread">
+        Unread
+    </button>
+    <button
+        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
+        data-tab="groups">
+        Groups
+    </button>
+</div>
+
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scroll">
                 <?php if (!empty($contacts)): ?>
-                    <?php foreach ($contacts as $contact): ?>
-                        <a href="<?= BASE_URL ?>/messages/show?user_id=<?= htmlspecialchars($contact['USER_ID']) ?>"
-                           class="flex items-center px-5 py-4 hover:bg-gray-50 cursor-pointer border-l-4
-                                  <?= $contact['USER_ID'] == $userData['USER_ID'] ? 'border-indigo-500 bg-gray-50' : 'border-transparent'; ?>">
-                            <div class="relative">
-                                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                    <?= strtoupper(substr($contact['NAMA'], 0, 1)) ?>
-                                </div>
-                            </div>
-                            <div class="ml-4 flex-1">
-                                <div class="flex justify-between items-baseline">
-                                    <h3 class="font-bold text-gray-900">
-                                        <?= htmlspecialchars($contact['NAMA']) ?>
-                                    </h3>
-                                    <span class="text-xs text-gray-400">
-                                        <?= htmlspecialchars($contact['ROLE_NAME']) ?>
-                                    </span>
-                                </div>
-                                <?php
-    // ambil content
-    $content = $contact['LAST_CONTENT'] ?? null;
+    <?php foreach ($contacts as $contact): ?>
+        <?php
+            // unread count dari query (alias: UNREAD_COUNT)
+            $hasUnread = !empty($contact['UNREAD_COUNT']) && $contact['UNREAD_COUNT'] > 0;
+        ?>
+        <a href="<?= BASE_URL ?>/messages/show?user_id=<?= htmlspecialchars($contact['USER_ID']) ?>"
+           class="flex items-center px-5 py-4 hover:bg-gray-50 cursor-pointer border-l-4
+                  <?= $contact['USER_ID'] == $userData['USER_ID'] ? 'border-indigo-500 bg-gray-50' : 'border-transparent'; ?>"
+           
+           data-contact-item
+           data-unread="<?= $hasUnread ? '1' : '0' ?>"
+           data-type="direct">
 
-    if ($content instanceof OCILob) {
-        $content = $content->load();
-    }
-    if ($content !== null) {
-        $content = trim((string)$content);
-    }
+            <div class="relative">
+                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <?= strtoupper(substr($contact['NAMA'], 0, 1)) ?>
+                </div>
 
-    $type = isset($contact['LAST_MSG_TYPE']) ? strtolower($contact['LAST_MSG_TYPE']) : 'text';
-    $preview = '';
-
-    if ($type === 'image') {
-        $preview = '[Image]';
-        if ($content !== '') {
-            $preview .= ' ' . $content;
-        }
-    } else {
-        $preview = $content !== '' ? $content : '';
-    }
-
-    if ($preview === '') {
-        $preview = 'No messages yet';
-    }
-?>
-<p class="text-sm text-gray-500 truncate">
-    <?= htmlspecialchars($preview) ?>
-</p>
-<?php
-$timeRaw = $contact['LAST_MESSAGE_AT'] ?? null;
-$time    = $timeRaw ? (string)$timeRaw : '';
-?>
-<p class="text-[10px] text-gray-400">
-    <?= htmlspecialchars($time) ?>
-</p>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="px-5 py-4 text-sm text-gray-500">
-                        Belum ada pengguna lain yang bisa diajak chat.
-                    </p>
+                <?php if ($hasUnread): ?>
+                    <!-- badge merah kecil di avatar -->
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-white"></span>
                 <?php endif; ?>
+            </div>
+
+            <div class="ml-4 flex-1">
+                <div class="flex justify-between items-baseline">
+                    <h3 class="font-bold text-gray-900">
+                        <?= htmlspecialchars($contact['NAMA']) ?>
+                    </h3>
+                    <span class="text-xs text-gray-400">
+                        <?= htmlspecialchars($contact['ROLE_NAME']) ?>
+                    </span>
+                </div>
+
+                <?php
+                    // ==== PREVIEW LAST MESSAGE ====
+                    $content = $contact['LAST_CONTENT'] ?? null;
+                    if ($content instanceof OCILob) {
+                        $content = $content->load();
+                    }
+                    if ($content !== null) {
+                        $content = trim((string)$content);
+                    }
+
+                    $type    = isset($contact['LAST_MSG_TYPE']) ? strtolower($contact['LAST_MSG_TYPE']) : 'text';
+                    $preview = '';
+
+                    if ($type === 'image') {
+                        $preview = '[Image]';
+                        if ($content !== '') {
+                            $preview .= ' ' . $content;
+                        }
+                    } else {
+                        $preview = $content !== '' ? $content : '';
+                    }
+
+                    if ($preview === '') {
+                        $preview = 'No messages yet';
+                    }
+
+                    $timeRaw = $contact['LAST_MESSAGE_AT'] ?? null;
+                    $time    = $timeRaw ? (string)$timeRaw : '';
+                ?>
+
+                <p class="text-sm text-gray-500 truncate">
+                    <?= htmlspecialchars($preview) ?>
+                </p>
+                <p class="text-[10px] text-gray-400">
+                    <?= htmlspecialchars($time) ?>
+                </p>
+            </div>
+        </a>
+    <?php endforeach; ?>
+<?php else: ?>
+    <p class="px-5 py-4 text-sm text-gray-500">
+        Belum ada pengguna lain yang bisa diajak chat.
+    </p>
+<?php endif; ?>
+
             </div>
         </div>
 
@@ -358,6 +387,8 @@ $time    = $timeRaw ? (string)$timeRaw : '';
     const previewName            = document.getElementById("attachment-preview-name");
     const previewSize            = document.getElementById("attachment-preview-size");
     const previewRemoveButton    = document.getElementById("attachment-preview-remove");
+    const tabButtons   = document.querySelectorAll(".tab-btn");
+    const contactItems = document.querySelectorAll("[data-contact-item]");
 
     if (contentInput) {
         contentInput.addEventListener("keydown", function(e) {
@@ -383,6 +414,50 @@ $time    = $timeRaw ? (string)$timeRaw : '';
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+
+    function setActiveTab(tab) {
+    tabButtons.forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        if (isActive) {
+            btn.classList.add("text-indigo-600", "border-indigo-600");
+            btn.classList.remove("hover:text-gray-800", "border-transparent");
+        } else {
+            btn.classList.remove("text-indigo-600", "border-indigo-600");
+            btn.classList.add("hover:text-gray-800", "border-transparent");
+        }
+    });
+    }
+    
+    function applyContactFilter(tab) {
+    contactItems.forEach(item => {
+        const unread = item.dataset.unread === "1";
+        const type   = item.dataset.type || "direct";
+
+        let show = true;
+        if (tab === "unread") {
+            show = unread;
+        } else if (tab === "groups") {
+            show = (type === "group");
+        }
+
+        if (show) {
+            item.classList.remove("hidden");
+        } else {
+            item.classList.add("hidden");
+        }
+    });
+    }
+
+    setActiveTab("all");
+    applyContactFilter("all");
+    tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        setActiveTab(tab);
+        applyContactFilter(tab);
+    });
+});
+
 
     function formatMessageBubble(msg) {
     const isMine   = Number(msg.SENDER_ID) === me;

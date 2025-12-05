@@ -12,44 +12,63 @@ class MessageController
             exit;
         }
 
+        $me = $_SESSION['user_id'];
         $db = koneksi_oracle();
         $userModel = new User($db);
+        $msg       = new Message($db);
 
-        $me = $_SESSION['user_id'];
-
+        // ambil list kontak
         $contacts = $userModel->getContactsWithLastMessage($me);
 
-        require_once __DIR__ . '/../../views/messages/index.php';
+        // kalau ada kontak, pilih yang pertama sebagai default
+        if (!empty($contacts)) {
+            $other        = $contacts[0]['USER_ID'];
+            $conversation = $msg->getConversation($me, $other);
+            $userData     = $userModel->getUserById($other);
+        } else {
+            // ga ada kontak sama sekali → kasih data kosong saja
+            $other        = null;
+            $conversation = [];
+            $userData     = [
+                'USER_ID' => 0,
+                'NAMA'    => 'No contact yet',
+                'EMAIL'   => '',
+            ];
+        }
+
+        // PAKAI VIEW YANG SAMA
+        require_once __DIR__ . '/../../views/messages/show.php';
     }
 
  public function show()
     {
-    if (!isset($_SESSION['user_id'])) {
-        die("Unauthorized access");
+        if (!isset($_SESSION['user_id'])) {
+            die("Unauthorized access");
+        }
+
+        if (!isset($_GET['user_id'])) {
+            // kalau user_id ga dikirim, lempar balik ke index
+            header("Location: /Sinergi/messages");
+            exit;
+        }
+
+        $me    = $_SESSION['user_id'];
+        $other = (int)$_GET['user_id'];
+
+        $db         = koneksi_oracle();
+        $msg        = new Message($db);
+        $userModel  = new User($db);
+
+        $contacts     = $userModel->getContactsWithLastMessage($me);
+        $conversation = $msg->getConversation($me, $other);
+        $userData     = $userModel->getUserById($other);
+
+        // tandai pesan dari $other ke $me sebagai sudah dibaca
+        $msg->markAsRead($me, $other);
+
+        require_once __DIR__ . '/../../views/messages/show.php';
     }
 
-    if (!isset($_GET['user_id'])) {
-        die("Missing target user");
-    }
-
-    $me    = $_SESSION['user_id'];
-    $other = $_GET['user_id'];
-
-    $db         = koneksi_oracle();
-    $msg        = new Message($db);
-    $userModel  = new User($db);
-
-    // ⬅ INI PENTING: ambil semua user lain untuk sidebar
-    $contacts = $userModel->getContactsWithLastMessage($me);
-
-    // data lawan chat
-    $conversation = $msg->getConversation($me, $other);
-    $userData     = $userModel->getUserById($other);
-
-    $msg->markAsRead($me, $other);
-
-        require_once 'views/messages/show.php';
-    }
 
     public function send()
 {
