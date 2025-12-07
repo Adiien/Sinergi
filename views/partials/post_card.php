@@ -9,12 +9,28 @@ $allFiles = $imagesString ? explode(',', $imagesString) : [];
 $visibility = $post['VISIBILITY'] ?? 'public';
 $likeCount = $post['LIKE_COUNT'] ?? 0;
 $commentCount = $post['COMMENT_COUNT'] ?? 0;
+$isCommentDisabled = ($post['IS_COMMENT_DISABLED'] ?? 0) == 1;
+$pollData = null;
 $handle = '@' . strtolower(str_replace(' ', '', $nama));
 $initial = strtoupper(substr($nama, 0, 1));
 $timestamp = isset($post['CREATED_AT']) ? date('d M Y, H:i', strtotime($post['CREATED_AT'])) : '';
 $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 $imageList = [];
 $docList = [];
+
+if (isset($post['IS_POLL']) && $post['IS_POLL'] == 1) {
+    // Asumsi koneksi DB sudah ada di global atau instance postModel
+    // Cara terbaik: Panggil model method di sini atau di controller
+    // Untuk contoh ini, kita asumsikan data poll sudah diambil atau kita panggil on-the-fly
+    if (!isset($postModel)) {
+        require_once __DIR__ . '/../../src/models/Post.php';
+        $dbPoll = koneksi_oracle(); // Pastikan fungsi koneksi bisa dipanggil
+        $postModelObj = new Post($dbPoll);
+        $pollData = $postModelObj->getPollData($post_id, $_SESSION['user_id']);
+    } else {
+        $pollData = $postModel->getPollData($post_id, $_SESSION['user_id']);
+    }
+}
 
 foreach ($allFiles as $file) {
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
@@ -121,6 +137,33 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                         </a>
                     <?php endif; ?>
 
+                    <?php
+                    // [MODIFIKASI UNTUK AJAX]
+                    if ($isOwnPost):
+                    ?>
+                        <button type="button"
+                            class="disable-comment-btn flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            data-post-id="<?= $post_id ?>"
+                            data-url="<?= BASE_URL ?>/post/toggleComments?id=<?= $post_id ?>&ajax=1">
+
+                            <?php if ($isCommentDisabled): ?>
+                                <span class="icon-container mr-2">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                </span>
+                                <span class="text-label">Aktifkan Komentar</span>
+                            <?php else: ?>
+                                <span class="icon-container mr-2">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                </span>
+                                <span class="text-label">Nonaktifkan Komentar</span>
+                            <?php endif; ?>
+                        </button>
+                    <?php endif; ?>
+
                     <button type="button"
                         class="report-button flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         data-target-type="post"
@@ -136,6 +179,45 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
 
     <div class="px-5 pb-5">
         <p class="text-gray-800 text-base break-words"><?php echo $content; ?></p>
+        <?php if ($pollData): ?>
+            <div class="mt-4 space-y-2 poll-container" id="poll-<?php echo $post_id; ?>">
+                <?php
+                $totalVotes = $pollData['total_votes'];
+                $hasVoted = $pollData['has_voted'];
+
+                foreach ($pollData['options'] as $opt):
+                    $percent = $totalVotes > 0 ? round(($opt['VOTE_COUNT'] / $totalVotes) * 100) : 0;
+                    $isMyChoice = ($pollData['user_voted_option_id'] == $opt['OPTION_ID']);
+                ?>
+
+                    <div class="relative w-full">
+                        <?php if (!$hasVoted): ?>
+                            <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)"
+                                class="w-full text-left border border-blue-400 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition font-medium">
+                                <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
+                            </button>
+                        <?php else: ?>
+                            <div class="relative w-full h-10 bg-gray-100 rounded-lg overflow-hidden border <?php echo $isMyChoice ? 'border-blue-500' : 'border-gray-200'; ?>">
+                                <div class="absolute top-0 left-0 h-full bg-blue-200 transition-all duration-500" style="width: <?php echo $percent; ?>%;"></div>
+
+                                <div class="absolute inset-0 flex items-center justify-between px-4 z-10">
+                                    <span class="text-sm font-semibold text-gray-800">
+                                        <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
+                                        <?php if ($isMyChoice): ?> <i class="ml-1 text-blue-600 fas fa-check-circle">✔</i> <?php endif; ?>
+                                    </span>
+                                    <span class="text-sm font-bold text-gray-600"><?php echo $percent; ?>%</span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                <?php endforeach; ?>
+
+                <div class="text-xs text-gray-500 mt-2 px-1">
+                    Total: <?php echo $totalVotes; ?> suara
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <?php if (!empty($imageList)): ?>
@@ -232,11 +314,20 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div id="comments-section-<?php echo $post_id; ?>" class="hidden comments-section pt-3">
-            <form action="<?= BASE_URL ?>/post/comment" method="POST" class="flex space-x-2 mb-4">
-                <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
-                <input type="text" name="content" placeholder="Tulis komentar..." class="w-full bg-gray-100 border-none rounded-lg p-2 text-sm focus:ring-indigo-500" autocomplete="off">
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Kirim</button>
-            </form>
+            <?php
+            // [LOGIKA BARU] Cek status database sebelum menampilkan form
+            if (!$isCommentDisabled):
+            ?>
+                <form action="<?= BASE_URL ?>/post/comment" method="POST" class="flex space-x-2 mb-4">
+                    <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
+                    <input type="text" name="content" placeholder="Tulis komentar..." class="w-full bg-gray-100 border-none rounded-lg p-2 text-sm focus:ring-indigo-500" autocomplete="off">
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Kirim</button>
+                </form>
+            <?php else: ?>
+                <div class="disabled-msg bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-center text-sm text-gray-500 italic">
+                    Komentar telah dinonaktifkan.
+                </div>
+            <?php endif; ?>
 
             <div id="comments-list-<?php echo $post_id; ?>" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scroll">
                 <?php
@@ -278,8 +369,8 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
 
                                 <div id="reply-form-container-<?= $cid ?>" class="mt-2 ml-2"></div>
 
-                                <?php if (!empty($replies)): ?>
-                                    <div class="ml-2 pl-2 border-l-2 border-gray-100 mt-2 space-y-2">
+                                <div id="replies-container-<?= $cid ?>" class="ml-2 pl-2 border-l-2 border-gray-100 mt-2 space-y-2">
+                                    <?php if (!empty($replies)): ?>
                                         <?php foreach ($replies as $reply): ?>
                                             <div class="flex items-start space-x-2">
                                                 <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-[10px] flex-shrink-0">
@@ -298,8 +389,8 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>

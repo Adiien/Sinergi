@@ -7,6 +7,8 @@ require_once 'database.php';
 
 define('BASE_URL', 'http://localhost/Sinergi');
 
+
+
 $route = $_GET['url'] ?? '';
 
 switch ($route) {
@@ -71,6 +73,18 @@ switch ($route) {
         $controller->comment();
         break;
 
+    case 'post/vote': // TAMBAHKAN INI
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->vote();
+        break;
+
+    case 'post/toggleComments':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->toggleComments();
+        break;
+
     case 'post/comment/like': // Tambah ini di index.php
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
@@ -95,25 +109,6 @@ switch ($route) {
         $controller->index();
         break;
 
-    case 'messages/show':
-        require_once 'src/Controllers/MessageController.php';
-        $controller = new MessageController();
-        $controller->show();
-        break;
-
-    case 'messages/send':
-        require_once 'src/Controllers/MessageController.php';
-        $controller = new MessageController();
-        $controller->send();
-        break;
-    
-    case 'api/messages/fetch':
-        require_once 'src/Controllers/MessageController.php';
-        $controller = new MessageController();
-        $controller->fetch();
-        break;
-
-
     case 'forum':
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
@@ -130,6 +125,24 @@ switch ($route) {
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->show();
+        break;
+
+    case 'forum/join':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->join();
+        break;
+
+    case 'forum/settings':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->settings();
+        break;
+
+    case 'forum/update':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->update();
         break;
 
     case 'forum/explore':
@@ -191,8 +204,6 @@ switch ($route) {
         $controller = new AuthController();
         $controller->logout();
         break;
-
-    
 
     default:
         http_response_code(404);

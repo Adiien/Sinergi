@@ -69,7 +69,7 @@
       <div class="bg-white rounded-xl shadow-lg p-5">
         <div class="flex space-x-4 border-b pb-4 mb-4">
           <button class="font-medium text-gray-700">Create Post</button>
-          <button class="font-medium text-gray-500 hover:text-gray-700">Create Poll</button>
+          <button id="home-btn-poll" class="font-medium text-gray-500 hover:text-gray-700">Create Poll</button>
         </div>
         <div id="create-post-trigger" class="w-full flex-1 bg-gray-100 border-none rounded-lg p-3 text-gray-500 cursor-pointer hover:bg-gray-200">
           Write here...
@@ -126,13 +126,13 @@
 
       <div class="flex justify-between items-center border-b pb-3 mb-4 shrink-0">
         <div class="flex items-center space-x-4">
-          <button class="flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1">
+          <button id="tab-create-post" class="flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1">
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
             </svg>
             <span>Create Post</span>
           </button>
-          <button class="flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1">
+          <button id="tab-create-poll" class="flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1">
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 019.75 19.875V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
             </svg>
@@ -168,9 +168,11 @@
         </div>
       </div>
 
-      <form action="<?= BASE_URL ?>/post/create" method="POST" enctype="multipart/form-data" class="mt-4 flex-1 flex flex-col">
+      <form id="createPostForm" action="<?= BASE_URL ?>/post/create" method="POST" enctype="multipart/form-data" class="mt-4 flex-1 flex flex-col">
 
         <input type="hidden" name="visibility" id="visibilityInput" value="public">
+
+        <input type="hidden" name="ajax" value="1">
 
         <input type="file" name="post_images[]" id="post_image_input" class="hidden" accept="image/*" multiple>
 
@@ -178,6 +180,25 @@
 
         <div class="w-full">
           <textarea name="content" class="w-full border-none rounded-lg p-2 focus:ring-0 min-h-[100px]" rows="5" placeholder="Write here..."></textarea>
+        </div>
+
+        <div id="poll-creator-container" class="hidden mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div class="flex justify-between items-center mb-2">
+            <label class="text-sm font-semibold text-gray-700">Opsi Jawaban</label>
+            <span class="text-xs text-gray-400">Min 2 opsi</span>
+          </div>
+
+          <div id="poll-inputs" class="space-y-2">
+            <input type="text" name="poll_options[]" placeholder="Opsi 1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+            <input type="text" name="poll_options[]" placeholder="Opsi 2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+          </div>
+
+          <button type="button" id="btn-add-option" class="mt-3 flex items-center text-xs font-bold text-indigo-600 hover:text-indigo-800">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Tambah Opsi
+          </button>
         </div>
 
         <div id="custom-media-preview" class="hidden relative w-full bg-gray-50 rounded-lg border border-gray-200 mb-4 p-2">
@@ -203,11 +224,17 @@
         </div>
 
         <div class="flex justify-between items-center mt-4 shrink-0">
-          <div class="flex items-center space-x-4">
-            <label class="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-              <input type="checkbox" class="rounded text-indigo-600 focus:ring-indigo-500" />
-              <span>Disable Comments</span>
-            </label>
+          <div class="flex items-center mt-3 mb-4">
+            <div class="flex items-center h-5">
+              <input id="is_comment_disabled" name="is_comment_disabled" type="checkbox" value="1"
+                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer">
+            </div>
+            <div class="ml-2 text-sm">
+              <label for="is_comment_disabled" class="font-medium text-gray-700 cursor-pointer select-none">
+                Nonaktifkan Komentar
+              </label>
+              <p class="text-xs text-gray-500">Orang lain tidak bisa mengomentari postingan ini.</p>
+            </div>
           </div>
           <button type="submit" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">
             Post
@@ -217,39 +244,55 @@
 
       <script>
         document.addEventListener("DOMContentLoaded", () => {
+          // --- Inisialisasi Elemen ---
           const triggerImgBtn = document.getElementById('trigger-upload-btn');
-          const triggerFileBtn = document.getElementById('trigger-file-btn'); // Tombol File
+          const triggerFileBtn = document.getElementById('trigger-file-btn');
 
           const imgInput = document.getElementById('post_image_input');
-          const fileInput = document.getElementById('post_file_input'); // Input File
+          const fileInput = document.getElementById('post_file_input');
 
           const previewArea = document.getElementById('custom-media-preview');
           const gridContainer = document.getElementById('preview-grid');
           const removeBtn = document.getElementById('btn-remove-media');
 
-          // 1. Handle Klik Tombol
-          if (triggerImgBtn) triggerImgBtn.addEventListener('click', () => imgInput.click());
-          if (triggerFileBtn) triggerFileBtn.addEventListener('click', () => fileInput.click());
+          // --- 1. Event Listener Tombol (Dengan Pencegah Double Click) ---
+          if (triggerImgBtn && imgInput) {
+            triggerImgBtn.addEventListener('click', (e) => {
+              e.preventDefault(); // Mencegah aksi default browser
+              e.stopPropagation(); // Mencegah event "naik" ke elemen pembungkus
+              imgInput.click(); // Buka file picker sekali saja
+            });
+          }
 
-          // Fungsi Render Preview
+          if (triggerFileBtn && fileInput) {
+            triggerFileBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              fileInput.click();
+            });
+          }
+
+          // --- 2. Fungsi Render Preview (Gambar & Dokumen) ---
           function handlePreview(files, isImage) {
-            if (files.length > 0) {
-              previewArea.classList.remove('hidden');
+            if (!files || files.length === 0) return;
 
-              Array.from(files).forEach(file => {
-                const wrapper = document.createElement('div');
-                wrapper.className = "relative group border border-gray-200 rounded-lg overflow-hidden bg-white";
+            previewArea.classList.remove('hidden');
 
-                if (isImage) {
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    wrapper.innerHTML = `<img src="${e.target.result}" class="w-full h-32 object-cover">`;
-                    gridContainer.appendChild(wrapper);
-                  }
-                  reader.readAsDataURL(file);
-                } else {
-                  // Preview untuk File Dokumen
-                  wrapper.innerHTML = `
+            Array.from(files).forEach(file => {
+              const wrapper = document.createElement('div');
+              wrapper.className = "relative group border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm";
+
+              if (isImage && file.type.startsWith('image/')) {
+                // Preview Gambar
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  wrapper.innerHTML = `<img src="${e.target.result}" class="w-full h-32 object-cover">`;
+                  gridContainer.appendChild(wrapper);
+                }
+                reader.readAsDataURL(file);
+              } else {
+                // Preview Dokumen
+                wrapper.innerHTML = `
                         <div class="flex items-center justify-center h-32 bg-gray-50 p-2 text-center">
                             <div>
                                 <svg class="w-8 h-8 mx-auto text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -258,13 +301,12 @@
                             </div>
                         </div>
                     `;
-                  gridContainer.appendChild(wrapper);
-                }
-              });
-            }
+                gridContainer.appendChild(wrapper);
+              }
+            });
           }
 
-          // 2. Listener Change Input
+          // --- 3. Listener Saat File Dipilih ---
           if (imgInput) {
             imgInput.addEventListener('change', function() {
               handlePreview(this.files, true);
@@ -277,9 +319,10 @@
             });
           }
 
-          // 3. Reset Preview
+          // --- 4. Tombol Reset / Hapus Preview ---
           if (removeBtn) {
-            removeBtn.addEventListener('click', () => {
+            removeBtn.addEventListener('click', (e) => {
+              e.preventDefault();
               imgInput.value = '';
               fileInput.value = '';
               gridContainer.innerHTML = '';
@@ -288,7 +331,6 @@
           }
         });
       </script>
-
     </div>
   </section>
 
@@ -373,71 +415,89 @@
   <script src="<?= BASE_URL ?>/public/assets/js/CommentLikeReply.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/Carousel.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/Notification.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/DisableComment.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/CreatePostAjax.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/Poll.js"></script>
 
   <script>
-    // GANTI BAGIAN SCRIPT INI DI views/home/index.php
     document.addEventListener("DOMContentLoaded", () => {
-      const triggerBtn = document.getElementById('trigger-upload-btn');
-      const addMoreBtn = document.getElementById('btn-add-more');
-      const fileInput = document.getElementById('post_image_input');
+      // --- Referensi Elemen ---
+      const homePollBtn = document.getElementById('home-btn-poll');
+      const modalTrigger = document.getElementById('create-post-trigger');
 
-      // Container preview
-      const previewArea = document.getElementById('custom-media-preview');
-      // Hapus img tag ID 'real-image-preview' yang lama, kita akan buat container baru
-      // Ganti struktur HTML previewArea menjadi container grid di kode HTML Anda atau biarkan JS membuatnya
+      const tabPost = document.getElementById('tab-create-post');
+      const tabPoll = document.getElementById('tab-create-poll');
 
-      const removeBtn = document.getElementById('btn-remove-media');
+      const pollContainer = document.getElementById('poll-creator-container');
+      const mediaPreview = document.getElementById('custom-media-preview');
+      const uploadBtns = document.querySelector('.flex.space-x-3'); // Tombol upload gambar/file
 
-      function openFile() {
-        fileInput.click();
+      // --- Fungsi Ganti Mode (Post vs Poll) ---
+      function switchMode(mode) {
+        if (mode === 'poll') {
+          // 1. Ubah Style Tab
+          tabPoll.className = "flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1";
+          tabPost.className = "flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1";
+
+          // 2. Tampilkan Input Poll
+          pollContainer.classList.remove('hidden');
+
+          // 3. Sembunyikan Upload Media (Opsional, agar fokus)
+          if (uploadBtns) uploadBtns.classList.add('opacity-50', 'pointer-events-none');
+
+        } else {
+          // Balik ke Mode Post Biasa
+          tabPost.className = "flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1";
+          tabPoll.className = "flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1";
+
+          pollContainer.classList.add('hidden');
+          if (uploadBtns) uploadBtns.classList.remove('opacity-50', 'pointer-events-none');
+        }
       }
 
-      if (triggerBtn) triggerBtn.addEventListener('click', openFile);
-      if (addMoreBtn) addMoreBtn.addEventListener('click', openFile);
-
-      if (fileInput) {
-        fileInput.addEventListener('change', function() {
-          const files = this.files;
-
-          // Bersihkan preview lama (kecuali tombol action)
-          // Kita akan sembunyikan img lama dan buat grid baru jika belum ada
-          let gridContainer = document.getElementById('preview-grid');
-          if (!gridContainer) {
-            gridContainer = document.createElement('div');
-            gridContainer.id = 'preview-grid';
-            gridContainer.className = 'grid grid-cols-2 gap-2 p-2';
-            previewArea.appendChild(gridContainer);
-
-            // Sembunyikan img preview tunggal yang lama jika ada
-            const oldImg = document.getElementById('real-image-preview');
-            if (oldImg) oldImg.style.display = 'none';
-          }
-
-          gridContainer.innerHTML = ''; // Reset isi grid
-
-          if (files.length > 0) {
-            previewArea.classList.remove('hidden');
-
-            Array.from(files).forEach(file => {
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'w-full h-32 object-cover rounded-lg border border-gray-200';
-                gridContainer.appendChild(img);
-              }
-              reader.readAsDataURL(file);
-            });
-          }
+      // --- Event Listener Tombol Home ---
+      if (homePollBtn) {
+        homePollBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          // 1. Buka Modal (Simulasi klik trigger asli)
+          modalTrigger.click();
+          // 2. Pindah ke Tab Poll
+          switchMode('poll');
         });
       }
 
-      if (removeBtn) {
-        removeBtn.addEventListener('click', () => {
-          fileInput.value = '';
-          const grid = document.getElementById('preview-grid');
-          if (grid) grid.innerHTML = '';
-          previewArea.classList.add('hidden');
+      // --- Event Listener Tab di dalam Modal ---
+      if (tabPoll) {
+        tabPoll.addEventListener('click', (e) => {
+          e.preventDefault();
+          switchMode('poll');
+        });
+      }
+
+      if (tabPost) {
+        tabPost.addEventListener('click', (e) => {
+          e.preventDefault();
+          switchMode('post');
+        });
+      }
+
+      // --- Logika Tambah Opsi (Max 5) ---
+      const btnAddOption = document.getElementById('btn-add-option');
+      const pollInputs = document.getElementById('poll-inputs');
+
+      if (btnAddOption && pollInputs) {
+        btnAddOption.addEventListener('click', () => {
+          const currentCount = pollInputs.children.length;
+          if (currentCount < 5) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'poll_options[]';
+            input.placeholder = 'Opsi ' + (currentCount + 1);
+            input.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none';
+            pollInputs.appendChild(input);
+          } else {
+            alert('Maksimal 5 opsi jawaban.');
+          }
         });
       }
     });

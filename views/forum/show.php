@@ -39,7 +39,7 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
 
     <div class="bg-white shadow-sm border-b border-gray-200 mb-6">
 
-        <div class="h-48 md:h-64 w-full relative bg-gray-200 overflow-hidden group">
+        <div class="h-48 md:h-48 w-full relative bg-gray-200 overflow-hidden group">
             <?php if (!empty($forum['COVER_IMAGE'])): ?>
                 <img src="<?= BASE_URL ?>/public/uploads/forums/<?= $forum['COVER_IMAGE'] ?>"
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -49,7 +49,7 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
         </div>
 
         <div class="container mx-auto px-4 lg:px-8 pb-6">
-            <div class="relative -mt-48 flex flex-col md:flex-row items-end md:items-end justify-between gap-6">
+            <div class="relative -mt-18 flex flex-col md:flex-row items-end md:items-end justify-between gap-6">
 
                 <div class="flex items-end gap-6 w-full md:w-auto relative z-10">
 

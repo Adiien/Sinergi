@@ -9,15 +9,16 @@ class Post
     }
 
     /**
-     * Membuat postingan baru (Support Gambar & Visibility)
+     * Membuat postingan baru (Support Gambar, Visibility & Disable Comment)
      */
-    // [UBAH] Tambahkan parameter $forum_id = null
-    public function createPost($user_id, $content, $images = [], $visibility = 'public', $forum_id = null)
+    public function createPost($user_id, $content, $images = [], $visibility = 'public', $forum_id = null, $is_comment_disabled = 0, $poll_options = [])
     {
-        // A. Insert Postingan Utama
-        // [UBAH] Tambahkan kolom forum_id di Query
-        $query = 'INSERT INTO posts (post_id, user_id, content, visibility, forum_id, created_at)
-              VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :visibility, :forum_id, SYSTIMESTAMP)
+        // Tentukan apakah ini postingan poll
+        $is_poll = !empty($poll_options) ? 1 : 0;
+
+        // Query insert data post termasuk kolom is_comment_disabled
+        $query = 'INSERT INTO posts (post_id, user_id, content, visibility, forum_id, is_comment_disabled, is_poll, created_at)
+              VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :visibility, :forum_id, :is_comment_disabled, :is_poll, SYSTIMESTAMP)
               RETURNING post_id, content INTO :post_id, :content_clob';
 
         $stmt = oci_parse($this->conn, $query);
@@ -25,15 +26,16 @@ class Post
 
         $new_post_id = 0;
 
+        // Binding parameter
         oci_bind_by_name($stmt, ':user_id', $user_id);
         oci_bind_by_name($stmt, ':visibility', $visibility);
-        // [BARU] Bind forum_id
         oci_bind_by_name($stmt, ':forum_id', $forum_id);
-
+        oci_bind_by_name($stmt, ':is_comment_disabled', $is_comment_disabled);
+        oci_bind_by_name($stmt, ':is_poll', $is_poll);
         oci_bind_by_name($stmt, ':post_id', $new_post_id, -1, SQLT_INT);
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
-        // Gunakan NO_AUTO_COMMIT
+        // Eksekusi tanpa auto commit (untuk handle gambar nanti)
         $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
 
         if (!$result) {
@@ -43,7 +45,7 @@ class Post
 
         $clob->save($content);
 
-        // B. Insert Gambar (Kode sama seperti sebelumnya)
+        // Proses Simpan Gambar (Jika ada)
         if (!empty($images) && $new_post_id > 0) {
             $queryImg = "INSERT INTO post_images (image_id, post_id, image_path) 
                      VALUES (post_images_seq.NEXTVAL, :p_id, :p_img)";
@@ -52,15 +54,29 @@ class Post
             foreach ($images as $imgName) {
                 oci_bind_by_name($stmtImg, ':p_id', $new_post_id);
                 oci_bind_by_name($stmtImg, ':p_img', $imgName);
-                $resImg = oci_execute($stmtImg, OCI_NO_AUTO_COMMIT);
-                if (!$resImg) {
+                if (!oci_execute($stmtImg, OCI_NO_AUTO_COMMIT)) {
                     oci_rollback($this->conn);
                     throw new Exception("Gagal menyimpan gambar.");
                 }
             }
             oci_free_statement($stmtImg);
         }
+        // [BARU] Logika Simpan Poll Options
+        if ($is_poll && $new_post_id > 0) {
+            $queryPoll = "INSERT INTO poll_options (option_id, post_id, option_text) VALUES (poll_options_seq.NEXTVAL, :p_id, :p_text)";
+            $stmtPoll = oci_parse($this->conn, $queryPoll);
 
+            foreach ($poll_options as $optText) {
+                if (trim($optText) !== '') {
+                    oci_bind_by_name($stmtPoll, ':p_id', $new_post_id);
+                    oci_bind_by_name($stmtPoll, ':p_text', $optText);
+                    oci_execute($stmtPoll, OCI_NO_AUTO_COMMIT);
+                }
+            }
+            oci_free_statement($stmtPoll);
+        }
+
+        // Commit semua perubahan jika sukses
         oci_commit($this->conn);
         oci_free_statement($stmt);
 
@@ -354,6 +370,8 @@ class Post
                 p.post_id, 
                 p.content,
                 p.visibility,
+                p.is_comment_disabled, 
+                p.is_poll,
                 p.forum_id,  -- [BARU] Ambil ID Forum
                 f.name AS forum_name, -- [BARU] Ambil Nama Forum
                 TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
@@ -455,8 +473,9 @@ class Post
         $query = 'SELECT 
                     p.post_id, 
                     p.content,
-                    p.image_path, 
-                    p.visibility, 
+                    p.image_path,
+                    p.visibility,
+                    p.is_comment_disabled,
                     -- [FIXED] Ganti alias menjadi CREATED_AT_FMT
                     TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
                     u.user_id, 
@@ -595,7 +614,7 @@ class Post
      */
     public function getPostById($post_id)
     {
-        $query = "SELECT post_id, user_id, image_path FROM posts WHERE post_id = :post_id";
+        $query = "SELECT post_id, user_id, image_path, is_comment_disabled FROM posts WHERE post_id = :post_id";
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':post_id', $post_id);
@@ -661,5 +680,106 @@ class Post
         oci_free_statement($stmt);
 
         return $images; // Mengembalikan array ['img1.jpg', 'img2.jpg', ...]
+    }
+    /**
+     * [PERBAIKAN] Mengubah status komentar (Enable/Disable) dengan COMMIT EKSPLISIT
+     */
+    public function toggleCommentStatus($post_id, $user_id)
+    {
+        // Gunakan bind variable :p_id dan :p_uid untuk menghindari konflik nama variabel sistem (ORA-01745)
+        $query = "UPDATE posts 
+                  SET is_comment_disabled = 1 - is_comment_disabled 
+                  WHERE post_id = :p_id AND user_id = :p_uid";
+
+        $stmt = oci_parse($this->conn, $query);
+
+        // Binding dengan nama variable yang aman
+        oci_bind_by_name($stmt, ':p_id', $post_id);
+        oci_bind_by_name($stmt, ':p_uid', $user_id);
+
+        // Eksekusi tanpa auto commit dulu untuk cek error
+        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+
+        if (!$result) {
+            $e = oci_error($stmt);
+            throw new Exception("Gagal update status komentar: " . $e['message']);
+        }
+
+        // [PENTING] Commit manual agar perubahan PERMANEN
+        oci_commit($this->conn);
+
+        oci_free_statement($stmt);
+        return true;
+    }
+    /**
+     * Mengambil Data Poll (Opsi + Persentase + Status User Vote)
+     */
+    public function getPollData($post_id, $viewer_id)
+    {
+        // Ambil opsi & total vote
+        $query = "SELECT option_id, option_text, vote_count FROM poll_options WHERE post_id = :post_id ORDER BY option_id ASC";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':post_id', $post_id);
+        oci_execute($stmt);
+
+        $options = [];
+        $total_votes = 0;
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
+            $options[] = $row;
+            $total_votes += (int)$row['VOTE_COUNT'];
+        }
+        oci_free_statement($stmt);
+
+        // Cek user sudah vote apa belum
+        $queryVote = "SELECT option_id FROM poll_votes WHERE post_id = :post_id AND user_id = :user_id";
+        $stmtVote = oci_parse($this->conn, $queryVote);
+        oci_bind_by_name($stmtVote, ':post_id', $post_id);
+        oci_bind_by_name($stmtVote, ':user_id', $viewer_id);
+        oci_execute($stmtVote);
+
+        $user_voted_option = null;
+        if ($row = oci_fetch_array($stmtVote, OCI_ASSOC)) {
+            $user_voted_option = $row['OPTION_ID'];
+        }
+        oci_free_statement($stmtVote);
+
+        return [
+            'options' => $options,
+            'total_votes' => $total_votes,
+            'user_voted_option_id' => $user_voted_option,
+            'has_voted' => ($user_voted_option !== null)
+        ];
+    }
+
+    /**
+     * Proses Voting
+     */
+    public function submitVote($post_id, $option_id, $user_id)
+    {
+        // Cek double vote
+        $check = "SELECT vote_id FROM poll_votes WHERE post_id = :p_id AND user_id = :u_id";
+        $stmtCheck = oci_parse($this->conn, $check);
+        oci_bind_by_name($stmtCheck, ':p_id', $post_id);
+        oci_bind_by_name($stmtCheck, ':u_id', $user_id);
+        oci_execute($stmtCheck);
+        if (oci_fetch($stmtCheck)) return false;
+
+        // Insert Vote
+        $insert = "INSERT INTO poll_votes (vote_id, post_id, option_id, user_id) VALUES (poll_votes_seq.NEXTVAL, :p_id, :opt_id, :u_id)";
+        $stmtIns = oci_parse($this->conn, $insert);
+        oci_bind_by_name($stmtIns, ':p_id', $post_id);
+        oci_bind_by_name($stmtIns, ':opt_id', $option_id);
+        oci_bind_by_name($stmtIns, ':u_id', $user_id);
+
+        if (oci_execute($stmtIns, OCI_NO_AUTO_COMMIT)) {
+            // Update Counter
+            $update = "UPDATE poll_options SET vote_count = vote_count + 1 WHERE option_id = :opt_id";
+            $stmtUpd = oci_parse($this->conn, $update);
+            oci_bind_by_name($stmtUpd, ':opt_id', $option_id);
+            oci_execute($stmtUpd, OCI_NO_AUTO_COMMIT);
+            oci_commit($this->conn);
+            return true;
+        }
+        return false;
     }
 }

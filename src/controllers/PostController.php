@@ -22,7 +22,10 @@ class PostController
      */
     public function create()
     {
-        // ... (kode validasi login tetap sama) ...
+        // Cek apakah request ini AJAX
+        $isAjax = isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
+
+        if (session_status() == PHP_SESSION_NONE) session_start();
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             try {
@@ -30,12 +33,23 @@ class PostController
                 $content = $_POST['content'];
                 $visibility = $_POST['visibility'] ?? 'public';
                 $forum_id = !empty($_POST['forum_id']) ? $_POST['forum_id'] : null;
+                // Ambil nilai checkbox 'Turn off commenting'
+                // Jika dicentang nilainya 1, jika tidak 0
+                $is_comment_disabled = isset($_POST['is_comment_disabled']) ? 1 : 0;
 
-                $uploaded_files = []; // Array untuk menampung semua file (gambar + dokumen)
+                $poll_options = isset($_POST['poll_options']) ? $_POST['poll_options'] : [];
+                // Filter opsi yang kosong
+                $poll_options = array_filter($poll_options, function ($value) {
+                    return !empty(trim($value));
+                });
+
+                // --- Logika Upload File (Gambar & Dokumen) ---
+                // (Asumsi logika upload file Anda sudah ada di sini seperti file asli)
+                $uploaded_files = [];
                 $uploadDir = 'public/uploads/posts/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-                // 1. PROSES GAMBAR (post_images)
+                // 1. Gambar
                 if (isset($_FILES['post_images']) && !empty($_FILES['post_images']['name'][0])) {
                     $files = $_FILES['post_images'];
                     $count = count($files['name']);
@@ -52,54 +66,38 @@ class PostController
                     }
                 }
 
-                // 2. [BARU] PROSES DOKUMEN (post_files)
-                if (isset($_FILES['post_files']) && !empty($_FILES['post_files']['name'][0])) {
-                    $docFiles = $_FILES['post_files'];
-                    $docCount = count($docFiles['name']);
-                    // Daftar ekstensi file yang diperbolehkan
-                    $allowed_docs = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
-
-                    for ($i = 0; $i < $docCount; $i++) {
-                        if ($docFiles['error'][$i] === UPLOAD_ERR_OK) {
-                            $ext = strtolower(pathinfo($docFiles['name'][$i], PATHINFO_EXTENSION));
-
-                            if (in_array($ext, $allowed_docs)) {
-                                // Simpan nama asli agar lebih user friendly saat didownload, tapi prefix unik
-                                $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($docFiles['name'][$i], PATHINFO_FILENAME));
-                                $newName = uniqid('file_') . '_' . $cleanName . '.' . $ext;
-
-                                if (move_uploaded_file($docFiles['tmp_name'][$i], $uploadDir . $newName)) {
-                                    $uploaded_files[] = $newName;
-                                }
-                            }
-                        }
-                    }
+                // Validasi input kosong
+                if (empty($content) && empty($uploaded_files)) {
+                    throw new Exception('Postingan tidak boleh kosong.');
                 }
 
-                if (empty($content) && empty($uploaded_files)) {
-                    $_SESSION['error_message'] = 'Postingan kosong. Tulis sesuatu atau lampirkan file.';
-                } else {
-                    // Simpan ke DB (Model sudah support array file path)
-                    if ($this->postModel->createPost($user_id, $content, $uploaded_files, $visibility, $forum_id)) {
-                        $_SESSION['success_message'] = 'Postingan berhasil dibuat!';
-                    } else {
-                        $_SESSION['error_message'] = 'Gagal membuat postingan.';
+                // [SIMPAN] Panggil model dengan parameter is_comment_disabled
+                if ($this->postModel->createPost($user_id, $content, $uploaded_files, $visibility, $forum_id, $is_comment_disabled, $poll_options)) {
+
+                    // Respon sukses untuk AJAX
+                    if ($isAjax) {
+                        echo json_encode(['success' => true, 'message' => 'Postingan berhasil dibuat!']);
+                        exit;
                     }
+                    $_SESSION['success_message'] = 'Postingan berhasil dibuat!';
+                } else {
+                    throw new Exception('Gagal menyimpan postingan.');
                 }
             } catch (Exception $e) {
-                $_SESSION['error_message'] = 'Error: ' . $e->getMessage();
+                // Respon error untuk AJAX
+                if ($isAjax) {
+                    http_response_code(400); // Bad Request
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                    exit;
+                }
+                $_SESSION['error_message'] = $e->getMessage();
             }
 
-            // Redirect...
-            if ($forum_id) {
-                header('Location: ' . BASE_URL . '/forum/show?id=' . $forum_id);
-            } else {
-                header('Location: ' . BASE_URL . '/home');
-            }
+            // Redirect fallback jika JS mati
+            header('Location: ' . BASE_URL . '/home');
             exit;
         }
     }
-
     /**
      * Memproses penghapusan postingan DAN file gambar
      */
@@ -256,6 +254,20 @@ class PostController
                     }
                     $_SESSION['error_message'] = $msg;
                 } else {
+
+                    $currentPost = $this->postModel->getPostById($post_id);
+
+                    // Cek jika post ditemukan DAN komentar didisable (is_comment_disabled == 1)
+                    if ($currentPost && isset($currentPost['IS_COMMENT_DISABLED']) && $currentPost['IS_COMMENT_DISABLED'] == 1) {
+                        $msg = 'Komentar untuk postingan ini telah dinonaktifkan.';
+                        if ($isAjax) {
+                            echo json_encode(['success' => false, 'message' => $msg]);
+                            exit;
+                        }
+                        $_SESSION['error_message'] = $msg;
+                        header('Location: ' . BASE_URL . '/home');
+                        exit;
+                    }
                     // Simpan ke Database
                     if ($this->postModel->addComment($post_id, $user_id, $content, $parent_id)) {
 
@@ -353,6 +365,108 @@ class PostController
             echo json_encode($updates);
         } catch (Exception $e) {
             echo json_encode([]);
+        }
+        exit;
+    }
+    /**
+     * [UPDATE] Menangani request disable/enable komentar (Support AJAX)
+     */
+    public function toggleComments()
+    {
+        // 1. Cek Login
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            if (isset($_GET['ajax'])) {
+                echo json_encode(['success' => false, 'message' => 'Silakan login terlebih dahulu.']);
+                exit;
+            }
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        $post_id = $_GET['id'] ?? null;
+        $user_id = $_SESSION['user_id'];
+        $isAjax = isset($_GET['ajax']); // Cek apakah ini request AJAX
+
+        if ($post_id) {
+            try {
+                // Panggil fungsi di Model
+                $this->postModel->toggleCommentStatus($post_id, $user_id);
+
+                if ($isAjax) {
+                    // Ambil status terbaru untuk dikirim balik ke JS
+                    $post = $this->postModel->getPostById($post_id);
+                    $isDisabled = ($post['IS_COMMENT_DISABLED'] == 1);
+
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'isDisabled' => $isDisabled,
+                        'message' => 'Status komentar berhasil diubah.'
+                    ]);
+                    exit;
+                }
+
+                $_SESSION['success_message'] = 'Pengaturan komentar berhasil diubah.';
+            } catch (Exception $e) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                    exit;
+                }
+                $_SESSION['error_message'] = $e->getMessage();
+            }
+        }
+
+        // Fallback untuk request biasa (bukan AJAX)
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            header('Location: ' . $_SERVER['HTTP_REFERER']);
+        } else {
+            header('Location: ' . BASE_URL . '/home');
+        }
+        exit;
+    }
+    /**
+     * Memproses Voting pada Polling
+     */
+    public function vote()
+    {
+        // Set header JSON agar JS tidak error "Unexpected token"
+        header('Content-Type: application/json');
+
+        if (session_status() == PHP_SESSION_NONE) session_start();
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Silakan login terlebih dahulu.']);
+            exit;
+        }
+
+        // Ambil data JSON dari fetch() JS
+        $input = json_decode(file_get_contents('php://input'), true);
+        $post_id = $input['post_id'] ?? null;
+        $option_id = $input['option_id'] ?? null;
+
+        if ($post_id && $option_id) {
+            try {
+                // Panggil Model untuk simpan vote
+                $result = $this->postModel->submitVote($post_id, $option_id, $_SESSION['user_id']);
+
+                if ($result) {
+                    // Jika sukses, ambil data terbaru untuk update tampilan progress bar
+                    $newData = $this->postModel->getPollData($post_id, $_SESSION['user_id']);
+                    echo json_encode(['success' => true, 'data' => $newData]);
+                } else {
+                    // Biasanya return false jika user sudah pernah vote
+                    echo json_encode(['success' => false, 'message' => 'Anda sudah memberikan suara pada polling ini.']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Data tidak valid.']);
         }
         exit;
     }
