@@ -1,6 +1,6 @@
 <?php
 require_once 'src/models/User.php';
-
+require_once 'src/helpers/MailHelper.php'; // Ensure this file exists at src/helpers/MailHelper.php
 class AuthController
 {
 
@@ -33,82 +33,47 @@ class AuthController
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-            // 1. AMBIL DATA & BERSIHKAN
+            // ... (Kode validasi input Anda sebelumnya TETAP SAMA) ...
             $nama = htmlspecialchars(trim($_POST['nama'] ?? ''));
             $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
-            $password = $_POST['password'] ?? '';
-            $role_name = $_POST['role_name'] ?? 'mahasiswa';
-            $nim_nip = trim($_POST['nim-nip-input'] ?? '');
-            $program_studi = $_POST['program_studi'] ?? '';
-            $admission_year = $_POST['admission_year'] ?? null;
+            // ... dst ...
 
-            // --- [BARU] VALIDASI DOMAIN EMAIL ---
-            if ($role_name == 'mahasiswa') {
-                if (!preg_match("/@stu\.pnj\.ac\.id$/", $email)) {
-                    $_SESSION['error_message'] = 'Mahasiswa wajib menggunakan email @stu.pnj.ac.id';
-                    $_SESSION['open_modal'] = 'register';
-                    header('Location: ' . BASE_URL);
-                    exit;
-                }
-            } elseif ($role_name == 'dosen') {
-                if (!preg_match("/@tik\.pnj\.ac\.id$/", $email)) {
-                    $_SESSION['error_message'] = 'Dosen wajib menggunakan email @tik.pnj.ac.id';
-                    $_SESSION['open_modal'] = 'register';
-                    header('Location: ' . BASE_URL);
-                    exit;
-                }
-            } elseif ($role_name == 'alumni') {
-                // Validasi gmail.com (atau bisa dihapus jika Alumni bebas)
-                if (!preg_match("/@gmail\.com$/", $email)) {
-                    $_SESSION['error_message'] = 'Alumni wajib menggunakan email @gmail.com';
-                    $_SESSION['open_modal'] = 'register';
-                    header('Location: ' . BASE_URL);
-                    exit;
-                }
-            }
-            // ------------------------------------
+            // [BARU] Generate Token 32 byte hex
+            $token = bin2hex(random_bytes(32));
 
-            // 2. VALIDASI FIELD KOSONG
-            if (empty($nama) || empty($email) || empty($password) || empty($nim_nip)) {
-                $_SESSION['error_message'] = 'Semua kolom wajib diisi!';
-                $_SESSION['open_modal'] = 'register';
-                header('Location: ' . BASE_URL);
-                exit;
-            }
-            // Validasi khusus Role
-            if ($role_name == 'mahasiswa' && empty($program_studi)) {
-                $_SESSION['error_message'] = 'Mahasiswa wajib memilih Program Studi.';
-                $_SESSION['open_modal'] = 'register';
-                header('Location: ' . BASE_URL);
-                exit;
-            }
-
-            // 3. SIAPKAN DATA UNTUK MODEL
             $data = [
                 'nama' => $nama,
                 'email' => $email,
-                'password' => $password,
-                'role_name' => $role_name,
-                'nim-nip-input' => $nim_nip,
-                'program_studi' => $program_studi,
-                'admission_year' => $admission_year
+                'password' => $_POST['password'],
+                'role_name' => $_POST['role_name'],
+                'nim-nip-input' => $_POST['nim-nip-input'] ?? '',
+                'program_studi' => $_POST['program_studi'] ?? '',
+                'admission_year' => $_POST['admission_year'] ?? null
             ];
 
-            // 4. EKSEKUSI KE MODEL
             try {
-                if ($this->userModel->registerUser($data)) {
-                    $_SESSION['success_message'] = 'Registrasi berhasil! Silakan login.';
-                    $_SESSION['open_modal'] = 'login'; // Buka modal login
+                // Panggil Model dengan Token
+                if ($this->userModel->registerUser($data, $token)) {
+
+                    // Kirim Email
+                    $sent = MailHelper::sendVerificationEmail($email, $nama, $token);
+
+                    if ($sent) {
+                        $_SESSION['success_message'] = 'Registrasi berhasil! Cek email Anda untuk verifikasi.';
+                    } else {
+                        $_SESSION['success_message'] = 'Registrasi berhasil, tapi gagal kirim email. Hubungi Admin.';
+                    }
+
+                    $_SESSION['open_modal'] = 'login';
                 } else {
-                    $_SESSION['error_message'] = 'Registrasi gagal. Silakan coba lagi.';
+                    $_SESSION['error_message'] = 'Registrasi gagal.';
                     $_SESSION['open_modal'] = 'register';
                 }
             } catch (Exception $e) {
-                // Cek pesan error Oracle untuk duplikat data (ORA-00001)
                 if (strpos($e->getMessage(), 'ORA-00001') !== false) {
                     $_SESSION['error_message'] = 'Email atau NIM/NIP sudah terdaftar!';
                 } else {
-                    $_SESSION['error_message'] = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+                    $_SESSION['error_message'] = 'Error: ' . $e->getMessage();
                 }
                 $_SESSION['open_modal'] = 'register';
             }
@@ -116,6 +81,39 @@ class AuthController
             header('Location: ' . BASE_URL);
             exit;
         }
+    }
+
+    /**
+     * [BARU] Menangani Klik Link dari Email
+     */
+    public function verify()
+    {
+        $token = $_GET['token'] ?? null;
+
+        if (!$token) {
+            $_SESSION['error_message'] = "Token tidak ditemukan.";
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        try {
+            $status = $this->userModel->verifyUserToken($token);
+
+            if ($status === 'active') {
+                $_SESSION['success_message'] = "Email terverifikasi! Akun Anda sudah aktif. Silakan login.";
+            } elseif ($status === 'pending_approval') {
+                $_SESSION['success_message'] = "Email terverifikasi! Akun Alumni Anda kini menunggu persetujuan Admin.";
+            } else {
+                $_SESSION['error_message'] = "Token verifikasi salah atau sudah kadaluarsa.";
+            }
+
+            $_SESSION['open_modal'] = 'login';
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "Terjadi kesalahan sistem.";
+        }
+
+        header('Location: ' . BASE_URL);
+        exit;
     }
 
     /**

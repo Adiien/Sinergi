@@ -12,37 +12,34 @@ class User
      * Registrasi user baru
      * Kueri ini sudah benar: "pass_user" (lowercase) dengan tanda kutip
      */
-    public function registerUser($data)
+    public function registerUser($data, $token) // Tambah parameter $token
     {
         $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
         $nama = $data['nama'];
         $email = $data['email'];
         $role_name = $data['role_name'];
+        // ... (variabel lain tetap sama) ...
         $program_studi = !empty($data['program_studi']) ? $data['program_studi'] : null;
+        $tahun_masuk = !empty($data['admission_year']) ? (int)$data['admission_year'] : null;
+        $nim = ($role_name == 'mahasiswa' || $role_name == 'alumni') ? $data['nim-nip-input'] : null;
+        $nip = ($role_name == 'dosen') ? $data['nim-nip-input'] : null;
 
-        $tahun_masuk = null;
-        if (!empty($data['admission_year']) && is_numeric($data['admission_year'])) {
-            $tahun_masuk = (int)$data['admission_year'];
-        }
-
-        $nim = null;
-        $nip = null;
-        if ($role_name == 'mahasiswa' || $role_name == 'alumni') {
-            $nim = $data['nim-nip-input'];
-        } elseif ($role_name == 'dosen') {
-            $nip = $data['nim-nip-input'];
-        }
+        // [UPDATE] Set status default 'pending_email'
+        $default_status = 'pending_email';
 
         $query = 'INSERT INTO users (
                       user_id, nama, email, pass_user, role_name, 
-                      nim, nip, program_studi, tahun_masuk
+                      nim, nip, program_studi, tahun_masuk,
+                      verification_token, status
                   ) VALUES (
                       users_seq.NEXTVAL, :nama, :email, :pass_user, :role_name,
-                      :nim, :nip, :program_studi, :tahun_masuk
+                      :nim, :nip, :program_studi, :tahun_masuk,
+                      :token, :status
                   )';
 
         $stmt = oci_parse($this->conn, $query);
 
+        // ... (bind variabel lama tetap sama) ...
         oci_bind_by_name($stmt, ':nama', $nama);
         oci_bind_by_name($stmt, ':email', $email);
         oci_bind_by_name($stmt, ':pass_user', $hashedPassword);
@@ -52,45 +49,95 @@ class User
         oci_bind_by_name($stmt, ':program_studi', $program_studi);
         oci_bind_by_name($stmt, ':tahun_masuk', $tahun_masuk);
 
+        // [UPDATE] Bind Token & Status
+        oci_bind_by_name($stmt, ':token', $token);
+        oci_bind_by_name($stmt, ':status', $default_status);
+
         $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
 
         if (!$result) {
             $e = oci_error($stmt);
             oci_free_statement($stmt);
-            throw new Exception("Error Database: " . $e['message'] . " (Query: " . $e['sqltext'] . ")");
+            throw new Exception("Error Database: " . $e['message']);
         }
 
         oci_free_statement($stmt);
         return true;
     }
 
-    public function loginUser($identifier, $password = null)
+    /**
+     * [BARU] Verifikasi User & Tentukan Status Akhir
+     */
+    public function verifyUserToken($token)
     {
-        $query = 'SELECT * FROM users 
-              WHERE email = :identifier 
-                 OR nim = :identifier 
-                 OR nip = :identifier';
-
+        // 1. Cari user berdasarkan token
+        $query = "SELECT user_id, role_name, status FROM users WHERE verification_token = :token";
         $stmt = oci_parse($this->conn, $query);
-        oci_bind_by_name($stmt, ':identifier', $identifier);
-        $exec = oci_execute($stmt);
+        oci_bind_by_name($stmt, ':token', $token);
+        oci_execute($stmt);
 
-        if (!$exec) {
-            $e = oci_error($stmt);
-            oci_free_statement($stmt);
-            throw new Exception("Error Database: " . $e['message'] . " (Query: " . $e['sqltext'] . ")");
+        $user = oci_fetch_array($stmt, OCI_ASSOC);
+        oci_free_statement($stmt);
+
+        if ($user) {
+            // 2. Tentukan status baru berdasarkan Role
+            $newStatus = 'active'; // Default (Dosen/Mahasiswa)
+
+            if ($user['ROLE_NAME'] == 'alumni') {
+                $newStatus = 'pending_approval'; // Alumni harus nunggu admin
+            }
+
+            // 3. Update status dan hapus token
+            $update = "UPDATE users SET status = :status, verification_token = NULL WHERE user_id = :uid";
+            $stmtUp = oci_parse($this->conn, $update);
+            oci_bind_by_name($stmtUp, ':status', $newStatus);
+            oci_bind_by_name($stmtUp, ':uid', $user['USER_ID']);
+
+            $res = oci_execute($stmtUp, OCI_COMMIT_ON_SUCCESS);
+            oci_free_statement($stmtUp);
+
+            // Kembalikan status baru agar Controller bisa kasih pesan yang sesuai
+            return $res ? $newStatus : false;
         }
 
+        return false; // Token tidak ditemukan
+    }
+
+    /**
+     * [UPDATE] Login dengan Cek Status
+     */
+    public function loginUser($identifier, $password = null)
+    {
+        // ... (Query SELECT sama seperti file lama Anda) ...
+        $query = 'SELECT * FROM users WHERE email = :identifier OR nim = :identifier OR nip = :identifier';
+        // ... (Execute query) ...
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':identifier', $identifier);
+        oci_execute($stmt);
         $row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS);
         oci_free_statement($stmt);
 
         if ($row) {
-            $dbPassword = isset($row['PASS_USER']) ? $row['PASS_USER'] : (isset($row['pass_user']) ? $row['pass_user'] : null);
+            // Cek Password
+            $dbPassword = $row['PASS_USER'] ?? null;
             if ($dbPassword && isset($password) && password_verify($password, $dbPassword)) {
-                return $row;
+
+                // [LOGIKA BARU] Cek Status
+                $status = $row['STATUS'] ?? 'active'; // Default active untuk user lama
+
+                if ($status == 'pending_email') {
+                    throw new Exception("Email Anda belum diverifikasi. Silakan cek inbox Anda.");
+                }
+                if ($status == 'pending_approval') {
+                    throw new Exception("Akun Alumni Anda sedang menunggu persetujuan Admin.");
+                }
+                if ($status == 'banned' || $status == 'inactive') {
+                    throw new Exception("Akun Anda dinonaktifkan.");
+                }
+
+                return $row; // Login Sukses
             }
         }
-
         return false;
     }
     /**

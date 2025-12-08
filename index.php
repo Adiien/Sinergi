@@ -3,6 +3,8 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 require_once 'database.php';
 
 define('BASE_URL', 'http://localhost/Sinergi');
@@ -29,6 +31,12 @@ switch ($route) {
         require_once 'src/Controllers/AuthController.php';
         $controller = new AuthController();
         $controller->register();
+        break;
+
+    case 'auth/verify':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->verify();
         break;
 
     case 'admin':
