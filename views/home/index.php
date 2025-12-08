@@ -212,7 +212,7 @@
 
         <div class="flex justify-between items-center border border-gray-200 rounded-lg p-3 mt-2 shrink-0">
           <span class="text-sm font-medium text-gray-700">Add to your post</span>
-          <div class="flex space-x-3">
+          <div id="media-upload-buttons" class="flex space-x-3">
             <button type="button" id="trigger-upload-btn" class="text-gray-500 hover:text-indigo-600 transition p-1 hover:bg-gray-100 rounded-full" title="Add Images">
               <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" alt="post pict" class="w-6 h-6" />
             </button>
@@ -418,6 +418,7 @@
   <script src="<?= BASE_URL ?>/public/assets/js/DisableComment.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/CreatePostAjax.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/Poll.js"></script>
+  <script src="<?= BASE_URL ?>/public/assets/js/CommentAction.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -430,7 +431,7 @@
 
       const pollContainer = document.getElementById('poll-creator-container');
       const mediaPreview = document.getElementById('custom-media-preview');
-      const uploadBtns = document.querySelector('.flex.space-x-3'); // Tombol upload gambar/file
+      const uploadBtns = document.getElementById('media-upload-buttons'); // Tombol upload gambar/file
 
       // --- Fungsi Ganti Mode (Post vs Poll) ---
       function switchMode(mode) {

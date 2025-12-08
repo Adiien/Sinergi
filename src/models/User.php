@@ -121,15 +121,134 @@ class User
         return $users;
     }
     /**
-     * [BARU] Menghapus pengguna berdasarkan ID
+     * [PERBAIKAN FINAL - ANTI ORA-01745]
+     * Menggunakan nama bind variable ':del_id' karena ':uid' adalah reserved word Oracle.
      */
     public function deleteUserById($user_id)
     {
-        $query = 'DELETE FROM users WHERE user_id = :user_id';
+        // ------------------------------------------------------------------
+        // TAHAP 1: Hapus Data di Tabel yang TIDAK MEMILIKI CASCADE
+        // ------------------------------------------------------------------
 
+        // 1. Hapus Pesan (Sender & Receiver)
+        // Gunakan :del_id_1 dan :del_id_2 untuk query dengan OR
+        $sqlMsg = "DELETE FROM messages WHERE sender_id = :del_id_1 OR receiver_id = :del_id_2";
+        $stmtM = oci_parse($this->conn, $sqlMsg);
+        oci_bind_by_name($stmtM, ':del_id_1', $user_id);
+        oci_bind_by_name($stmtM, ':del_id_2', $user_id);
+        if (!oci_execute($stmtM, OCI_NO_AUTO_COMMIT)) {
+            $e = oci_error($stmtM);
+            throw new Exception("Gagal menghapus pesan user: " . $e['message']);
+        }
+        oci_free_statement($stmtM);
+
+        // 2. Hapus Laporan (Reports)
+        // [FIX] Ganti :uid menjadi :del_id
+        $sqlRep = "DELETE FROM reports WHERE user_id = :del_id";
+        $stmtR = oci_parse($this->conn, $sqlRep);
+        oci_bind_by_name($stmtR, ':del_id', $user_id);
+        if (!oci_execute($stmtR, OCI_NO_AUTO_COMMIT)) {
+            $e = oci_error($stmtR);
+            throw new Exception("Gagal menghapus laporan user: " . $e['message']);
+        }
+        oci_free_statement($stmtR);
+
+        // 3. Hapus Notifikasi
+        $sqlNotif = "DELETE FROM notifications WHERE user_id = :del_id_1 OR actor_id = :del_id_2";
+        $stmtN = oci_parse($this->conn, $sqlNotif);
+        oci_bind_by_name($stmtN, ':del_id_1', $user_id);
+        oci_bind_by_name($stmtN, ':del_id_2', $user_id);
+        if (!oci_execute($stmtN, OCI_NO_AUTO_COMMIT)) {
+            $e = oci_error($stmtN);
+            throw new Exception("Gagal menghapus notifikasi user: " . $e['message']);
+        }
+        oci_free_statement($stmtN);
+
+        // ------------------------------------------------------------------
+        // TAHAP 2: Hapus Data Lain (Follows & Interaksi)
+        // ------------------------------------------------------------------
+
+        // 4. Hapus Follows
+        $sqlFollow = "DELETE FROM follows WHERE follower_id = :del_id_1 OR following_id = :del_id_2";
+        $stmtF = oci_parse($this->conn, $sqlFollow);
+        oci_bind_by_name($stmtF, ':del_id_1', $user_id);
+        oci_bind_by_name($stmtF, ':del_id_2', $user_id);
+        oci_execute($stmtF, OCI_NO_AUTO_COMMIT);
+        oci_free_statement($stmtF);
+
+        // 5. Hapus Likes & Votes
+        $tables = ['post_likes', 'comment_likes', 'poll_votes'];
+        foreach ($tables as $table) {
+            $sql = "DELETE FROM $table WHERE user_id = :del_id";
+            $stmt = oci_parse($this->conn, $sql);
+            oci_bind_by_name($stmt, ':del_id', $user_id);
+            oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+            oci_free_statement($stmt);
+        }
+
+        // ------------------------------------------------------------------
+        // TAHAP 3: Hapus Forum & Member (Pembersihan Ekstra)
+        // ------------------------------------------------------------------
+
+        // Hapus user dari semua forum
+        $sqlExit = "DELETE FROM forum_members WHERE user_id = :del_id";
+        $stmtExit = oci_parse($this->conn, $sqlExit);
+        oci_bind_by_name($stmtExit, ':del_id', $user_id);
+        oci_execute($stmtExit, OCI_NO_AUTO_COMMIT);
+        oci_free_statement($stmtExit);
+
+        // Hapus forum yang dibuat user (Beserta isinya agar tidak error foreign key)
+
+        // a. Ambil ID Forum buatan user
+        $sqlGetF = "SELECT forum_id FROM forums WHERE created_by = :del_id";
+        $stmtGetF = oci_parse($this->conn, $sqlGetF);
+        oci_bind_by_name($stmtGetF, ':del_id', $user_id);
+        oci_execute($stmtGetF);
+
+        $myForumIds = [];
+        while ($row = oci_fetch_array($stmtGetF, OCI_ASSOC)) {
+            $myForumIds[] = $row['FORUM_ID'];
+        }
+        oci_free_statement($stmtGetF);
+
+        // b. Jika ada forum, hapus isinya dulu
+        if (!empty($myForumIds)) {
+            $idList = implode(',', $myForumIds);
+
+            // Hapus Child dari Postingan di forum ini
+            // (Likes, Comments, Images, Polls) - disederhanakan dengan subquery
+            $sqls = [
+                "DELETE FROM post_likes WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList))",
+                "DELETE FROM comment_likes WHERE comment_id IN (SELECT comment_id FROM comments WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList)))",
+                "DELETE FROM comments WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList))",
+                "DELETE FROM post_images WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList))",
+                "DELETE FROM poll_votes WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList))",
+                "DELETE FROM poll_options WHERE post_id IN (SELECT post_id FROM posts WHERE forum_id IN ($idList))",
+                // Hapus Postingan
+                "DELETE FROM posts WHERE forum_id IN ($idList)",
+                // Hapus Member lain
+                "DELETE FROM forum_members WHERE forum_id IN ($idList)"
+            ];
+
+            foreach ($sqls as $sql) {
+                $s = oci_parse($this->conn, $sql);
+                oci_execute($s, OCI_NO_AUTO_COMMIT);
+            }
+
+            // c. Hapus Forumnya
+            $sqlDelForum = "DELETE FROM forums WHERE forum_id IN ($idList)";
+            $stmtDF = oci_parse($this->conn, $sqlDelForum);
+            oci_execute($stmtDF, OCI_NO_AUTO_COMMIT);
+        }
+
+        // ------------------------------------------------------------------
+        // TAHAP 4: Hapus User Utama
+        // ------------------------------------------------------------------
+        $query = 'DELETE FROM users WHERE user_id = :del_id';
         $stmt = oci_parse($this->conn, $query);
-        oci_bind_by_name($stmt, ':user_id', $user_id);
+        oci_bind_by_name($stmt, ':del_id', $user_id);
 
+        // Eksekusi dan COMMIT
         $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
 
         if (!$result) {
@@ -138,15 +257,11 @@ class User
             throw new Exception("Error Database (Delete User): " . $e['message']);
         }
 
-        // oci_num_rows() akan mengembalikan jumlah baris yang terpengaruh
         $rows_affected = oci_num_rows($stmt);
-
         oci_free_statement($stmt);
 
-        // Mengembalikan true jika 1 baris (pengguna) terhapus
         return $rows_affected > 0;
     }
-
     /**
      * [UPDATE] Toggle Follow/Unfollow (Sesuai tabel FOLLOWS Anda)
      */
@@ -345,8 +460,8 @@ class User
     }
 
     public function getContactsWithLastMessage($me)
-{
-    $sql = "
+    {
+        $sql = "
         WITH conv AS (
             SELECT
                 CASE 
@@ -402,18 +517,15 @@ class User
           u.nama ASC
     ";
 
-    $stmt = oci_parse($this->conn, $sql);
-    oci_bind_by_name($stmt, ':me', $me);
-    oci_execute($stmt);
+        $stmt = oci_parse($this->conn, $sql);
+        oci_bind_by_name($stmt, ':me', $me);
+        oci_execute($stmt);
 
-    $result = [];
-    while ($row = oci_fetch_assoc($stmt)) {
-        $result[] = $row;
+        $result = [];
+        while ($row = oci_fetch_assoc($stmt)) {
+            $result[] = $row;
+        }
+
+        return $result;
     }
-
-    return $result;
-}
-
-
-
 }

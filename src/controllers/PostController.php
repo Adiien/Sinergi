@@ -470,4 +470,58 @@ class PostController
         }
         exit;
     }
+    /**
+     * [BARU] Hapus Komentar via AJAX
+     */
+    public function deleteComment()
+    {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Login required']);
+            exit;
+        }
+
+        $comment_id = $_POST['comment_id'] ?? null;
+        if (!$comment_id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid ID']);
+            exit;
+        }
+
+        // Cek Admin (Opsional)
+        $is_admin = (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin');
+
+        if ($this->postModel->deleteComment($comment_id, $_SESSION['user_id'], $is_admin)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal menghapus atau akses ditolak']);
+        }
+        exit;
+    }
+
+    /**
+     * [BARU] Update Komentar via AJAX
+     */
+    public function updateComment()
+    {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Login required']);
+            exit;
+        }
+
+        $comment_id = $_POST['comment_id'] ?? null;
+        $content = $_POST['content'] ?? '';
+
+        if (!$comment_id || empty(trim($content))) {
+            echo json_encode(['success' => false, 'message' => 'Content cannot be empty']);
+            exit;
+        }
+
+        if ($this->postModel->updateComment($comment_id, $_SESSION['user_id'], $content)) {
+            echo json_encode(['success' => true, 'new_content' => nl2br(htmlspecialchars($content))]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal update atau akses ditolak']);
+        }
+        exit;
+    }
 }

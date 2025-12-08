@@ -3,77 +3,81 @@
         <h3 class="font-bold text-gray-900 text-lg mb-4">People to Follow</h3>
 
         <div class="space-y-4">
-            <?php 
-            // Pastikan variable suggestedUsers ada
-            if (isset($suggestedUsers) && !empty($suggestedUsers)): 
+            <?php
+            // Pastikan variable suggestedUsers ada dan tidak kosong
+            if (isset($suggestedUsers) && !empty($suggestedUsers)):
                 foreach ($suggestedUsers as $sUser):
-                    // Ambil inisial
+                    // Ambil inisial nama untuk avatar
                     $initial = strtoupper(substr($sUser['NAMA'], 0, 1));
-                    // Buat handle
+
+                    // Buat handle username (misal: @budi)
                     $handle = '@' . strtolower(str_replace(' ', '', $sUser['NAMA']));
-                    
-                    // Warna background acak
-                    $bgColors = ['bg-blue-300', 'bg-purple-300', 'bg-yellow-300', 'bg-green-300', 'bg-pink-300'];
+
+                    // Warna background avatar acak
+                    $bgColors = ['bg-blue-500', 'bg-purple-500', 'bg-yellow-500', 'bg-green-500', 'bg-pink-500', 'bg-indigo-500'];
                     $randomColor = $bgColors[array_rand($bgColors)];
-                    
-                    // Cek Role
+
+                    // Cek Role User
                     $role = strtolower($sUser['ROLE_NAME'] ?? 'mahasiswa');
-                    
-                    // Konfigurasi Badge
-                    $badgeClass = 'hidden'; 
+
+                    // Konfigurasi Badge Role
+                    $badgeClass = 'hidden';
                     $roleLabel = '';
-                    
+
                     if ($role == 'admin') {
-                        $badgeClass = 'bg-indigo-100 text-indigo-800'; 
+                        $badgeClass = 'bg-indigo-100 text-indigo-800 border border-indigo-200';
                         $roleLabel = 'Admin';
                     } elseif ($role == 'dosen') {
-                        $badgeClass = 'bg-blue-100 text-blue-800'; 
+                        $badgeClass = 'bg-blue-100 text-blue-800 border border-blue-200';
                         $roleLabel = 'Dosen';
-                    } elseif ($role == 'mahasiswa') {
-                        $badgeClass = 'bg-green-100 text-green-800'; 
-                        $roleLabel = 'Mahasiswa';
                     }
+                    // Mahasiswa tidak perlu badge agar tidak terlalu ramai
             ?>
-                <div class="flex items-center justify-between gap-3">
-                    
-                    <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <div class="shrink-0 w-10 h-10 <?php echo $randomColor; ?> rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            <?php echo $initial; ?>
-                        </div>
-                        
-                        <div class="min-w-0 flex flex-col">
-                            <div class="flex items-center gap-1.5">
-                                <h4 class="font-semibold text-gray-900 text-sm truncate" title="<?php echo htmlspecialchars($sUser['NAMA']); ?>">
-                                    <?php echo htmlspecialchars($sUser['NAMA']); ?>
-                                </h4>
-                                
-                                <?php if ($roleLabel): ?>
-                                    <span class="shrink-0 <?php echo $badgeClass; ?> text-[10px] px-2 py-0.5 rounded-full font-medium inline-block">
-                                        <?php echo $roleLabel; ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-                            <p class="text-xs text-gray-500 truncate"><?php echo $handle; ?></p>
-                        </div>
-                    </div>
-                    
-                    <button 
-                        class="follow-button shrink-0 border border-blue-500 text-blue-500 hover:bg-blue-50 px-4 py-1 rounded-full text-xs font-medium transition-colors"
-                        data-user-id="<?php echo $sUser['USER_ID']; ?>">
-                        Follow
-                    </button>
+                    <div class="flex items-center justify-between gap-3 group">
 
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <a href="<?= BASE_URL ?>/profile?id=<?= $sUser['USER_ID'] ?>" class="shrink-0 w-10 h-10 <?= $randomColor ?> rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm transition transform hover:scale-105">
+                                <?= $initial ?>
+                            </a>
+
+                            <div class="min-w-0 flex flex-col">
+                                <div class="flex items-center gap-1.5">
+                                    <a href="<?= BASE_URL ?>/profile?id=<?= $sUser['USER_ID'] ?>" class="block font-semibold text-gray-900 text-sm truncate hover:text-blue-600 transition" title="<?= htmlspecialchars($sUser['NAMA']) ?>">
+                                        <?= htmlspecialchars($sUser['NAMA']) ?>
+                                    </a>
+
+                                    <?php if ($roleLabel): ?>
+                                        <span class="shrink-0 <?= $badgeClass ?> text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none">
+                                            <?= $roleLabel ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <a href="<?= BASE_URL ?>/profile?id=<?= $sUser['USER_ID'] ?>" class="block text-xs text-gray-500 truncate hover:text-blue-500 transition">
+                                    <?= $handle ?>
+                                </a>
+                            </div>
+                        </div>
+
+                        <button
+                            class="follow-button shrink-0 border border-blue-600 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200"
+                            data-user-id="<?= $sUser['USER_ID'] ?>">
+                            Follow
+                        </button>
+
+                    </div>
+                <?php
+                endforeach;
+            else:
+                ?>
+                <div class="text-center py-6">
+                    <p class="text-sm text-gray-400">Tidak ada saran teman baru.</p>
                 </div>
-            <?php 
-                endforeach; 
-            else: 
-            ?>
-                <p class="text-sm text-gray-500 text-center py-2">Tidak ada saran teman baru.</p>
             <?php endif; ?>
         </div>
 
-        <div class="mt-5 pt-4 border-t">
-            <a href="#" class="text-blue-600 font-medium text-sm hover:underline">See All</a>
+        <div class="mt-5 pt-4 border-t border-gray-100 text-center">
+            <a href="#" class="text-blue-600 font-semibold text-sm hover:text-blue-800 transition">See All Suggestions</a>
         </div>
     </div>
 </aside>

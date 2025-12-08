@@ -85,10 +85,22 @@ switch ($route) {
         $controller->toggleComments();
         break;
 
-    case 'post/comment/like': // Tambah ini di index.php
+    case 'post/comment/like':
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
         $controller->likeComment();
+        break;
+
+    case 'post/comment/delete':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->deleteComment();
+        break;
+
+    case 'post/comment/update':
+        require_once 'src/Controllers/PostController.php';
+        $controller = new PostController();
+        $controller->updateComment();
         break;
 
     case 'report/create':

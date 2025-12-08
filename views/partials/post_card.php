@@ -10,27 +10,12 @@ $visibility = $post['VISIBILITY'] ?? 'public';
 $likeCount = $post['LIKE_COUNT'] ?? 0;
 $commentCount = $post['COMMENT_COUNT'] ?? 0;
 $isCommentDisabled = ($post['IS_COMMENT_DISABLED'] ?? 0) == 1;
-$pollData = null;
 $handle = '@' . strtolower(str_replace(' ', '', $nama));
 $initial = strtoupper(substr($nama, 0, 1));
 $timestamp = isset($post['CREATED_AT']) ? date('d M Y, H:i', strtotime($post['CREATED_AT'])) : '';
 $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 $imageList = [];
 $docList = [];
-
-if (isset($post['IS_POLL']) && $post['IS_POLL'] == 1) {
-    // Asumsi koneksi DB sudah ada di global atau instance postModel
-    // Cara terbaik: Panggil model method di sini atau di controller
-    // Untuk contoh ini, kita asumsikan data poll sudah diambil atau kita panggil on-the-fly
-    if (!isset($postModel)) {
-        require_once __DIR__ . '/../../src/models/Post.php';
-        $dbPoll = koneksi_oracle(); // Pastikan fungsi koneksi bisa dipanggil
-        $postModelObj = new Post($dbPoll);
-        $pollData = $postModelObj->getPollData($post_id, $_SESSION['user_id']);
-    } else {
-        $pollData = $postModel->getPollData($post_id, $_SESSION['user_id']);
-    }
-}
 
 foreach ($allFiles as $file) {
     $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
@@ -79,27 +64,37 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                     <?php endif; ?>
                 </h3>
 
-                <p class="text-sm text-gray-500">
-                    <?php echo $handle; ?>
+                <div class="flex items-center text-sm text-gray-500 space-x-1">
+                    <span><?php echo $handle; ?></span>
+
                     <?php if ($timestamp): ?>
-                        <span class="text-xs text-gray-400">&middot; <?php echo $timestamp; ?></span>
+                        <span class="text-gray-400">&middot; <?php echo $timestamp; ?></span>
                     <?php endif; ?>
-                </p>
+
+                    <span class="text-gray-400">&middot;</span>
+                    <?php if ($visibility == 'public'): ?>
+                        <div class="group relative flex items-center">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Public">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Public</span>
+                        </div>
+                    <?php else: ?>
+                        <div class="group relative flex items-center">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Private">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Private</span>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
         <div class="flex items-center space-x-3">
-
             <?php
-            // [PERBAIKAN FITUR UNFOLLOW]
-            // Tombol tetap ditampilkan meskipun sudah follow, agar bisa di-unfollow.
-            // Hanya sembunyikan jika itu postingan sendiri.
             if (!$isOwnPost):
-                // Tentukan teks dan style awal berdasarkan status follow saat ini
                 $btnText = $isFollowing ? 'Following' : 'Follow';
-
-                // Style 'Following': Abu-abu solid (sesuai logika JS FollowToggle.js)
-                // Style 'Follow': Biru outline
                 $btnClass = $isFollowing
                     ? 'bg-gray-100 text-gray-500 border-gray-200'
                     : 'border-blue-500 text-blue-500 hover:bg-blue-50';
@@ -123,13 +118,10 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                 <div id="post-menu-<?php echo $post_id; ?>"
                     class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
 
-                    <?php
-                    // Menu Delete: Hanya untuk Pemilik Post atau Admin
-                    if (isset($_SESSION['user_id']) && ($isOwnPost || (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'))):
-                    ?>
+                    <?php if (isset($_SESSION['user_id']) && ($isOwnPost || (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'))): ?>
                         <a href="<?= BASE_URL ?>/post/delete?id=<?php echo $post_id; ?>"
                             class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                            onclick="return confirm('Apakah Anda yakin ingin menghapus postingan ini? Tindakan ini tidak dapat dibatalkan.');">
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus postingan ini?');">
                             <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
@@ -137,28 +129,20 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                         </a>
                     <?php endif; ?>
 
-                    <?php
-                    // [MODIFIKASI UNTUK AJAX]
-                    if ($isOwnPost):
-                    ?>
+                    <?php if ($isOwnPost): ?>
                         <button type="button"
                             class="disable-comment-btn flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             data-post-id="<?= $post_id ?>"
                             data-url="<?= BASE_URL ?>/post/toggleComments?id=<?= $post_id ?>&ajax=1">
-
                             <?php if ($isCommentDisabled): ?>
-                                <span class="icon-container mr-2">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <span class="icon-container mr-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                </span>
+                                    </svg></span>
                                 <span class="text-label">Aktifkan Komentar</span>
                             <?php else: ?>
-                                <span class="icon-container mr-2">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <span class="icon-container mr-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                    </svg>
-                                </span>
+                                    </svg></span>
                                 <span class="text-label">Nonaktifkan Komentar</span>
                             <?php endif; ?>
                         </button>
@@ -171,7 +155,6 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                         <img src="<?= BASE_URL ?>/public/assets/image/Report.png" alt="Report Icon" class="w-5 h-5 mr-2">
                         Report
                     </button>
-
                 </div>
             </div>
         </div>
@@ -179,103 +162,91 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
 
     <div class="px-5 pb-5">
         <p class="text-gray-800 text-base break-words"><?php echo $content; ?></p>
-        <?php if ($pollData): ?>
-            <div class="mt-4 space-y-2 poll-container" id="poll-<?php echo $post_id; ?>">
-                <?php
-                $totalVotes = $pollData['total_votes'];
-                $hasVoted = $pollData['has_voted'];
 
-                foreach ($pollData['options'] as $opt):
-                    $percent = $totalVotes > 0 ? round(($opt['VOTE_COUNT'] / $totalVotes) * 100) : 0;
-                    $isMyChoice = ($pollData['user_voted_option_id'] == $opt['OPTION_ID']);
-                ?>
-
-                    <div class="relative w-full">
-                        <?php if (!$hasVoted): ?>
-                            <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)"
-                                class="w-full text-left border border-blue-400 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition font-medium">
-                                <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
-                            </button>
-                        <?php else: ?>
-                            <div class="relative w-full h-10 bg-gray-100 rounded-lg overflow-hidden border <?php echo $isMyChoice ? 'border-blue-500' : 'border-gray-200'; ?>">
-                                <div class="absolute top-0 left-0 h-full bg-blue-200 transition-all duration-500" style="width: <?php echo $percent; ?>%;"></div>
-
-                                <div class="absolute inset-0 flex items-center justify-between px-4 z-10">
-                                    <span class="text-sm font-semibold text-gray-800">
-                                        <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
-                                        <?php if ($isMyChoice): ?> <i class="ml-1 text-blue-600 fas fa-check-circle">✔</i> <?php endif; ?>
-                                    </span>
-                                    <span class="text-sm font-bold text-gray-600"><?php echo $percent; ?>%</span>
+        <?php if (isset($post['IS_POLL']) && $post['IS_POLL'] == 1): ?>
+            <?php
+            if (!isset($postModel)) {
+                require_once __DIR__ . '/../../src/models/Post.php';
+                $dbPoll = koneksi_oracle();
+                $postModel = new Post($dbPoll);
+            }
+            $pollData = $postModel->getPollData($post_id, $_SESSION['user_id']);
+            ?>
+            <?php if ($pollData): ?>
+                <div class="mt-4 space-y-2 poll-container" id="poll-<?php echo $post_id; ?>">
+                    <?php
+                    $totalVotes = $pollData['total_votes'];
+                    $hasVoted = $pollData['has_voted'];
+                    foreach ($pollData['options'] as $opt):
+                        $percent = $totalVotes > 0 ? round(($opt['VOTE_COUNT'] / $totalVotes) * 100) : 0;
+                        $isMyChoice = ($pollData['user_voted_option_id'] == $opt['OPTION_ID']);
+                    ?>
+                        <div class="relative w-full">
+                            <?php if (!$hasVoted): ?>
+                                <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)"
+                                    class="w-full text-left border border-indigo-400 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition font-medium">
+                                    <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
+                                </button>
+                            <?php else: ?>
+                                <div class="relative w-full h-10 bg-gray-100 rounded-lg overflow-hidden border <?php echo $isMyChoice ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-200'; ?>">
+                                    <div class="absolute top-0 left-0 h-full bg-indigo-200 transition-all duration-500" style="width: <?php echo $percent; ?>%;"></div>
+                                    <div class="absolute inset-0 flex items-center justify-between px-4 z-10">
+                                        <span class="text-sm font-semibold text-gray-800 flex items-center">
+                                            <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
+                                            <?php if ($isMyChoice): ?><svg class="w-4 h-4 ml-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg><?php endif; ?>
+                                        </span>
+                                        <span class="text-sm font-bold text-gray-600"><?php echo $percent; ?>%</span>
+                                    </div>
                                 </div>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                    <div class="text-xs text-gray-500 mt-2 px-1 flex justify-between">
+                        <span>Total: <?php echo $totalVotes; ?> suara</span>
+                        <?php if ($hasVoted): ?><span class="text-indigo-600 font-medium">Anda sudah memilih</span><?php endif; ?>
                     </div>
-
-                <?php endforeach; ?>
-
-                <div class="text-xs text-gray-500 mt-2 px-1">
-                    Total: <?php echo $totalVotes; ?> suara
                 </div>
-            </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
     <?php if (!empty($imageList)): ?>
         <div class="px-5 pb-4">
-
             <div class="relative group w-full bg-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-
-                <div id="carousel-<?= $post_id ?>"
-                    class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full h-[400px]">
-
+                <div id="carousel-<?= $post_id ?>" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-full h-[400px]">
                     <?php foreach ($imageList as $index => $img): ?>
                         <div class="flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-gray-100 relative">
-
-                            <img src="<?= BASE_URL ?>/public/uploads/posts/<?= htmlspecialchars($img) ?>"
-                                class="max-w-full max-h-full object-contain">
-
+                            <img src="<?= BASE_URL ?>/public/uploads/posts/<?= htmlspecialchars($img) ?>" class="max-w-full max-h-full object-contain">
                             <?php if (count($imageList) > 1): ?>
-                                <div class="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                                    <?= $index + 1 ?> / <?= count($imageList) ?>
-                                </div>
+                                <div class="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full"><?= $index + 1 ?> / <?= count($imageList) ?></div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
-
                 </div>
                 <?php if (count($imageList) > 1): ?>
-                    <button onclick="slideCarousel('<?= $post_id ?>', 'left')"
-                        class="absolute top-1/2 left-2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="slideCarousel('<?= $post_id ?>', 'left')" class="absolute top-1/2 left-2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-
-                    <button onclick="slideCarousel('<?= $post_id ?>', 'right')"
-                        class="absolute top-1/2 right-2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        </svg></button>
+                    <button onclick="slideCarousel('<?= $post_id ?>', 'right')" class="absolute top-1/2 right-2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
+                        </svg></button>
                 <?php endif; ?>
-
             </div>
         </div>
     <?php endif; ?>
+
     <?php if (!empty($docList)): ?>
         <div class="px-5 pb-4 space-y-2">
-            <?php foreach ($docList as $doc): ?>
-                <?php
+            <?php foreach ($docList as $doc):
                 $ext = strtoupper(pathinfo($doc, PATHINFO_EXTENSION));
-                // Bersihkan nama file yang random (file_unik_namaasli.pdf) -> namaasli.pdf
                 $displayName = preg_replace('/^file_[a-z0-9]+_/', '', $doc);
-                ?>
+            ?>
                 <a href="<?= BASE_URL ?>/public/uploads/posts/<?= htmlspecialchars($doc) ?>" target="_blank" class="flex items-center p-3 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition group bg-gray-50">
-                    <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg mr-3 group-hover:bg-blue-200 group-hover:text-blue-800 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg mr-3 group-hover:bg-blue-200 group-hover:text-blue-800 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
+                        </svg></div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-800 truncate group-hover:text-blue-700"><?= htmlspecialchars($displayName) ?></p>
                         <p class="text-xs text-gray-500 uppercase"><?= $ext ?> File</p>
@@ -314,10 +285,8 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div id="comments-section-<?php echo $post_id; ?>" class="hidden comments-section pt-3">
-            <?php
-            // [LOGIKA BARU] Cek status database sebelum menampilkan form
-            if (!$isCommentDisabled):
-            ?>
+
+            <?php if (!$isCommentDisabled): ?>
                 <form action="<?= BASE_URL ?>/post/comment" method="POST" class="flex space-x-2 mb-4">
                     <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
                     <input type="text" name="content" placeholder="Tulis komentar..." class="w-full bg-gray-100 border-none rounded-lg p-2 text-sm focus:ring-indigo-500" autocomplete="off">
@@ -330,10 +299,7 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
             <?php endif; ?>
 
             <div id="comments-list-<?php echo $post_id; ?>" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scroll">
-                <?php
-                // [PENTING] Menggunakan struktur TREE yang baru
-                $comments_tree = $post['comments_list'] ?? [];
-                ?>
+                <?php $comments_tree = $post['comments_list'] ?? []; ?>
 
                 <?php if (!empty($comments_tree)): ?>
                     <?php foreach ($comments_tree as $comment): ?>
@@ -347,42 +313,113 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                         $replies = $comment['REPLIES'] ?? [];
                         ?>
 
-                        <div class="flex items-start space-x-2 group">
+                        <div class="flex items-start space-x-2 group/item">
                             <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0">
                                 <?= $c_initial ?>
                             </div>
+
                             <div class="flex-1">
-                                <div class="bg-gray-100 rounded-2xl rounded-tl-none p-3 inline-block min-w-[150px]">
-                                    <h4 class="text-xs font-bold text-gray-900"><?= $c_nama ?></h4>
-                                    <p class="text-sm text-gray-800 leading-snug break-all"><?= $c_content ?></p>
+                                <div class="relative inline-block max-w-full">
+                                    <div class="bg-gray-100 rounded-2xl rounded-tl-none p-3 min-w-[150px] pr-8">
+                                        <h4 class="text-xs font-bold text-gray-900"><?= $c_nama ?></h4>
+                                        <p id="comment-content-<?= $cid ?>" class="text-sm text-gray-800 leading-snug break-all"><?= $c_content ?></p>
+
+                                        <div id="comment-edit-form-<?= $cid ?>" class="hidden mt-2">
+                                            <textarea class="w-full text-xs p-2 border rounded" rows="2"><?= strip_tags($comment['CONTENT'] ?? '') ?></textarea>
+                                            <div class="flex justify-end space-x-2 mt-1">
+                                                <button onclick="cancelEdit(<?= $cid ?>)" class="text-xs text-gray-500 hover:text-gray-700">Batal</button>
+                                                <button onclick="saveEdit(<?= $cid ?>)" class="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Simpan</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <?php if (isset($_SESSION['user_id']) && $comment['USER_ID'] == $_SESSION['user_id']): ?>
+                                        <div class="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                            <button class="text-gray-400 hover:text-gray-600 p-1" onclick="toggleCommentMenu(<?= $cid ?>)">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                </svg>
+                                            </button>
+                                            <div id="comment-menu-<?= $cid ?>" class="hidden absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                                                <button onclick="editCommentUI(<?= $cid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                    <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                    Edit
+                                                </button>
+                                                <button onclick="deleteComment(<?= $cid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-100">
+                                                    <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
+
                                 <div class="flex items-center space-x-4 mt-1 ml-2">
                                     <button class="comment-like-btn text-xs font-semibold <?= $c_is_liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500' ?>" data-comment-id="<?= $cid ?>">
                                         Like <span class="comment-like-count"><?= $c_likes > 0 ? $c_likes : '' ?></span>
                                     </button>
-                                    <button class="reply-button text-xs font-semibold text-gray-400 hover:text-indigo-600"
-                                        data-parent-id="<?= $cid ?>"
-                                        data-post-id="<?= $post_id ?>">
-                                        Reply
-                                    </button>
+                                    <button class="reply-button text-xs font-semibold text-gray-400 hover:text-indigo-600" data-parent-id="<?= $cid ?>" data-post-id="<?= $post_id ?>">Reply</button>
                                 </div>
 
                                 <div id="reply-form-container-<?= $cid ?>" class="mt-2 ml-2"></div>
 
                                 <div id="replies-container-<?= $cid ?>" class="ml-2 pl-2 border-l-2 border-gray-100 mt-2 space-y-2">
                                     <?php if (!empty($replies)): ?>
-                                        <?php foreach ($replies as $reply): ?>
-                                            <div class="flex items-start space-x-2">
+                                        <?php foreach ($replies as $reply):
+                                            $rid = $reply['COMMENT_ID'];
+                                            $r_content = nl2br(htmlspecialchars($reply['CONTENT'] ?? ''));
+                                        ?>
+                                            <div class="flex items-start space-x-2 group/reply">
                                                 <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-[10px] flex-shrink-0">
                                                     <?= strtoupper(substr($reply['NAMA'], 0, 1)) ?>
                                                 </div>
+
                                                 <div>
-                                                    <div class="bg-gray-50 rounded-xl p-2 px-3 inline-block">
-                                                        <h4 class="text-xs font-bold text-gray-900"><?= htmlspecialchars($reply['NAMA']) ?></h4>
-                                                        <p class="text-xs text-gray-700 break-all"><?= nl2br(htmlspecialchars($reply['CONTENT'])) ?></p>
+                                                    <div class="relative inline-block max-w-full">
+                                                        <div class="bg-gray-50 rounded-xl p-2 px-3 inline-block min-w-[120px] pr-8">
+                                                            <h4 class="text-xs font-bold text-gray-900"><?= htmlspecialchars($reply['NAMA']) ?></h4>
+                                                            <p id="comment-content-<?= $rid ?>" class="text-xs text-gray-700 break-all"><?= $r_content ?></p>
+
+                                                            <div id="comment-edit-form-<?= $rid ?>" class="hidden mt-2">
+                                                                <textarea class="w-full text-xs p-2 border rounded" rows="2"><?= strip_tags($reply['CONTENT'] ?? '') ?></textarea>
+                                                                <div class="flex justify-end space-x-2 mt-1">
+                                                                    <button onclick="cancelEdit(<?= $rid ?>)" class="text-xs text-gray-500 hover:text-gray-700">Batal</button>
+                                                                    <button onclick="saveEdit(<?= $rid ?>)" class="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Simpan</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <?php if (isset($_SESSION['user_id']) && $reply['USER_ID'] == $_SESSION['user_id']): ?>
+                                                            <div class="absolute top-1 right-1 opacity-0 group-hover/reply:opacity-100 transition-opacity">
+                                                                <button class="text-gray-400 hover:text-gray-600 p-1" onclick="toggleCommentMenu(<?= $rid ?>)">
+                                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                                    </svg>
+                                                                </button>
+                                                                <div id="comment-menu-<?= $rid ?>" class="hidden absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                                                                    <button onclick="editCommentUI(<?= $rid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                                        <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                        </svg>
+                                                                        Edit
+                                                                    </button>
+                                                                    <button onclick="deleteComment(<?= $rid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-100">
+                                                                        <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                        </svg>
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     </div>
+
                                                     <div class="flex items-center space-x-2 mt-0.5 ml-1">
-                                                        <button class="comment-like-btn text-[10px] font-semibold <?= ($reply['IS_LIKED'] ?? 0) ? 'text-pink-500' : 'text-gray-400' ?>" data-comment-id="<?= $reply['COMMENT_ID'] ?>">
+                                                        <button class="comment-like-btn text-[10px] font-semibold <?= ($reply['IS_LIKED'] ?? 0) ? 'text-pink-500' : 'text-gray-400' ?>" data-comment-id="<?= $rid ?>">
                                                             Like <span class="comment-like-count"><?= ($reply['LIKE_COUNT'] ?? 0) > 0 ? $reply['LIKE_COUNT'] : '' ?></span>
                                                         </button>
                                                     </div>

@@ -81,27 +81,23 @@
            }
 
            return `
+          <a href="${window.BASE_URL}/profile?id=${user.USER_ID}" class="block">
             <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition cursor-pointer border-b border-gray-50 last:border-none">
-                <div class="flex items-center space-x-3 overflow-hidden">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-                        ${initial}
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">${user.NAMA}</h4>
-                            ${roleBadge}
-                        </div>
-                        <p class="text-xs text-gray-500 truncate">${handle}</p>
-                    </div>
+              <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    ${initial}
                 </div>
-                
-                <button 
-                    class="follow-button text-xs border px-3 py-1 rounded-full font-bold transition ${buttonClass}" 
-                    data-user-id="${user.USER_ID}">
-                    ${buttonText}
-                </button>
+                <div class="min-w-0">
+                  <div class="flex items-center">
+                      <h4 class="font-bold text-gray-800 text-sm truncate">${user.NAMA}</h4>
+                      ${roleBadge}
+                  </div>
+                  <p class="text-xs text-gray-500 truncate">${handle}</p>
+                </div>
+              </div>
             </div>
-           `;
+        </a>
+        `;
          }
 
          // --- [BARU] TEMPLATE RENDER FORUM ---
@@ -338,6 +334,6 @@
    </div>
  </nav>
  <script>
-  window.BASE_URL = "<?= BASE_URL ?>";
-</script>
+   window.BASE_URL = "<?= BASE_URL ?>";
+ </script>
  <script src="<?= BASE_URL ?>/public/assets/js/profiledropdown.js"></script>

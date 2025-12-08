@@ -782,4 +782,64 @@ class Post
         }
         return false;
     }
+    /**
+     * [BARU] Ambil data komentar berdasarkan ID (untuk cek kepemilikan)
+     */
+    public function getCommentById($comment_id)
+    {
+        $query = "SELECT * FROM comments WHERE comment_id = :cid";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':cid', $comment_id);
+        oci_execute($stmt);
+        $row = oci_fetch_array($stmt, OCI_ASSOC);
+        oci_free_statement($stmt);
+        return $row;
+    }
+
+    /**
+     * [BARU] Hapus Komentar
+     */
+    public function deleteComment($comment_id, $user_id, $is_admin = false)
+    {
+        // Cek kepemilikan
+        $comment = $this->getCommentById($comment_id);
+        if (!$comment) return false;
+
+        if (!$is_admin && $comment['USER_ID'] != $user_id) {
+            return false; // Bukan pemilik
+        }
+
+        $query = "DELETE FROM comments WHERE comment_id = :cid";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':cid', $comment_id);
+
+        $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+        oci_free_statement($stmt);
+        return $result;
+    }
+
+    /**
+     * [BARU] Edit Komentar
+     */
+    public function updateComment($comment_id, $user_id, $new_content)
+    {
+        // Cek kepemilikan
+        $comment = $this->getCommentById($comment_id);
+        if (!$comment || $comment['USER_ID'] != $user_id) {
+            return false;
+        }
+
+        $query = "UPDATE comments SET content = :content WHERE comment_id = :cid";
+        $stmt = oci_parse($this->conn, $query);
+
+        // Oracle CLOB handling (opsional jika teks panjang, tapi varchar2 cukup untuk komentar pendek)
+        // Untuk simpel kita anggap content muat di Varchar2 4000 byte, 
+        // jika pakai CLOB logicnya mirip createPost.
+        oci_bind_by_name($stmt, ':content', $new_content);
+        oci_bind_by_name($stmt, ':cid', $comment_id);
+
+        $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+        oci_free_statement($stmt);
+        return $result;
+    }
 }

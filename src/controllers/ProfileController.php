@@ -17,72 +17,77 @@ class ProfileController
 
     public function index()
     {
-        // Cek Login
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . BASE_URL . '/login');
             exit;
         }
 
-        $user_id = $_SESSION['user_id'];
+        $current_login_id = $_SESSION['user_id'];
 
-        // 1. Ambil data statistik (Followers/Following)
-        $followStats = $this->userModel->getFollowStats($user_id);
-        
-        // 2. Ambil Data CONTENT (Postingan Sendiri)
-        $contentPosts = $this->postModel->getPostsByAuthor($user_id, $user_id);
+        // 1. Tentukan ID siapa yang mau dilihat
+        $target_user_id = isset($_GET['id']) ? $_GET['id'] : $current_login_id;
+        $is_own_profile = ($target_user_id == $current_login_id);
 
-        // 3. Ambil Data ACTIVITY (Postingan yang di-Interaksi)
-        $activityPosts = $this->postModel->getActivityPosts($user_id, $user_id);
-
-        // --- [LOGIKA PENEMPELAN KOMENTAR UNTUK SEMUA POST] ---
-        
-        // Gabungkan kedua array post untuk mengambil semua ID-nya sekaligus (efisiensi query)
-        $all_posts_temp = array_merge($contentPosts, $activityPosts);
-        
-        $post_ids = [];
-        foreach ($all_posts_temp as $p) {
-            $post_ids[] = $p['POST_ID'];
+        // 2. Ambil Data User Target
+        $targetUser = $this->userModel->getUserById($target_user_id);
+        if (!$targetUser) {
+            header('Location: ' . BASE_URL . '/home');
+            exit;
         }
-        // Hapus duplikat ID
+
+        // 3. Cek Status Follow (Khusus jika melihat profil orang lain)
+        $is_following = false;
+        if (!$is_own_profile) {
+            // Query manual cek status follow
+            $query = "SELECT 1 FROM follows WHERE follower_id = :me AND following_id = :target";
+            $stmt = oci_parse($this->conn, $query);
+            oci_bind_by_name($stmt, ':me', $current_login_id);
+            oci_bind_by_name($stmt, ':target', $target_user_id);
+            oci_execute($stmt);
+            if (oci_fetch($stmt)) {
+                $is_following = true;
+            }
+            oci_free_statement($stmt);
+        }
+
+        // 4. Ambil Statistik & Postingan
+        $followStats = $this->userModel->getFollowStats($target_user_id);
+
+        // Postingan Content (Milik target_user, dilihat oleh current_login_id)
+        $contentPosts = $this->postModel->getPostsByAuthor($target_user_id, $current_login_id);
+
+        // Postingan Activity (Interaksi target_user, dilihat oleh current_login_id)
+        $activityPosts = $this->postModel->getActivityPosts($target_user_id, $current_login_id);
+
+        // --- Logika Penempelan Komentar (Copy-Paste Logika Sebelumnya) ---
+        $all_posts_temp = array_merge($contentPosts, $activityPosts);
+        $post_ids = [];
+        foreach ($all_posts_temp as $p) $post_ids[] = $p['POST_ID'];
         $post_ids = array_unique($post_ids);
 
         if (!empty($post_ids)) {
-            // Ambil semua komentar dari database untuk ID-ID tersebut
-            $all_comments_raw = $this->postModel->getCommentsForPosts(array_values($post_ids), $_SESSION['user_id']);
-
-            // Kelompokkan komentar berdasarkan POST_ID agar mudah dicocokkan
+            $all_comments_raw = $this->postModel->getCommentsForPosts(array_values($post_ids), $current_login_id);
             $comments_by_post_id = [];
-            foreach ($all_comments_raw as $comment) {
-                $comments_by_post_id[$comment['POST_ID']][] = $comment;
-            }
+            foreach ($all_comments_raw as $comment) $comments_by_post_id[$comment['POST_ID']][] = $comment;
 
-            // 1. Tempelkan komentar ke array $contentPosts (Tab Content)
-            foreach ($contentPosts as &$post) {
-                $pid = $post['POST_ID'];
-                // Jika ada komentar untuk post ini, masukkan. Jika tidak, array kosong.
-                $post['comments_list'] = $comments_by_post_id[$pid] ?? [];
-            }
-            unset($post); // Putus referensi
-
-            // 2. Tempelkan komentar ke array $activityPosts (Tab Activity)
-            foreach ($activityPosts as &$post) {
-                $pid = $post['POST_ID'];
-                $post['comments_list'] = $comments_by_post_id[$pid] ?? [];
-            }
-            unset($post); // Putus referensi
+            foreach ($contentPosts as &$post) $post['comments_list'] = $comments_by_post_id[$post['POST_ID']] ?? [];
+            unset($post);
+            foreach ($activityPosts as &$post) $post['comments_list'] = $comments_by_post_id[$post['POST_ID']] ?? [];
+            unset($post);
         }
-        // --- [AKHIR LOGIKA] ---
 
-        // Siapkan data untuk View
+        // 5. Kirim Data ke View
         $data = [
-            'user_id' => $user_id,
-            'nama' => $_SESSION['nama'],
-            'email' => $_SESSION['email'],
-            'role' => $_SESSION['role_name'] ?? 'Member',
+            'user_id' => $target_user_id,
+            'is_own_profile' => $is_own_profile, // Penentu Tampilan
+            'is_following' => $is_following,     // Status Follow
+            'nama' => $targetUser['NAMA'],
+            'email' => $targetUser['EMAIL'],
+            'role' => $targetUser['ROLE_NAME'] ?? 'Member',
             'followers' => $followStats['followers'],
             'following' => $followStats['following'],
-            'content_posts' => $contentPosts, // Sekarang sudah punya comments_list
-            'activity_posts' => $activityPosts // Sekarang sudah punya comments_list
+            'content_posts' => $contentPosts,
+            'activity_posts' => $activityPosts
         ];
 
         require 'views/profile/index.php';
