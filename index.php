@@ -51,6 +51,12 @@ switch ($route) {
         $controller->delete();
         break;
 
+    case 'admin/resend':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->resendVerification();
+        break;
+
     case 'home':
         require_once 'src/Controllers/HomeController.php';
         $controller = new HomeController();

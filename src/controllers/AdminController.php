@@ -3,8 +3,9 @@
 require_once 'src/models/User.php';
 require_once 'src/models/Post.php';
 // [PERBAIKAN 1]: Pastikan nama file ini benar (saya asumsikan 'ReportModel.php' sesuai instruksi sebelumnya)
-require_once 'src/models/Report.php'; 
+require_once 'src/models/Report.php';
 
+require_once __DIR__ . '/../helpers/MailHelper.php';
 class AdminController
 {
     private $userModel;
@@ -17,10 +18,10 @@ class AdminController
         $this->conn = koneksi_oracle();
         $this->userModel = new User($this->conn);
         $this->postModel = new Post($this->conn);
-        
+
         // [PERBAIKAN 3]: Inisialisasi ReportModel
         // (Pastikan nama class-nya 'ReportModel', sesuaikan jika nama file Anda beda)
-        $this->reportModel = new ReportModel($this->conn); 
+        $this->reportModel = new ReportModel($this->conn);
     }
 
     /**
@@ -39,14 +40,13 @@ class AdminController
         // 2. Jika lolos, ambil data untuk dasbor
         $users = [];
         $pendingReports = []; // [PERBAIKAN 4]: Inisialisasi variabel
-        
+
         try {
             // Ambil data user
             $users = $this->userModel->getAllUsers();
-            
+
             // [PERBAIKAN 5]: Ambil data laporan yang pending
             $pendingReports = $this->reportModel->getPendingReports();
-
         } catch (Exception $e) {
             $_SESSION['error_message'] = 'Gagal memuat data admin: ' . $e->getMessage();
         }
@@ -55,14 +55,14 @@ class AdminController
         //    Variabel $users dan $pendingReports otomatis tersedia di view
         require 'views/admin/index.php';
     }
-    
+
     /**
      * Memproses penghapusan pengguna
      */
     public function delete()
     {
         // (Kode fungsi delete Anda sudah benar, biarkan saja)
-        
+
         // 1. Keamanan: Pastikan admin
         if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_name']) || $_SESSION['role_name'] != 'admin') {
             $_SESSION['error_message'] = 'Anda tidak memiliki hak akses.';
@@ -100,6 +100,64 @@ class AdminController
         }
 
         // 5. Kembali ke halaman admin
+        header('Location: ' . BASE_URL . '/admin');
+        exit;
+    }
+    /**
+     * [BARU] Kirim Ulang Email Verifikasi
+     */
+    public function resendVerification()
+    {
+        // 1. Cek Admin
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_name']) || $_SESSION['role_name'] != 'admin') {
+            header('Location: ' . BASE_URL . '/home');
+            exit;
+        }
+
+        // 2. Validasi ID
+        if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+            $_SESSION['error_message'] = 'ID pengguna tidak valid.';
+            header('Location: ' . BASE_URL . '/admin');
+            exit;
+        }
+
+        $user_id = (int)$_GET['id'];
+
+        try {
+            // 3. Ambil data user
+            $user = $this->userModel->getUserById($user_id);
+
+            if (!$user) {
+                throw new Exception("Pengguna tidak ditemukan.");
+            }
+
+            // Cek apakah statusnya memang pending_email
+            if ($user['STATUS'] !== 'pending_email') {
+                throw new Exception("Akun ini sudah aktif atau tidak butuh verifikasi email.");
+            }
+
+            // 4. Generate Token Baru
+            $newToken = bin2hex(random_bytes(32));
+
+            // 5. Update Token di DB
+            if ($this->userModel->updateVerificationToken($user_id, $newToken)) {
+
+                // 6. Kirim Email
+                $sent = MailHelper::sendVerificationEmail($user['EMAIL'], $user['NAMA'], $newToken);
+
+                if ($sent) {
+                    $_SESSION['success_message'] = "Email verifikasi berhasil dikirim ulang ke " . htmlspecialchars($user['EMAIL']);
+                } else {
+                    $_SESSION['error_message'] = "Gagal mengirim email (SMTP Error). Cek konfigurasi MailHelper.";
+                }
+            } else {
+                throw new Exception("Gagal mengupdate token database.");
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = $e->getMessage();
+        }
+
+        // Kembali ke dashboard admin
         header('Location: ' . BASE_URL . '/admin');
         exit;
     }

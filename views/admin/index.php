@@ -67,10 +67,23 @@
                     <?php echo htmlspecialchars($user['NIM'] ?? $user['NIP'] ?? 'N/A'); ?>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                    <a href="<?= BASE_URL ?>/admin/delete?id=<?php echo $user['USER_ID']; ?>"
-                      class="text-red-600 hover:text-red-900 ml-4"
-                      onclick="return confirm('Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan.');">
+                    <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
+
+                    <?php
+                    // Ambil status, handle huruf besar/kecil dari Oracle
+                    $status = isset($user['STATUS']) ? strtolower($user['STATUS']) : '';
+                    ?>
+
+                    <?php if ($status == 'pending_email'): ?>
+                      <a href="<?= BASE_URL ?>/admin/resend?id=<?= $user['USER_ID']; ?>"
+                        class="text-orange-500 hover:text-orange-700 mr-2 font-bold"
+                        title="Kirim Ulang Verifikasi">
+                        Resend
+                      </a>
+                    <?php endif; ?>
+                    <a href="<?= BASE_URL ?>/admin/delete?id=<?= $user['USER_ID']; ?>"
+                      class="text-red-600 hover:text-red-900 ml-2"
+                      onclick="return confirm('Hapus pengguna ini?');">
                       Hapus
                     </a>
                   </td>
@@ -85,60 +98,60 @@
         </table>
       </div>
       <div class="bg-white rounded-xl shadow-lg p-5 mt-8">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Laporan Masuk (Pending)</h2>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Laporan Masuk (Pending)</h2>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelapor</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konten Dilaporkan (Singkat)</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Lapor</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <?php if (isset($pendingReports) && !empty($pendingReports)): ?>
-              <?php foreach ($pendingReports as $report): ?>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <?php echo htmlspecialchars($report['REPORTER_NAME']); ?>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                      <?php echo htmlspecialchars($report['TARGET_TYPE']); ?>
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    <?php if ($report['TARGET_TYPE'] == 'post' && isset($report['POST_CONTENT'])): ?>
-                      <em>"<?php echo htmlspecialchars(substr($report['POST_CONTENT'], 0, 100)); ?>..."</em>
-                    <?php else: ?>
-                      (Data Komentar) ID: <?php echo $report['TARGET_ID']; ?>
-                    <?php endif; ?>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-500 max-w-sm whitespace-normal">
-                    <?php echo htmlspecialchars($report['REASON']); ?>
-                  </td>
-                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <?php echo htmlspecialchars($report['CREATED_AT']); ?>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="#" class="text-green-600 hover:text-green-900">Review</a>
-                    <a href="#" class="text-red-600 hover:text-red-900 ml-4">Dismiss</a>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php else: ?>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
               <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada laporan masuk yang pending.</td>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelapor</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konten Dilaporkan (Singkat)</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Lapor</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <?php if (isset($pendingReports) && !empty($pendingReports)): ?>
+                <?php foreach ($pendingReports as $report): ?>
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <?php echo htmlspecialchars($report['REPORTER_NAME']); ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        <?php echo htmlspecialchars($report['TARGET_TYPE']); ?>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      <?php if ($report['TARGET_TYPE'] == 'post' && isset($report['POST_CONTENT'])): ?>
+                        <em>"<?php echo htmlspecialchars(substr($report['POST_CONTENT'], 0, 100)); ?>..."</em>
+                      <?php else: ?>
+                        (Data Komentar) ID: <?php echo $report['TARGET_ID']; ?>
+                      <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500 max-w-sm whitespace-normal">
+                      <?php echo htmlspecialchars($report['REASON']); ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <?php echo htmlspecialchars($report['CREATED_AT']); ?>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <a href="#" class="text-green-600 hover:text-green-900">Review</a>
+                      <a href="#" class="text-red-600 hover:text-red-900 ml-4">Dismiss</a>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <tr>
+                  <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada laporan masuk yang pending.</td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
   </main>
 
   <?php // Script untuk alert, jika Anda mau

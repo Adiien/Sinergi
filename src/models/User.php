@@ -66,12 +66,13 @@ class User
     }
 
     /**
-     * [BARU] Verifikasi User & Tentukan Status Akhir
+     * [PERBAIKAN] Verifikasi Token & Update Status
+     * Mengganti :uid menjadi :id_user agar tidak error ORA-01745
      */
     public function verifyUserToken($token)
     {
         // 1. Cari user berdasarkan token
-        $query = "SELECT user_id, role_name, status FROM users WHERE verification_token = :token";
+        $query = "SELECT user_id, role_name FROM users WHERE verification_token = :token";
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':token', $token);
         oci_execute($stmt);
@@ -80,27 +81,52 @@ class User
         oci_free_statement($stmt);
 
         if ($user) {
-            // 2. Tentukan status baru berdasarkan Role
-            $newStatus = 'active'; // Default (Dosen/Mahasiswa)
-
-            if ($user['ROLE_NAME'] == 'alumni') {
-                $newStatus = 'pending_approval'; // Alumni harus nunggu admin
-            }
+            // 2. Tentukan status baru
+            $newStatus = ($user['ROLE_NAME'] == 'alumni') ? 'pending_approval' : 'active';
 
             // 3. Update status dan hapus token
-            $update = "UPDATE users SET status = :status, verification_token = NULL WHERE user_id = :uid";
+            // [PERBAIKAN DI SINI] Menggunakan :id_user bukan :uid
+            $update = "UPDATE users SET status = :status, verification_token = NULL WHERE user_id = :id_user";
+
             $stmtUp = oci_parse($this->conn, $update);
+
             oci_bind_by_name($stmtUp, ':status', $newStatus);
-            oci_bind_by_name($stmtUp, ':uid', $user['USER_ID']);
+            oci_bind_by_name($stmtUp, ':id_user', $user['USER_ID']); // Bind ke nama variabel baru
 
             $res = oci_execute($stmtUp, OCI_COMMIT_ON_SUCCESS);
             oci_free_statement($stmtUp);
 
-            // Kembalikan status baru agar Controller bisa kasih pesan yang sesuai
             return $res ? $newStatus : false;
         }
 
         return false; // Token tidak ditemukan
+    }
+
+    /**
+     * [BARU] Update Token Verifikasi (Untuk fitur Resend)
+     */
+    public function updateVerificationToken($user_id, $newToken)
+    {
+        // [PERBAIKAN] Ganti :uid menjadi :id_user
+        $query = "UPDATE users SET verification_token = :token WHERE user_id = :id_user";
+
+        $stmt = oci_parse($this->conn, $query);
+
+        oci_bind_by_name($stmt, ':token', $newToken);
+        oci_bind_by_name($stmt, ':id_user', $user_id); // Ganti binding juga
+
+        // Eksekusi (Mode Debugging bisa dihapus jika sudah berhasil)
+        $result = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+
+        if (!$result) {
+            $e = oci_error($stmt);
+            // Anda bisa mengembalikan error log jika perlu, atau throw exception
+            // die("Oracle Error: " . $e['message']); 
+            return false;
+        }
+
+        oci_free_statement($stmt);
+        return $result;
     }
 
     /**
@@ -145,8 +171,8 @@ class User
      */
     public function getAllUsers()
     {
-        // Ambil kolom yang relevan, urutkan berdasarkan nama
-        $query = 'SELECT user_id, nama, email, role_name, nim, nip, program_studi 
+        // [PERBAIKAN] Tambahkan kolom 'status' di sini agar tombol Resend bisa muncul
+        $query = 'SELECT user_id, nama, email, role_name, nim, nip, program_studi, status
                   FROM users 
                   ORDER BY nama ASC';
 
