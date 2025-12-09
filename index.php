@@ -27,6 +27,24 @@ switch ($route) {
         $controller->login();
         break;
 
+    case 'auth/forgot':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->forgotPassword();
+        break;
+
+    case 'auth/verify-code':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->verifyCode();
+        break;
+
+    case 'auth/reset-password':
+        require_once 'src/Controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resetPassword();
+        break;
+
     case 'auth/register':
         require_once 'src/Controllers/AuthController.php';
         $controller = new AuthController();

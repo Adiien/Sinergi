@@ -63,4 +63,49 @@ class MailHelper
             return false;
         }
     }
+    /**
+     * Kirim Email Reset Password (OTP)
+     */
+    public static function sendResetCode($toEmail, $toName, $code)
+    {
+        loadEnv(__DIR__ . '/.env');
+
+        $mail = new PHPMailer(true);
+
+        try {
+            // --- KONFIGURASI SERVER SMTP (Sama seperti sebelumnya) ---
+            $mail->isSMTP();
+            $mail->Host       = getenv('SMTP_HOST');
+            $mail->SMTPAuth   = true;
+            $mail->Username   = getenv('SMTP_USERNAME'); // Sesuaikan
+            $mail->Password   = getenv('SMTP_PASSWORD');    // Sesuaikan
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = getenv('SMTP_PORT');
+
+            // --- PENGIRIM & PENERIMA ---
+            $mail->setFrom(getenv('SMTP_FROM_EMAIL'), getenv('SMTP_FROM_NAME'));
+            $mail->addAddress($toEmail, $toName);
+
+            // --- KONTEN EMAIL ---
+            $mail->isHTML(true);
+            $mail->Subject = 'Reset Password Code - SINERGI';
+
+            $mail->Body    = "
+                <div style='font-family: Arial, sans-serif; padding: 20px; text-align: center; color: #333;'>
+                    <h2 style='color: #4F46E5;'>Permintaan Reset Password</h2>
+                    <p>Gunakan kode berikut untuk mereset password akun Anda:</p>
+                    <h1 style='font-size: 32px; letter-spacing: 5px; color: #333; margin: 20px 0;'>$code</h1>
+                    <p>Kode ini berlaku selama 15 menit. Jangan berikan kode ini kepada siapapun.</p>
+                </div>
+            ";
+
+            $mail->AltBody = "Kode reset password Anda adalah: $code";
+
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log("Mail Error: " . $mail->ErrorInfo);
+            return false;
+        }
+    }
 }

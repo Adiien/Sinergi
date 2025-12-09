@@ -187,4 +187,128 @@ class AuthController
         header('Location: ' . BASE_URL);
         exit;
     }
+    /**
+     * 1. FORM LUPA PASSWORD (MODAL)
+     */
+    public function forgotPassword()
+    {
+        // Jika akses GET biasa (bukan submit form), redirect ke home buka modal forgot
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['open_modal'] = 'forgot_password';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // --- PROSES POST ---
+        $email = $_POST['email'];
+
+        // Cek User
+        $user = $this->userModel->getUserByEmail($email);
+
+        if ($user) {
+            // Generate OTP
+            $code = rand(1000, 9999);
+
+            // Simpan Session OTP
+            $_SESSION['otp_code'] = $code;
+            $_SESSION['otp_email'] = $email;
+            $_SESSION['otp_expiry'] = time() + (15 * 60); // 15 Menit
+
+            // Kirim Email
+            MailHelper::sendResetCode($email, $user['NAMA'], $code);
+
+            // SUKSES: Buka modal verifikasi
+            $_SESSION['open_modal'] = 'verify_code';
+        } else {
+            // GAGAL: Tetap di modal forgot
+            $_SESSION['error_message'] = "Email tidak ditemukan.";
+            $_SESSION['open_modal'] = 'forgot_password';
+        }
+
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    /**
+     * 2. FORM VERIFIKASI KODE (MODAL)
+     */
+    public function verifyCode()
+    {
+        // Cek akses valid
+        if (!isset($_SESSION['otp_email'])) {
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $inputCode = implode('', $_POST['code']);
+
+            // Validasi Waktu
+            if (time() > $_SESSION['otp_expiry']) {
+                unset($_SESSION['otp_code']);
+                $_SESSION['error_message'] = "Kode kadaluarsa. Silakan ulang.";
+                $_SESSION['open_modal'] = 'forgot_password'; // Balik ke awal
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+
+            // Validasi Kode
+            if ($inputCode == $_SESSION['otp_code']) {
+                $_SESSION['otp_verified'] = true;
+                // SUKSES: Buka modal reset password
+                $_SESSION['open_modal'] = 'reset_password';
+            } else {
+                $_SESSION['error_message'] = "Kode salah.";
+                $_SESSION['open_modal'] = 'verify_code'; // Tetap di sini
+            }
+        } else {
+            // Jika akses GET, buka modal verify
+            $_SESSION['open_modal'] = 'verify_code';
+        }
+
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    /**
+     * 3. FORM GANTI PASSWORD (MODAL)
+     */
+    public function resetPassword()
+    {
+        if (!isset($_SESSION['otp_verified'])) {
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $pass1 = $_POST['new_password'];
+            $pass2 = $_POST['confirm_password'];
+
+            if ($pass1 === $pass2) {
+                $email = $_SESSION['otp_email'];
+
+                if ($this->userModel->updatePasswordByEmail($email, $pass1)) {
+                    // BERSIHKAN SESSION
+                    unset($_SESSION['otp_code']);
+                    unset($_SESSION['otp_email']);
+                    unset($_SESSION['otp_expiry']);
+                    unset($_SESSION['otp_verified']);
+
+                    $_SESSION['success_message'] = "Password berhasil diubah. Silakan login.";
+                    $_SESSION['open_modal'] = 'login'; // Buka modal login
+                } else {
+                    $_SESSION['error_message'] = "Gagal update database.";
+                    $_SESSION['open_modal'] = 'reset_password';
+                }
+            } else {
+                $_SESSION['error_message'] = "Password tidak cocok.";
+                $_SESSION['open_modal'] = 'reset_password';
+            }
+        } else {
+            $_SESSION['open_modal'] = 'reset_password';
+        }
+
+        header('Location: ' . BASE_URL);
+        exit;
+    }
 }

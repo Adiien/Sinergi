@@ -214,7 +214,7 @@
           </div>
 
           <div class="text-right">
-            <a href="#" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
+            <a href="<?= BASE_URL ?>/auth/forgot" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
           </div>
 
         </div>
@@ -230,32 +230,170 @@
       </p>
     </div>
   </section>
+
+  <section id="forgot-password-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50 backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative mx-4">
+      <button onclick="window.location.href='<?= BASE_URL ?>'" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-[#36344B]">Lupa Password?</h2>
+        <p class="text-sm text-gray-500 mt-2">Masukkan email Anda untuk menerima kode verifikasi.</p>
+      </div>
+
+      <form action="<?= BASE_URL ?>/auth/forgot" method="POST">
+        <div class="mb-6">
+          <input type="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e5e8f] focus:outline-none" placeholder="Email address" required>
+        </div>
+        <button type="submit" class="w-full bg-[#5e5e8f] text-white font-bold py-3 rounded-lg hover:bg-[#4a4a75] transition shadow-md">
+          Kirim Kode
+        </button>
+      </form>
+
+      <div class="text-center mt-6">
+        <a href="#" id="back-to-login-from-forgot" class="text-sm text-indigo-600 font-semibold hover:underline">Kembali ke Login</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="verify-code-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50 backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative mx-4">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-[#36344B]">Verifikasi</h2>
+        <p class="text-sm text-gray-500 mt-2">Masukkan 4 digit kode yang dikirim ke email Anda.</p>
+      </div>
+
+      <form action="<?= BASE_URL ?>/auth/verify-code" method="POST">
+        <div class="flex justify-center gap-4 mb-8">
+          <?php for ($i = 0; $i < 4; $i++): ?>
+            <input type="text" name="code[]" maxlength="1"
+              class="w-14 h-14 border border-gray-300 rounded-lg text-center text-2xl font-bold focus:ring-2 focus:ring-[#5e5e8f] focus:outline-none otp-input" required autocomplete="off">
+          <?php endfor; ?>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" onclick="location.href='<?= BASE_URL ?>'" class="flex-1 border border-gray-300 text-gray-600 font-bold py-3 rounded-lg hover:bg-gray-50 transition">Batal</button>
+          <button type="submit" class="flex-1 bg-[#5e5e8f] text-white font-bold py-3 rounded-lg hover:bg-[#4a4a75] transition shadow-md">Verifikasi</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="reset-password-section" class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden opacity-0 scale-95 fixed inset-0 z-50 bg-[#5e5e8f]/50 backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative mx-4">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-[#36344B]">Password Baru</h2>
+        <p class="text-sm text-gray-500 mt-2">Buat password baru untuk akun Anda.</p>
+      </div>
+
+      <form action="<?= BASE_URL ?>/auth/reset-password" method="POST">
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-700 mb-1">Password Baru</label>
+          <input type="password" name="new_password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e5e8f] focus:outline-none" placeholder="******" required>
+        </div>
+
+        <div class="mb-8">
+          <label class="block text-xs font-bold text-gray-700 mb-1">Konfirmasi Password</label>
+          <input type="password" name="confirm_password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e5e8f] focus:outline-none" placeholder="******" required>
+        </div>
+
+        <button type="submit" class="w-full bg-[#5e5e8f] text-white font-bold py-3 rounded-lg hover:bg-[#4a4a75] transition shadow-md">
+          Simpan Password
+        </button>
+      </form>
+    </div>
+  </section>
+
   <script src="<?= BASE_URL ?>/public/assets/js/register.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/transitions.js"></script>
 </body>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+    // Ambil Referensi Section
     const loginSection = document.getElementById("login-section");
     const registerSection = document.getElementById("register-section");
+    const forgotSection = document.getElementById("forgot-password-section");
+    const verifySection = document.getElementById("verify-code-section");
+    const resetSection = document.getElementById("reset-password-section");
 
-    // Fungsi helper dari transitions.js (pastikan fungsi showSection bisa diakses atau copy logikanya)
+    // Tombol Navigasi Manual
+    const btnShowForgot = document.querySelector('a[href="<?= BASE_URL ?>/auth/forgot"]');
+    const btnBackToLogin = document.getElementById('back-to-login-from-forgot');
+
+    // Fungsi Helper Buka Section
     function openSection(section) {
-      section.classList.remove("hidden");
-      setTimeout(() => {
-        section.classList.remove("opacity-0", "scale-95");
-      }, 20);
+      // Tutup semua dulu biar aman
+      [loginSection, registerSection, forgotSection, verifySection, resetSection].forEach(el => {
+        if (el) {
+          el.classList.add("hidden");
+          el.classList.add("opacity-0", "scale-95");
+        }
+      });
+
+      // Buka yang diminta
+      if (section) {
+        section.classList.remove("hidden");
+        setTimeout(() => {
+          section.classList.remove("opacity-0", "scale-95");
+        }, 20);
+      }
     }
 
+    // --- LOGIKA SESSION DARI PHP ---
     <?php if (isset($_SESSION['open_modal'])): ?>
-      <?php if ($_SESSION['open_modal'] == 'register'): ?>
-        openSection(registerSection);
-      <?php elseif ($_SESSION['open_modal'] == 'login'): ?>
+      <?php $modalType = $_SESSION['open_modal']; ?>
+
+      <?php if ($modalType == 'login'): ?>
         openSection(loginSection);
+      <?php elseif ($modalType == 'register'): ?>
+        openSection(registerSection);
+      <?php elseif ($modalType == 'forgot_password'): ?>
+        openSection(forgotSection);
+      <?php elseif ($modalType == 'verify_code'): ?>
+        openSection(verifySection);
+      <?php elseif ($modalType == 'reset_password'): ?>
+        openSection(resetSection);
       <?php endif; ?>
 
-      <?php unset($_SESSION['open_modal']); // Hapus session agar tidak terbuka terus 
-      ?>
+      <?php unset($_SESSION['open_modal']); ?>
     <?php endif; ?>
+
+    // --- EVENT LISTENER TOMBOL ---
+
+    // Klik "Forgot Password?" di form Login
+    if (btnShowForgot) {
+      btnShowForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSection(forgotSection);
+      });
+    }
+
+    // Klik "Kembali ke Login" di form Forgot
+    if (btnBackToLogin) {
+      btnBackToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSection(loginSection);
+      });
+    }
+
+    // Script Pindah Fokus OTP (Auto Next Input)
+    const otpInputs = document.querySelectorAll('.otp-input');
+    otpInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+          otpInputs[index - 1].focus();
+        }
+      });
+    });
+
   });
 </script>
 

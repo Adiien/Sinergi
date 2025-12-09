@@ -66,6 +66,32 @@ class PostController
                     }
                 }
 
+                // 2. [BARU] PROSES DOKUMEN (post_files)
+                if (isset($_FILES['post_files']) && !empty($_FILES['post_files']['name'][0])) {
+                    $files = $_FILES['post_files'];
+                    $count = count($files['name']);
+
+                    // Daftar ekstensi yang diizinkan (sesuai accept di HTML)
+                    $allowed_docs = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
+
+                    for ($i = 0; $i < $count; $i++) {
+                        if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                            $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+
+                            if (in_array($ext, $allowed_docs)) {
+                                // Format nama file: file_{uniqid}_{NamaAsli}
+                                // Ini penting agar di post_card.php nama aslinya bisa diambil kembali
+                                $cleanFileName = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($files['name'][$i]));
+                                $newName = uniqid('file_') . '_' . $cleanFileName;
+
+                                if (move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newName)) {
+                                    $uploaded_files[] = $newName;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Validasi input kosong
                 if (empty($content) && empty($uploaded_files)) {
                     throw new Exception('Postingan tidak boleh kosong.');

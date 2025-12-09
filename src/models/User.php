@@ -601,4 +601,26 @@ class User
 
         return $result;
     }
+    // 1. Cek Email (Hanya untuk memastikan user terdaftar)
+    public function getUserByEmail($email)
+    {
+        $query = "SELECT nama FROM users WHERE email = :email";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':email', $email);
+        oci_execute($stmt);
+        return oci_fetch_array($stmt, OCI_ASSOC);
+    }
+
+    // 2. Update Password Baru (Tanpa cek token di DB)
+    public function updatePasswordByEmail($email, $newPassword)
+    {
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        $query = "UPDATE users SET pass_user = :pass WHERE email = :email";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':pass', $hashed);
+        oci_bind_by_name($stmt, ':email', $email);
+
+        return oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+    }
 }
