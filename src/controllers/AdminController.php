@@ -2,8 +2,8 @@
 // Pastikan kita memiliki akses ke model User, Post, dan ReportModel
 require_once 'src/models/User.php';
 require_once 'src/models/Post.php';
-// [PERBAIKAN 1]: Pastikan nama file ini benar (saya asumsikan 'ReportModel.php' sesuai instruksi sebelumnya)
 require_once 'src/models/Report.php';
+require_once 'src/models/Forum.php';
 
 require_once __DIR__ . '/../helpers/MailHelper.php';
 class AdminController
@@ -29,30 +29,62 @@ class AdminController
      */
     public function index()
     {
-        // 1. Pengecekan Keamanan (Sangat Penting)
+        // 1. Cek Login
         if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_name']) || $_SESSION['role_name'] != 'admin') {
-            // ... (kode keamanan Anda sudah benar)
-            $_SESSION['error_message'] = 'Anda tidak memiliki hak akses.';
             header('Location: ' . BASE_URL . '/home');
             exit;
         }
 
-        // 2. Jika lolos, ambil data untuk dasbor
+        $db = $this->conn;
+        
+        // 2. Siapkan Variabel Default
         $users = [];
-        $pendingReports = []; // [PERBAIKAN 4]: Inisialisasi variabel
+        $pendingReports = [];
+        $stats = [ // Default stats 0
+            'total_users'  => 0,
+            'active_users' => 0,
+            'total_forums' => 0,
+            'total_posts'  => 0,
+        ];
+
+        // 3. Ambil Parameter Tab
+        $tab = $_GET['tab'] ?? 'users';
 
         try {
-            // Ambil data user
-            $users = $this->userModel->getAllUsers();
+            // Init Model yang diperlukan
+            // (Pastikan semua model ini sudah di-include atau ada di __construct)
+            $userModel  = new User($db);
+            $reportModel = new ReportModel($db); // Sesuaikan nama class model report Anda
+            $forumModel = new ForumModel($db);
+            $postModel  = new Post($db);
 
-            // [PERBAIKAN 5]: Ambil data laporan yang pending
-            $pendingReports = $this->reportModel->getPendingReports();
+            // 4. Logika Pengambilan Data Berdasarkan Tab
+            if ($tab === 'users') {
+                $users = $userModel->getAllUsers();
+            } 
+            elseif ($tab === 'reports') {
+                $pendingReports = $reportModel->getPendingReports();
+            }
+            // KUNCI PERBAIKANNYA DI SINI:
+            // Jika tab adalah 'stats', atau untuk jaga-jaga kita ambil juga di semua tab (opsional)
+            elseif  ($tab === 'stats') {
+                 $stats = [
+                    'total_users'  => $userModel->countAll(),
+                    'active_users' => $userModel->countActive(),
+                    'total_forums' => $forumModel->countAll(),
+                    'total_posts'  => $postModel->countAll(),
+                ];
+            }
+
+            // Opsional: Jika Anda ingin widget angka SELALU muncul,
+            // pindahkan logika $stats keluar dari blok if/else.
+
         } catch (Exception $e) {
-            $_SESSION['error_message'] = 'Gagal memuat data admin: ' . $e->getMessage();
+            $_SESSION['error_message'] = 'Gagal memuat data: ' . $e->getMessage();
         }
 
-        // 3. Muat view admin dan kirimkan datanya
-        //    Variabel $users dan $pendingReports otomatis tersedia di view
+        // 5. Load View Utama
+        // Variabel $stats yang sudah diisi di atas akan terbawa ke sini
         require 'views/admin/index.php';
     }
 
@@ -237,25 +269,88 @@ class AdminController
 
 public function statistik()
 {
-    AuthGuard::protect();
+    // proteksi admin
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        header('Location: ' . BASE_URL . '/home');
+        exit;
+    }
 
     $db = koneksi_oracle();
 
+    require_once 'src/models/User.php';
+    require_once 'src/models/Post.php';
+    require_once 'src/models/ForumModel.php';
+
     $userModel  = new User($db);
-    $forumModel = new Forum($db);
+    $forumModel = new ForumModel($db);
     $postModel  = new Post($db);
 
     $stats = [
-        'total_users'  => $userModel->countAll(),
-        'active_users' => $userModel->countActive(),
-        'total_forums' => $forumModel->countAll(),
-        'total_posts'  => $postModel->countAll(),
+        'total_users'  => (int) $userModel->countAll(),
+        'active_users' => (int) $userModel->countActive(),
+        'total_forums' => (int) $forumModel->countAll(),
+        'total_posts'  => (int) $postModel->countAll(),
     ];
 
-    require_once 'views/admin/stats.php';
+    require 'views/admin/stats.php';
 }
 
+    public function review()
+    {
+        // 1. Cek Admin
+        if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+            header('Location: ' . BASE_URL . '/home');
+            exit;
+        }
 
+        $report_id = $_GET['id'] ?? 0;
+        if (!$report_id) {
+            header('Location: ' . BASE_URL . '/admin?tab=reports');
+            exit;
+        }
 
+        // 2. Ambil Data Laporan
+        $report = $this->reportModel->getReportById($report_id);
+
+        if (!$report) {
+            $_SESSION['error_message'] = "Laporan tidak ditemukan.";
+            header('Location: ' . BASE_URL . '/admin?tab=reports');
+            exit;
+        }
+
+        // 3. Handle Aksi Tombol (POST)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $action = $_POST['action'] ?? '';
+
+            try {
+                if ($action === 'dismiss') {
+                    // OPSI 1: Abaikan Laporan (Status -> dismissed)
+                    $this->reportModel->updateStatus($report_id, 'dismissed');
+                    $_SESSION['success_message'] = "Laporan diabaikan.";
+                
+                } elseif ($action === 'delete_content') {
+                    // OPSI 2: Hapus Konten (Post -> deleted, Laporan -> resolved)
+                    if ($report['TARGET_TYPE'] === 'post') {
+                        // Hapus postingan menggunakan PostModel yang sudah ada
+                        $this->postModel->deletePost($report['TARGET_ID']); 
+                    }
+                    
+                    // Update status laporan jadi 'resolved'
+                    $this->reportModel->updateStatus($report_id, 'resolved');
+                    $_SESSION['success_message'] = "Konten berhasil dihapus dan laporan diselesaikan.";
+                }
+
+                // Redirect kembali ke daftar laporan
+                header('Location: ' . BASE_URL . '/admin?tab=reports');
+                exit;
+
+            } catch (Exception $e) {
+                $error = "Terjadi kesalahan: " . $e->getMessage();
+            }
+        }
+
+        // 4. Tampilkan View
+        require 'views/admin/review.php';
+    }
 
 }

@@ -89,7 +89,14 @@ switch ($route) {
 
     case 'admin/statistik':
         require_once 'src/Controllers/AdminController.php';
-        (new AdminController())->statistik();
+        $controller = new AdminController();
+        $controller->statistik();
+        break;
+    
+    case 'admin/review':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->review();
         break;
 
     case 'home':
