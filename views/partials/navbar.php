@@ -15,7 +15,7 @@
   // Tidak Aktif: Transparan, tapi hover ada efek sedikit
   $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
   ?>
- <nav id="main-nav" class="bg-[#36364c] p-4 shadow-lg fixed top-0 w-full z-40">
+ <nav id="main-nav" class="bg-[#36364c] h-20 shadow-lg fixed top-0 w-full z-40">
    <div
      class="container mx-auto px-6 py-3 flex justify-between items-center">
      <a href="<?= BASE_URL ?>/home" class="flex items-center space-x-1">

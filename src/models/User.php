@@ -623,4 +623,21 @@ class User
 
         return oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
     }
+
+    public function countAll()
+    {
+        $q = "SELECT COUNT(*) AS TOTAL FROM users";
+        $s = oci_parse($this->conn, $q);
+        oci_execute($s);
+        return oci_fetch_assoc($s)['TOTAL'];
+    }
+
+    public function countActive()
+    {
+        $q = "SELECT COUNT(*) AS TOTAL FROM users WHERE status = 'active'";
+        $s = oci_parse($this->conn, $q);
+        oci_execute($s);
+        return oci_fetch_assoc($s)['TOTAL'];
+    }
+
 }

@@ -1,5 +1,6 @@
 <?php
 require_once 'src/models/User.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class SettingsController
 {

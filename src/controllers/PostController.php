@@ -1,6 +1,7 @@
 <?php
 require_once 'src/models/Post.php';
 require_once 'src/models/Notification.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class PostController
 {

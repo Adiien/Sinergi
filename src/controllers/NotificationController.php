@@ -1,5 +1,6 @@
 <?php
 require_once 'src/models/Notification.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class NotificationController
 {

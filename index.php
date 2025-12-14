@@ -74,6 +74,23 @@ switch ($route) {
         $controller = new AdminController();
         $controller->resendVerification();
         break;
+    
+    case 'admin/update-role':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->updateRole();
+        break;
+
+    case 'admin/toggle-status':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->toggleStatus();
+        break;
+
+    case 'admin/statistik':
+        require_once 'src/Controllers/AdminController.php';
+        (new AdminController())->statistik();
+        break;
 
     case 'home':
         require_once 'src/Controllers/HomeController.php';
@@ -146,11 +163,29 @@ switch ($route) {
         $controller = new UserController();
         $controller->follow();
         break;
-
+    
     case 'messages':
         require_once 'src/Controllers/MessageController.php';
         $controller = new MessageController();
         $controller->index();
+        break;
+
+    case 'messages/show':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->show();
+        break;
+
+    case 'messages/send':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->send();
+        break;
+    
+    case 'api/messages/fetch':
+        require_once 'src/Controllers/MessageController.php';
+        $controller = new MessageController();
+        $controller->fetch();
         break;
 
     case 'forum':

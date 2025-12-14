@@ -121,60 +121,64 @@ class AuthController
      */
     // ...
     public function login()
-    {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-
-            if (
-                !isset($_POST['captcha']) ||
-                !isset($_SESSION['captcha_string']) ||
-                trim($_POST['captcha']) !== $_SESSION['captcha_string']
-            ) {
-
-
-                $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal. Silakan coba lagi.';
-                $_SESSION['open_modal'] = 'login';
-
-                // Kosongkan CAPTCHA lama
-                if (isset($_SESSION['captcha_string'])) {
-                    unset($_SESSION['captcha_string']);
-                }
-
-                header('Location: ' . BASE_URL);
-                exit;
-            }
-
-            unset($_SESSION['captcha_string']);
-
-            try {
-                $identifier = $_POST['identifier'];
-                $password = $_POST['password'];
-
-                $user = $this->userModel->loginUser($identifier, $password);
-
-                if ($user) {
-
-                    $_SESSION['user_id'] = $user['USER_ID'];
-                    $_SESSION['nama'] = $user['NAMA'];
-                    $_SESSION['email'] = $user['EMAIL'];
-                    $_SESSION['role_name'] = $user['ROLE_NAME'];
-
-
-                    header('Location: ' . BASE_URL . '/home');
-                    exit;
-                } else {
-                    $_SESSION['error_message'] = 'Login Gagal. Periksa kembali email/NIM/NIP dan password Anda.';
-                    $_SESSION['open_modal'] = 'login';
-                    header('Location: ' . BASE_URL);
-                    exit;
-                }
-            } catch (Exception $e) {
-                $_SESSION['error_message'] = $e->getMessage();
-                header('Location: ' . BASE_URL);
-                exit;
-            }
-        }
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . BASE_URL);
+        exit;
     }
+
+    // CAPTCHA CHECK
+    if (
+        !isset($_POST['captcha']) ||
+        !isset($_SESSION['captcha_string']) ||
+        trim($_POST['captcha']) !== $_SESSION['captcha_string']
+    ) {
+        $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal.';
+        $_SESSION['open_modal'] = 'login';
+        unset($_SESSION['captcha_string']);
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    unset($_SESSION['captcha_string']);
+
+    try {
+        $identifier = $_POST['identifier'] ?? '';
+        $password   = $_POST['password'] ?? '';
+
+        // 1️⃣ AMBIL USER
+        $user = $this->userModel->loginUser($identifier, $password);
+
+        if (!$user) {
+            $_SESSION['error_message'] = 'Login gagal. Periksa kredensial.';
+            $_SESSION['open_modal'] = 'login';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // 2️⃣ CEK STATUS USER (INI YANG KEMARIN SALAH TEMPAT)
+        if (isset($user['STATUS']) && strtolower($user['STATUS']) === 'suspended') {
+            $_SESSION['error_message'] = 'Akun Anda telah disuspend oleh admin.';
+            $_SESSION['open_modal'] = 'login';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // 3️⃣ SET SESSION (BARU BOLEH)
+        $_SESSION['user_id']   = $user['USER_ID'];
+        $_SESSION['nama']      = $user['NAMA'];
+        $_SESSION['email']     = $user['EMAIL'];
+        $_SESSION['role_name'] = $user['ROLE_NAME'];
+
+        header('Location: ' . BASE_URL . '/home');
+        exit;
+
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = 'Terjadi kesalahan sistem.';
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+}
     // ...
 
     /**

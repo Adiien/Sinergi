@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/Message.php';
 require_once __DIR__ . '/../models/User.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class MessageController
 {

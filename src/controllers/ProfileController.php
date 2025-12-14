@@ -1,6 +1,7 @@
 <?php
 require_once 'src/models/User.php';
 require_once 'src/models/Post.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class ProfileController
 {

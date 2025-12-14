@@ -2,6 +2,7 @@
 require_once 'src/models/Forum.php';
 // Pastikan model Post juga di-load jika belum ada di autoloader
 require_once 'src/models/Post.php';
+require_once 'src/helpers/AuthGuard.php';
 
 class ForumController
 {

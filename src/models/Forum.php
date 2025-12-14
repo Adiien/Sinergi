@@ -301,4 +301,13 @@ class ForumModel
         oci_free_statement($stmt);
         return true;
     }
+
+    public function countAll()
+    {
+        $q = "SELECT COUNT(*) AS TOTAL FROM forums";
+        $s = oci_parse($this->conn, $q);
+        oci_execute($s);
+        return oci_fetch_assoc($s)['TOTAL'];
+    }
+
 }

@@ -161,4 +161,101 @@ class AdminController
         header('Location: ' . BASE_URL . '/admin');
         exit;
     }
+
+    public function updateRole()
+{
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+
+    $userId = (int)($_POST['user_id'] ?? 0);
+    $role   = $_POST['role'] ?? '';
+
+    $allowed = ['admin', 'mahasiswa', 'dosen', 'alumni'];
+    if ($userId <= 0 || !in_array($role, $allowed)) {
+        $_SESSION['error_message'] = 'Data tidak valid';
+        header("Location: " . BASE_URL . "/admin");
+        exit;
+    }
+
+    // Cegah admin mengubah role dirinya sendiri
+    if ($userId == $_SESSION['user_id']) {
+        $_SESSION['error_message'] = 'Tidak boleh mengubah role sendiri';
+        header("Location: " . BASE_URL . "/admin");
+        exit;
+    }
+
+    $db = koneksi_oracle();
+    $sql = "UPDATE users SET role_name = :role WHERE user_id = :id";
+    $stmt = oci_parse($db, $sql);
+
+    oci_bind_by_name($stmt, ":role", $role);
+    oci_bind_by_name($stmt, ":id", $userId);
+    oci_execute($stmt);
+
+    $_SESSION['success_message'] = 'Role user berhasil diubah';
+    header("Location: " . BASE_URL . "/admin");
+    exit;
+}
+
+    public function toggleStatus()
+{
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+
+    $userId = (int)($_GET['id'] ?? 0);
+    $status = $_GET['status'] ?? '';
+
+    if ($userId <= 0 || !in_array($status, ['active', 'suspended'])) {
+        $_SESSION['error_message'] = 'Status tidak valid';
+        header("Location: " . BASE_URL . "/admin");
+        exit;
+    }
+
+    // Cegah admin suspend dirinya sendiri
+    if ($userId == $_SESSION['user_id']) {
+        $_SESSION['error_message'] = 'Tidak boleh suspend akun sendiri';
+        header("Location: " . BASE_URL . "/admin");
+        exit;
+    }
+
+    $db = koneksi_oracle();
+    $sql = "UPDATE users SET status = :status WHERE user_id = :id";
+    $stmt = oci_parse($db, $sql);
+
+    oci_bind_by_name($stmt, ":status", $status);
+    oci_bind_by_name($stmt, ":id", $userId);
+    oci_execute($stmt);
+
+    $_SESSION['success_message'] = "Status user diubah menjadi {$status}";
+    header("Location: " . BASE_URL . "/admin");
+    exit;
+}
+
+public function statistik()
+{
+    AuthGuard::protect();
+
+    $db = koneksi_oracle();
+
+    $userModel  = new User($db);
+    $forumModel = new Forum($db);
+    $postModel  = new Post($db);
+
+    $stats = [
+        'total_users'  => $userModel->countAll(),
+        'active_users' => $userModel->countActive(),
+        'total_forums' => $forumModel->countAll(),
+        'total_posts'  => $postModel->countAll(),
+    ];
+
+    require_once 'views/admin/stats.php';
+}
+
+
+
+
 }

@@ -2,6 +2,8 @@
 // Impor model baru Anda
 require_once 'src/models/Post.php';
 require_once 'src/models/User.php'; // (Jika diperlukan untuk data user lain)
+require_once 'src/helpers/AuthGuard.php';
+
 
 /**
  * Fungsi Helper untuk mengubah array komentar datar menjadi tree (bersarang)

@@ -366,45 +366,89 @@ class Post
      */
     public function getFeedPosts($current_user_id)
     {
-        $query = 'SELECT 
-                p.post_id, 
-                p.content,
-                p.visibility,
-                p.is_comment_disabled, 
-                p.is_poll,
-                p.forum_id,  -- [BARU] Ambil ID Forum
-                f.name AS forum_name, -- [BARU] Ambil Nama Forum
-                TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
-                u.user_id, 
-                u.nama, 
-                u.role_name,
-                
-                (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
-                 FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
+            $query = "
+SELECT 
+    p.post_id,
+    p.content,
+    p.visibility,
+    p.is_comment_disabled,
+    p.is_poll,
+    p.forum_id,
+    f.name AS forum_name,
+    TO_CHAR(p.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS CREATED_AT_FMT,
+    u.user_id,
+    u.nama,
+    u.role_name,
 
-                (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
-                (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :current_user_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
-                (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
-              FROM 
-                posts p
-              JOIN 
-                users u ON p.user_id = u.user_id
-              LEFT JOIN  -- [BARU] Join ke tabel forums
-                forums f ON p.forum_id = f.forum_id
-              WHERE 
-                p.visibility = \'public\'
-                OR p.user_id = :current_user_id
-                OR (
-                    p.visibility = \'private\' 
-                    AND EXISTS (
-                        SELECT 1 FROM follows f 
-                        WHERE f.follower_id = :current_user_id 
-                        AND f.following_id = p.user_id
-                    )
-                )
-              ORDER BY 
-                p.created_at DESC';
+    (SELECT LISTAGG(pi.image_path, ',')
+            WITHIN GROUP (ORDER BY pi.image_id)
+     FROM post_images pi
+     WHERE pi.post_id = p.post_id
+    ) AS IMAGE_PATHS,
+
+    (SELECT COUNT(*) FROM post_likes pl 
+        WHERE pl.post_id = p.post_id
+    ) AS like_count,
+
+    (SELECT COUNT(*) FROM comments c 
+        WHERE c.post_id = p.post_id
+    ) AS comment_count,
+
+    (SELECT COUNT(*) 
+        FROM follows fo 
+        WHERE fo.follower_id = :current_user_id 
+          AND fo.following_id = p.user_id
+    ) AS IS_FOLLOWING,
+
+    (SELECT COUNT(*) 
+        FROM post_likes pl2 
+        WHERE pl2.post_id = p.post_id 
+          AND pl2.user_id = :current_user_id
+    ) AS IS_LIKED
+
+FROM posts p
+JOIN users u ON p.user_id = u.user_id
+LEFT JOIN forums f ON p.forum_id = f.forum_id
+
+WHERE
+(
+    -- ATURAN FORUM
+    p.forum_id IS NULL
+
+    OR f.visibility = 'public'
+
+    OR (
+        f.visibility = 'private'
+        AND EXISTS (
+            SELECT 1
+            FROM forum_members fm
+            WHERE fm.forum_id = f.forum_id
+              AND fm.user_id = :current_user_id
+        )
+    )
+)
+AND
+(
+    -- ATURAN POST
+    p.visibility = 'public'
+
+    OR p.user_id = :current_user_id
+
+    OR (
+        p.visibility = 'private'
+        AND EXISTS (
+            SELECT 1
+            FROM follows fo
+            WHERE fo.follower_id = :current_user_id
+              AND fo.following_id = p.user_id
+        )
+    )
+)
+
+ORDER BY p.created_at DESC
+";
+
+
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ":current_user_id", $current_user_id);
@@ -842,4 +886,13 @@ class Post
         oci_free_statement($stmt);
         return $result;
     }
+
+    public function countAll()
+    {
+        $q = "SELECT COUNT(*) AS TOTAL FROM posts";
+        $s = oci_parse($this->conn, $q);
+        oci_execute($s);
+        return oci_fetch_assoc($s)['TOTAL'];
+    }
+
 }
