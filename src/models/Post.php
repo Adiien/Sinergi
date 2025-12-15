@@ -11,76 +11,71 @@ class Post
     /**
      * Membuat postingan baru (Support Gambar, Visibility & Disable Comment)
      */
-    public function createPost($user_id, $content, $images = [], $visibility = 'public', $forum_id = null, $is_comment_disabled = 0, $poll_options = [])
+    // GANTI TOTAL FUNGSI createPost DENGAN INI
+    public function createPost($user_id, $content, $images = [], $visibility = 'public', $forum_id = null, $is_comment_disabled = 0, $poll_options = [], $shared_forum_id = null)
     {
-        // Tentukan apakah ini postingan poll
         $is_poll = !empty($poll_options) ? 1 : 0;
 
-        // Query insert data post termasuk kolom is_comment_disabled
-        $query = 'INSERT INTO posts (post_id, user_id, content, visibility, forum_id, is_comment_disabled, is_poll, created_at)
-              VALUES (posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :visibility, :forum_id, :is_comment_disabled, :is_poll, SYSTIMESTAMP)
-              RETURNING post_id, content INTO :post_id, :content_clob';
+        // PERHATIKAN: Query ini harus memuat :shared_forum_id dan KOLOM shared_forum_id
+        $query = 'INSERT INTO posts (
+                    post_id, user_id, content, visibility, forum_id, 
+                    is_comment_disabled, is_poll, shared_forum_id, created_at
+                  )
+                  VALUES (
+                    posts_seq.NEXTVAL, :user_id, EMPTY_CLOB(), :visibility, :forum_id, 
+                    :is_comment_disabled, :is_poll, :shared_forum_id, SYSTIMESTAMP
+                  )
+                  RETURNING post_id, content INTO :post_id, :content_clob';
 
         $stmt = oci_parse($this->conn, $query);
         $clob = oci_new_descriptor($this->conn, OCI_D_LOB);
-
         $new_post_id = 0;
 
-        // Binding parameter
+        // BINDING VARIABLE (Harus sesuai dengan Query di atas)
         oci_bind_by_name($stmt, ':user_id', $user_id);
         oci_bind_by_name($stmt, ':visibility', $visibility);
         oci_bind_by_name($stmt, ':forum_id', $forum_id);
         oci_bind_by_name($stmt, ':is_comment_disabled', $is_comment_disabled);
         oci_bind_by_name($stmt, ':is_poll', $is_poll);
+
+        // Pastikan baris ini ada:
+        oci_bind_by_name($stmt, ':shared_forum_id', $shared_forum_id);
+
         oci_bind_by_name($stmt, ':post_id', $new_post_id, -1, SQLT_INT);
         oci_bind_by_name($stmt, ':content_clob', $clob, -1, OCI_B_CLOB);
 
-        // Eksekusi tanpa auto commit (untuk handle gambar nanti)
-        $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+        if (oci_execute($stmt, OCI_NO_AUTO_COMMIT)) {
+            $clob->save($content);
 
-        if (!$result) {
+            // Handle Gambar
+            if (!empty($images)) {
+                foreach ($images as $img) {
+                    $imgQuery = "INSERT INTO post_images (image_id, post_id, image_path) VALUES (post_images_seq.NEXTVAL, :post_id, :image_path)";
+                    $imgStmt = oci_parse($this->conn, $imgQuery);
+                    oci_bind_by_name($imgStmt, ':post_id', $new_post_id);
+                    oci_bind_by_name($imgStmt, ':image_path', $img);
+                    oci_execute($imgStmt, OCI_NO_AUTO_COMMIT);
+                }
+            }
+
+            // Handle Polling
+            if ($is_poll && !empty($poll_options)) {
+                foreach ($poll_options as $option_text) {
+                    $pollQuery = "INSERT INTO poll_options (option_id, post_id, option_text) VALUES (poll_options_seq.NEXTVAL, :post_id, :option_text)";
+                    $pollStmt = oci_parse($this->conn, $pollQuery);
+                    oci_bind_by_name($pollStmt, ':post_id', $new_post_id);
+                    oci_bind_by_name($pollStmt, ':option_text', $option_text);
+                    oci_execute($pollStmt, OCI_NO_AUTO_COMMIT);
+                }
+            }
+
+            oci_commit($this->conn);
+            return $new_post_id;
+        } else {
             $e = oci_error($stmt);
-            throw new Exception($e['message']);
+            error_log("Database Error: " . $e['message']); // Log error untuk debugging
+            return false;
         }
-
-        $clob->save($content);
-
-        // Proses Simpan Gambar (Jika ada)
-        if (!empty($images) && $new_post_id > 0) {
-            $queryImg = "INSERT INTO post_images (image_id, post_id, image_path) 
-                     VALUES (post_images_seq.NEXTVAL, :p_id, :p_img)";
-            $stmtImg = oci_parse($this->conn, $queryImg);
-
-            foreach ($images as $imgName) {
-                oci_bind_by_name($stmtImg, ':p_id', $new_post_id);
-                oci_bind_by_name($stmtImg, ':p_img', $imgName);
-                if (!oci_execute($stmtImg, OCI_NO_AUTO_COMMIT)) {
-                    oci_rollback($this->conn);
-                    throw new Exception("Gagal menyimpan gambar.");
-                }
-            }
-            oci_free_statement($stmtImg);
-        }
-        // [BARU] Logika Simpan Poll Options
-        if ($is_poll && $new_post_id > 0) {
-            $queryPoll = "INSERT INTO poll_options (option_id, post_id, option_text) VALUES (poll_options_seq.NEXTVAL, :p_id, :p_text)";
-            $stmtPoll = oci_parse($this->conn, $queryPoll);
-
-            foreach ($poll_options as $optText) {
-                if (trim($optText) !== '') {
-                    oci_bind_by_name($stmtPoll, ':p_id', $new_post_id);
-                    oci_bind_by_name($stmtPoll, ':p_text', $optText);
-                    oci_execute($stmtPoll, OCI_NO_AUTO_COMMIT);
-                }
-            }
-            oci_free_statement($stmtPoll);
-        }
-
-        // Commit semua perubahan jika sukses
-        oci_commit($this->conn);
-        oci_free_statement($stmt);
-
-        return true;
     }
     /**
      * [BARU] Menghitung total postingan milik seorang user
@@ -366,89 +361,59 @@ class Post
      */
     public function getFeedPosts($current_user_id)
     {
-            $query = "
-SELECT 
-    p.post_id,
-    p.content,
-    p.visibility,
-    p.is_comment_disabled,
-    p.is_poll,
-    p.forum_id,
-    f.name AS forum_name,
-    TO_CHAR(p.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS CREATED_AT_FMT,
-    u.user_id,
-    u.nama,
-    u.role_name,
+        $query = "
+        SELECT 
+            p.post_id,
+            p.content,
+            p.visibility,
+            p.is_comment_disabled,
+            p.is_poll,
+            p.forum_id,
+            TO_CHAR(p.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS CREATED_AT_FMT,
+            
+            -- Info User
+            u.user_id,
+            u.nama,
+            u.role_name,
 
-    (SELECT LISTAGG(pi.image_path, ',')
-            WITHIN GROUP (ORDER BY pi.image_id)
-     FROM post_images pi
-     WHERE pi.post_id = p.post_id
-    ) AS IMAGE_PATHS,
+            -- Info Forum Asal
+            f.name AS forum_name,
 
-    (SELECT COUNT(*) FROM post_likes pl 
-        WHERE pl.post_id = p.post_id
-    ) AS like_count,
+            -- [KHUSUS SHARE FORUM]
+            p.shared_forum_id,
+            sf.name AS shared_forum_name,
+            sf.description AS shared_forum_desc,
+            sf.cover_image AS shared_forum_cover,
+            sf.visibility AS shared_forum_visibility,
+            
+            -- [PERBAIKAN] Hitung Member Menggunakan Subquery (Bukan kolom sf.member_count)
+            (SELECT COUNT(*) FROM forum_members fm2 WHERE fm2.forum_id = sf.forum_id) AS shared_forum_members,
 
-    (SELECT COUNT(*) FROM comments c 
-        WHERE c.post_id = p.post_id
-    ) AS comment_count,
+            -- Agregat Lainnya
+            (SELECT LISTAGG(pi.image_path, ',') WITHIN GROUP (ORDER BY pi.image_id) FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
+            (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+            (SELECT COUNT(*) FROM follows fo WHERE fo.follower_id = :current_user_id AND fo.following_id = p.user_id) AS IS_FOLLOWING,
+            (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
 
-    (SELECT COUNT(*) 
-        FROM follows fo 
-        WHERE fo.follower_id = :current_user_id 
-          AND fo.following_id = p.user_id
-    ) AS IS_FOLLOWING,
+        FROM posts p
+        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN forums f ON p.forum_id = f.forum_id
+        
+        -- Join ke Forum yang Dishare
+        LEFT JOIN forums sf ON p.shared_forum_id = sf.forum_id
 
-    (SELECT COUNT(*) 
-        FROM post_likes pl2 
-        WHERE pl2.post_id = p.post_id 
-          AND pl2.user_id = :current_user_id
-    ) AS IS_LIKED
-
-FROM posts p
-JOIN users u ON p.user_id = u.user_id
-LEFT JOIN forums f ON p.forum_id = f.forum_id
-
-WHERE
-(
-    -- ATURAN FORUM
-    p.forum_id IS NULL
-
-    OR f.visibility = 'public'
-
-    OR (
-        f.visibility = 'private'
-        AND EXISTS (
-            SELECT 1
-            FROM forum_members fm
-            WHERE fm.forum_id = f.forum_id
-              AND fm.user_id = :current_user_id
+        WHERE
+        (
+            p.forum_id IS NULL OR f.visibility = 'public'
+            OR (f.visibility = 'private' AND EXISTS (SELECT 1 FROM forum_members fm WHERE fm.forum_id = f.forum_id AND fm.user_id = :current_user_id))
         )
-    )
-)
-AND
-(
-    -- ATURAN POST
-    p.visibility = 'public'
-
-    OR p.user_id = :current_user_id
-
-    OR (
-        p.visibility = 'private'
-        AND EXISTS (
-            SELECT 1
-            FROM follows fo
-            WHERE fo.follower_id = :current_user_id
-              AND fo.following_id = p.user_id
+        AND
+        (
+            p.visibility = 'public' OR p.user_id = :current_user_id
+            OR (p.visibility = 'private' AND EXISTS (SELECT 1 FROM follows fo WHERE fo.follower_id = :current_user_id AND fo.following_id = p.user_id))
         )
-    )
-)
-
-ORDER BY p.created_at DESC
-";
-
-
+        ORDER BY p.created_at DESC";
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ":current_user_id", $current_user_id);
@@ -894,5 +859,4 @@ ORDER BY p.created_at DESC
         oci_execute($s);
         return oci_fetch_assoc($s)['TOTAL'];
     }
-
 }

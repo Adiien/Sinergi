@@ -344,4 +344,114 @@ class ForumController
 
         require 'views/forum/explore.php';
     }
+    public function invite()
+    {
+        // 1. Cek Login
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        // 2. Ambil Data
+        $forumId = $_POST['forum_id'] ?? null;
+        $targetUserId = $_POST['target_user_id'] ?? null; // ID user dari hasil pencarian
+
+        // Jika ID kosong (user lupa klik saran/dropdown), kembalikan error
+        if (!$forumId || !$targetUserId) {
+            $_SESSION['error_message'] = "Wajib memilih user dari saran pencarian yang muncul.";
+            header('Location: ' . BASE_URL . '/forum/show?id=' . $forumId);
+            exit;
+        }
+
+        // 3. Load Model User & Notifikasi
+        // Kita cek dulu biar tidak error "Cannot redeclare class"
+        if (!class_exists('User')) {
+            require_once 'src/models/User.php';
+        }
+        if (!class_exists('NotificationModel')) {
+            require_once 'src/models/Notification.php';
+        }
+
+        $userModel = new User($this->conn);
+        $notifModel = new NotificationModel($this->conn);
+
+        // 4. Cek User Target (Apakah user asli?)
+        $targetUser = $userModel->getUserById($targetUserId);
+        if (!$targetUser) {
+            $_SESSION['error_message'] = "User tidak valid.";
+            header('Location: ' . BASE_URL . '/forum/show?id=' . $forumId);
+            exit;
+        }
+
+        // 5. Cek Membership (Apakah dia sudah join?)
+        // Gunakan method isMember yang sudah ada di ForumModel
+        if ($this->forumModel->isMember($forumId, $targetUserId)) {
+            $_SESSION['error_message'] = htmlspecialchars($targetUser['NAMA']) . " sudah menjadi anggota.";
+            header('Location: ' . BASE_URL . '/forum/show?id=' . $forumId);
+            exit;
+        }
+
+        // 6. Kirim Notifikasi Undangan
+        // Format: create(penerima_id, pengirim_id, tipe_notif, id_forum)
+        $notifModel->create($targetUserId, $_SESSION['user_id'], 'forum_invite', $forumId);
+
+        $_SESSION['success_message'] = "Undangan berhasil dikirim ke " . htmlspecialchars($targetUser['NAMA']);
+        header('Location: ' . BASE_URL . '/forum/show?id=' . $forumId);
+        exit;
+    }
+    // [BARU] API untuk Menerima Undangan
+    public function apiAcceptInvite()
+    {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $forum_id = $_POST['forum_id'] ?? null;
+        $notif_id = $_POST['notif_id'] ?? null;
+
+        if ($forum_id && $notif_id) {
+            // 1. Tambahkan Member
+            $this->forumModel->addMember($forum_id, $_SESSION['user_id']);
+
+            // 2. Hapus Notifikasi
+            if (!class_exists('NotificationModel')) {
+                require_once 'src/models/Notification.php';
+            }
+            $notifModel = new NotificationModel($this->conn);
+            $notifModel->deleteNotification($notif_id);
+
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid data']);
+        }
+        exit;
+    }
+
+    // [BARU] API untuk Menolak Undangan
+    public function apiDeclineInvite()
+    {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $notif_id = $_POST['notif_id'] ?? null;
+
+        if ($notif_id) {
+            // Hanya hapus notifikasi
+            if (!class_exists('NotificationModel')) {
+                require_once 'src/models/Notification.php';
+            }
+            $notifModel = new NotificationModel($this->conn);
+            $notifModel->deleteNotification($notif_id);
+
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid data']);
+        }
+        exit;
+    }
 }

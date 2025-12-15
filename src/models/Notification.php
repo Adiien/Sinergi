@@ -54,7 +54,7 @@ class NotificationModel
         $results = [];
         while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
             $results[] = $row;
-    }
+        }
         return $results;
     }
 
@@ -77,5 +77,13 @@ class NotificationModel
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ':user_id', $user_id);
         oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+    }
+    // [BARU] Hapus notifikasi spesifik (untuk Accept/Decline)
+    public function deleteNotification($notif_id)
+    {
+        $query = "DELETE FROM notifications WHERE notification_id = :notif_id";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':notif_id', $notif_id);
+        return oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
     }
 }
