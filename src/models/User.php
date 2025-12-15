@@ -626,18 +626,33 @@ class User
 
     public function countAll()
     {
-        $q = "SELECT COUNT(*) AS TOTAL FROM users";
+        // Kita hapus "AS TOTAL" dan pakai index angka [0] biar pasti dapat datanya
+        $q = "SELECT COUNT(*) FROM users";
         $s = oci_parse($this->conn, $q);
-        oci_execute($s);
-        return oci_fetch_assoc($s)['TOTAL'];
+        
+        // Cek jika execute gagal, kembalikan 0
+        if (!oci_execute($s)) {
+            return 0;
+        }
+
+        // Gunakan OCI_NUM (Array Angka) -> Ambil kolom pertama (index 0)
+        $row = oci_fetch_array($s, OCI_NUM);
+        
+        // Jika row ada isinya, ambil index 0. Jika tidak, kembalikan 0.
+        return isset($row[0]) ? (int)$row[0] : 0;
     }
 
     public function countActive()
     {
-        $q = "SELECT COUNT(*) AS TOTAL FROM users WHERE status = 'active'";
+        $q = "SELECT COUNT(*) FROM users WHERE status = 'active'";
         $s = oci_parse($this->conn, $q);
-        oci_execute($s);
-        return oci_fetch_assoc($s)['TOTAL'];
+        
+        if (!oci_execute($s)) {
+            return 0;
+        }
+
+        $row = oci_fetch_array($s, OCI_NUM);
+        return isset($row[0]) ? (int)$row[0] : 0;
     }
 
 }
