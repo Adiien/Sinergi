@@ -17,7 +17,7 @@
   ?>
  <nav id="main-nav" class="bg-[#36364c] h-20 shadow-lg fixed top-0 w-full z-40">
    <div
-     class="container mx-auto px-6 py-3 flex justify-between items-center">
+     class="container mx-auto px-6 py-4 flex justify-between items-center">
      <a href="<?= BASE_URL ?>/home" class="flex items-center space-x-1">
        <div class="p-0.5">
          <img src="<?= BASE_URL ?>/public/assets/image/LOGOSINERGIBORDER.png" alt="Logo" class="w-10 h-10" />

@@ -77,7 +77,6 @@ class ForumController
         }
 
         $forum_id = $_GET['id'] ?? null;
-        // [BARU] Ambil parameter view, default ke 'feed'
         $view_mode = $_GET['view'] ?? 'feed';
 
         if (!$forum_id) {
@@ -101,34 +100,47 @@ class ForumController
 
         $isMember = $this->forumModel->isMember($forum_id, $_SESSION['user_id']);
 
-        // Inisialisasi variabel agar view tidak error
+        // [BARU] Cek Visibility
+        // Oracle mengembalikan key huruf besar (VISIBILITY)
+        $visibility = isset($forum['VISIBILITY']) ? strtolower($forum['VISIBILITY']) : 'public';
+        $isPrivate = ($visibility === 'private');
+
+        // Inisialisasi variabel
         $posts = [];
         $members = [];
+        $accessDenied = false; // Flag untuk View
 
-        // [LOGIKA SWITCH VIEW]
-        if ($view_mode == 'members') {
-            // Ambil Data Member
-            $members = $this->forumModel->getForumMembers($forum_id);
+        // [LOGIKA UTAMA]
+        // Jika Private DAN Bukan Member, blokir akses
+        if ($isPrivate && !$isMember) {
+            $accessDenied = true;
         } else {
-            // Default: Ambil Data Feed (Postingan)
-            $posts = $postModel->getPostsByForum($forum_id, $_SESSION['user_id']);
+            // Akses Diizinkan (Public atau Member)
 
-            // Attach comments
-            $post_ids = array_column($posts, 'POST_ID');
-            if (!empty($post_ids)) {
-                $all_comments = $postModel->getCommentsForPosts($post_ids, $_SESSION['user_id']);
-                $comments_by_post = [];
-                foreach ($all_comments as $c) {
-                    $comments_by_post[$c['POST_ID']][] = $c;
-                }
-                foreach ($posts as &$p) {
-                    $p['comments_list'] = $comments_by_post[$p['POST_ID']] ?? [];
+            if ($view_mode == 'members') {
+                $members = $this->forumModel->getForumMembers($forum_id);
+            } else {
+                $posts = $postModel->getPostsByForum($forum_id, $_SESSION['user_id']);
+
+                // Attach comments
+                $post_ids = array_column($posts, 'POST_ID');
+                if (!empty($post_ids)) {
+                    $all_comments = $postModel->getCommentsForPosts($post_ids, $_SESSION['user_id']);
+                    $comments_by_post = [];
+                    foreach ($all_comments as $c) {
+                        $comments_by_post[$c['POST_ID']][] = $c;
+                    }
+                    foreach ($posts as &$p) {
+                        $p['comments_list'] = $comments_by_post[$p['POST_ID']] ?? [];
+                    }
                 }
             }
         }
 
         require 'views/forum/show.php';
     }
+
+
     public function ajaxSearch()
     {
         header('Content-Type: application/json');
@@ -293,5 +305,43 @@ class ForumController
             header('Location: ' . BASE_URL . '/forum/settings?id=' . $forum_id);
         }
         exit;
+    }
+    /**
+     * Halaman Explore / Discover Forum
+     */
+    public function explore()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        // 1. Logika Pencarian Forum
+        $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+        if (!empty($keyword)) {
+            $forums = $this->forumModel->searchForums($keyword, 0);
+        } else {
+            $forums = $this->forumModel->getAllForums();
+        }
+
+        // 2. Cek Status Join (untuk tombol Join/Lihat)
+        $joinedForums = $this->forumModel->getUserJoinedForums($_SESSION['user_id']);
+        $joinedForumIds = array_column($joinedForums, 'FORUM_ID');
+
+        // 3. Data untuk Sidebar Kanan (Suggested Users)
+        // Kita perlu memanggil UserModel jika ingin menampilkan user suggestion
+        // Jika belum ada model User di controller ini, kita inisialisasi sementara
+        if (!class_exists('User')) {
+            require_once 'src/models/User.php';
+        }
+        $userModel = new User($this->conn);
+        // Ambil 5 user acak/terbaru sebagai saran (sesuaikan method di UserModel Anda)
+        // Jika method getSuggestedUsers belum ada, ganti dengan getAllUsers atau kosongkan
+        $suggestedUsers = method_exists($userModel, 'getSuggestedUsers')
+            ? $userModel->getSuggestedUsers($_SESSION['user_id'])
+            : [];
+
+        require 'views/forum/explore.php';
     }
 }

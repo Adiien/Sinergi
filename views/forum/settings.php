@@ -57,6 +57,26 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                    <div class="flex items-center gap-5">
+                        <div class="relative w-24 h-24 bg-gray-100 rounded-full overflow-hidden border border-gray-200 group flex-shrink-0">
+                            <?php if (!empty($forum['FORUM_ICON'])): ?>
+                                <img src="<?= BASE_URL ?>/public/uploads/forums/icons/<?= $forum['FORUM_ICON'] ?>" class="w-full h-full object-cover" id="icon-preview">
+                            <?php else: ?>
+                                <div class="w-full h-full flex items-center justify-center text-gray-400 bg-indigo-50 font-bold text-3xl" id="icon-placeholder">
+                                    <?= substr($forum['NAME'], 0, 1) ?>
+                                </div>
+                                <img src="" class="hidden w-full h-full object-cover" id="icon-preview">
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" name="forum_icon" id="icon_input" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p class="text-xs text-gray-500 mt-1">Recommended: Square image, 200x200px.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Forum Name</label>
                     <input type="text" name="name" value="<?= htmlspecialchars($forum['NAME']) ?>" required
                         class="w-full rounded-lg border-gray-300 border p-2.5 text-gray-900 focus:ring-indigo-500 focus:border-indigo-500">
@@ -93,23 +113,45 @@
     </div>
 
     <script>
-        // Simple Image Preview Script
+        // Preview Cover Image
         const coverInput = document.getElementById('cover_input');
         const coverPreview = document.getElementById('cover-preview');
         const coverPlaceholder = document.getElementById('cover-placeholder');
 
-        coverInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    coverPreview.src = e.target.result;
-                    coverPreview.classList.remove('hidden');
-                    if (coverPlaceholder) coverPlaceholder.classList.add('hidden');
+        if (coverInput) {
+            coverInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        coverPreview.src = e.target.result;
+                        coverPreview.classList.remove('hidden');
+                        if (coverPlaceholder) coverPlaceholder.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
                 }
-                reader.readAsDataURL(file);
-            }
-        });
+            });
+        }
+
+        // [BARU] Preview Forum Icon / Profile Picture
+        const iconInput = document.getElementById('icon_input');
+        const iconPreview = document.getElementById('icon-preview');
+        const iconPlaceholder = document.getElementById('icon-placeholder');
+
+        if (iconInput) {
+            iconInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        iconPreview.src = e.target.result;
+                        iconPreview.classList.remove('hidden');
+                        if (iconPlaceholder) iconPlaceholder.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
     </script>
 </body>
 

@@ -167,120 +167,136 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
 
             <div class="lg:col-span-3 space-y-6">
 
-                <?php if ($activeTab == 'members'): ?>
+                <?php if (isset($accessDenied) && $accessDenied): ?>
 
-                    <div class="bg-white rounded-2xl shadow-sm p-6">
-                        <h3 class="font-bold text-gray-900 text-xl mb-6 flex items-center">
-                            Members
-                            <span class="ml-2 bg-gray-100 text-gray-600 text-sm py-0.5 px-2.5 rounded-full">
-                                <?= isset($members) ? count($members) : 0 ?>
-                            </span>
-                        </h3>
+                    <div class="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100 text-center px-4">
+                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">This Forum is Private</h3>
+                        <p class="text-gray-500 mb-8 max-w-md">
+                            Join this community to view posts, discussions, and member lists.
+                        </p>
 
-                        <?php if (empty($members)): ?>
-                            <p class="text-gray-500 text-center py-10">Belum ada anggota.</p>
-                        <?php else: ?>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <?php foreach ($members as $m): ?>
-                                    <?php
-                                    $m_initial = strtoupper(substr($m['NAMA'], 0, 1));
-
-                                    // 1. Ambil Role Sistem (default)
-                                    $sys_role = strtolower($m['ROLE_NAME'] ?? 'member');
-
-                                    // 2. Cek apakah ini Pembuat Forum? (Group Admin)
-                                    // Pastikan key array $forum['CREATED_BY'] tersedia (dari query getForumById)
-                                    $is_creator = ($m['USER_ID'] == $forum['CREATED_BY']);
-
-                                    // 3. Tentukan Label & Warna
-                                    if ($is_creator) {
-                                        $display_label = 'Group Admin';
-                                        $badge_color = 'bg-purple-100 text-purple-700 border border-purple-200'; // Warna Khusus Admin Group
-                                    } elseif ($sys_role == 'dosen') {
-                                        $display_label = 'Dosen';
-                                        $badge_color = 'bg-blue-100 text-blue-700 border border-blue-200';
-                                    } elseif ($sys_role == 'admin') {
-                                        $display_label = 'System Admin';
-                                        $badge_color = 'bg-red-100 text-red-700 border border-red-200';
-                                    } else {
-                                        $display_label = 'Member';
-                                        $badge_color = 'bg-gray-100 text-gray-600 border border-gray-200';
-                                    }
-                                    ?>
-
-                                    <div class="flex items-center p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-gray-50">
-                                        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
-                                            <?= $m_initial ?>
-                                        </div>
-                                        <div class="ml-4 flex-1 min-w-0">
-                                            <div class="flex justify-between items-start">
-                                                <div>
-                                                    <h4 class="font-bold text-gray-900 text-sm truncate"><?= htmlspecialchars($m['NAMA']) ?></h4>
-                                                    <p class="text-xs text-gray-500 mt-0.5">Joined <?= $m['JOINED_DATE'] ?></p>
-                                                </div>
-                                                <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-lg ml-2 whitespace-nowrap <?= $badge_color ?>">
-                                                    <?= $display_label ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                        <form action="<?= BASE_URL ?>/forum/join" method="POST">
+                            <input type="hidden" name="forum_id" value="<?= $forum['FORUM_ID'] ?>">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">
+                                Join Community
+                            </button>
+                        </form>
                     </div>
 
                 <?php else: ?>
+                    <?php if ($activeTab == 'members'): ?>
+                        <div class="bg-white rounded-2xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 text-xl mb-6 flex items-center">
+                                Members
+                                <span class="ml-2 bg-gray-100 text-gray-600 text-sm py-0.5 px-2.5 rounded-full">
+                                    <?= isset($members) ? count($members) : 0 ?>
+                                </span>
+                            </h3>
 
-                    <?php if ($isMember): ?>
-                        <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center space-x-4">
-                            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold overflow-hidden">
-                                <?php if (isset($_SESSION['nama'])): ?>
-                                    <?= strtoupper(substr($_SESSION['nama'], 0, 1)) ?>
-                                <?php else: ?>
-                                    ?
-                                <?php endif; ?>
-                            </div>
-                            <div id="create-post-trigger" class="flex-1 bg-gray-100 hover:bg-gray-200 transition rounded-full px-5 py-3 text-gray-500 cursor-pointer text-sm font-medium">
-                                Write something to the group...
-                            </div>
-                            <button class="text-gray-400 hover:text-indigo-600 transition p-2 hover:bg-gray-100 rounded-full">
-                                <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6">
-                            </button>
+                            <?php if (empty($members)): ?>
+                                <p class="text-gray-500 text-center py-10">Belum ada anggota.</p>
+                            <?php else: ?>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <?php foreach ($members as $m): ?>
+                                        <?php
+                                        $m_initial = strtoupper(substr($m['NAMA'], 0, 1));
+                                        $sys_role = strtolower($m['ROLE_NAME'] ?? 'member');
+                                        $is_creator = ($m['USER_ID'] == $forum['CREATED_BY']);
+
+                                        if ($is_creator) {
+                                            $display_label = 'Group Admin';
+                                            $badge_color = 'bg-purple-100 text-purple-700 border border-purple-200';
+                                        } elseif ($sys_role == 'dosen') {
+                                            $display_label = 'Dosen';
+                                            $badge_color = 'bg-blue-100 text-blue-700 border border-blue-200';
+                                        } elseif ($sys_role == 'admin') {
+                                            $display_label = 'System Admin';
+                                            $badge_color = 'bg-red-100 text-red-700 border border-red-200';
+                                        } else {
+                                            $display_label = 'Member';
+                                            $badge_color = 'bg-gray-100 text-gray-600 border border-gray-200';
+                                        }
+                                        ?>
+                                        <div class="flex items-center p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-gray-50">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0">
+                                                <?= $m_initial ?>
+                                            </div>
+                                            <div class="ml-4 flex-1 min-w-0">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 class="font-bold text-gray-900 text-sm truncate"><?= htmlspecialchars($m['NAMA']) ?></h4>
+                                                        <p class="text-xs text-gray-500 mt-0.5">Joined <?= $m['JOINED_DATE'] ?></p>
+                                                    </div>
+                                                    <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-lg ml-2 whitespace-nowrap <?= $badge_color ?>">
+                                                        <?= $display_label ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
+
                     <?php else: ?>
-                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        <?php if ($isMember): ?>
+                            <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center space-x-4">
+                                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold overflow-hidden">
+                                    <?php if (isset($_SESSION['nama'])): ?>
+                                        <?= strtoupper(substr($_SESSION['nama'], 0, 1)) ?>
+                                    <?php else: ?>
+                                        ?
+                                    <?php endif; ?>
+                                </div>
+                                <div id="create-post-trigger" class="flex-1 bg-gray-100 hover:bg-gray-200 transition rounded-full px-5 py-3 text-gray-500 cursor-pointer text-sm font-medium">
+                                    Write something to the group...
+                                </div>
+                                <button class="text-gray-400 hover:text-indigo-600 transition p-2 hover:bg-gray-100 rounded-full">
+                                    <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6">
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-blue-700">
+                                            Anda harus bergabung dengan forum ini untuk membuat postingan.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($posts)): ?>
+                            <?php foreach ($posts as $post): ?>
+                                <?php require 'views/partials/post_card.php'; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
                                     </svg>
                                 </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-blue-700">
-                                        Anda harus bergabung dengan forum ini untuk membuat postingan.
-                                    </p>
-                                </div>
+                                <h3 class="text-xl font-bold text-gray-900">No posts yet</h3>
+                                <p class="text-gray-500 text-sm mt-1">Be the first to share something in this group!</p>
                             </div>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
 
-                    <?php if (!empty($posts)): ?>
-                        <?php foreach ($posts as $post): ?>
-                            <?php require 'views/partials/post_card.php'; ?>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
-                            <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-xl font-bold text-gray-900">No posts yet</h3>
-                            <p class="text-gray-500 text-sm mt-1">Be the first to share something in this group!</p>
-                        </div>
-                    <?php endif; ?>
+                    <?php endif; // End If Members vs Feed 
+                    ?>
 
-                <?php endif; // End If Members vs Feed 
+                <?php endif; // [AKHIR MODIFIKASI] End If Access Denied 
                 ?>
 
             </div>
