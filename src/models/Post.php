@@ -362,67 +362,69 @@ class Post
     public function getFeedPosts($current_user_id)
     {
         $query = "
-        SELECT 
-            p.post_id,
-            p.content,
-            p.visibility,
-            p.is_comment_disabled,
-            p.is_poll,
-            p.forum_id,
-            TO_CHAR(p.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS CREATED_AT_FMT,
-            
-            -- Info User
-            u.user_id,
-            u.nama,
-            u.role_name,
+SELECT 
+    p.post_id,
+    p.content,
+    p.visibility,
+    p.is_comment_disabled,
+    p.is_poll,
+    p.forum_id,
+    p.shared_forum_id,
+    TO_CHAR(p.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS') AS CREATED_AT_FMT,
 
-            -- Info Forum Asal
-            f.name AS forum_name,
+    -- User
+    u.user_id,
+    u.nama,
+    u.role_name,
 
-            -- [KHUSUS SHARE FORUM]
-            p.shared_forum_id,
-            sf.name AS shared_forum_name,
-            sf.description AS shared_forum_desc,
-            sf.cover_image AS shared_forum_cover,
-            sf.visibility AS shared_forum_visibility,
-            
-            -- [PERBAIKAN] Hitung Member Menggunakan Subquery (Bukan kolom sf.member_count)
-            (SELECT COUNT(*) FROM forum_members fm2 WHERE fm2.forum_id = sf.forum_id) AS shared_forum_members,
+    -- Forum asal
+    f.name AS forum_name,
 
-            -- Agregat Lainnya
-            (SELECT LISTAGG(pi.image_path, ',') WITHIN GROUP (ORDER BY pi.image_id) FROM post_images pi WHERE pi.post_id = p.post_id) AS IMAGE_PATHS,
-            (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
-            (SELECT COUNT(*) FROM follows fo WHERE fo.follower_id = :current_user_id AND fo.following_id = p.user_id) AS IS_FOLLOWING,
-            (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :current_user_id) AS IS_LIKED
+    -- Forum yang dishare
+    sf.name AS shared_forum_name,
+    sf.description AS shared_forum_desc,
+    sf.cover_image AS shared_forum_cover,
+    sf.visibility AS shared_forum_visibility,
 
-        FROM posts p
-        JOIN users u ON p.user_id = u.user_id
-        LEFT JOIN forums f ON p.forum_id = f.forum_id
-        
-        -- Join ke Forum yang Dishare
-        LEFT JOIN forums sf ON p.shared_forum_id = sf.forum_id
+    -- Jumlah member forum share
+    (SELECT COUNT(*) 
+        FROM forum_members fm2 
+        WHERE fm2.forum_id = sf.forum_id
+    ) AS shared_forum_members,
 
-<<<<<<< HEAD
+    -- Agregat
+    (SELECT LISTAGG(pi.image_path, ',') 
+        WITHIN GROUP (ORDER BY pi.image_id)
+        FROM post_images pi 
+        WHERE pi.post_id = p.post_id
+    ) AS image_paths,
+
+    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+
+    (SELECT COUNT(*) 
+        FROM follows fo 
+        WHERE fo.follower_id = :current_user_id 
+          AND fo.following_id = p.user_id
+    ) AS is_following,
+
     (SELECT COUNT(*) 
         FROM post_likes pl2 
         WHERE pl2.post_id = p.post_id 
           AND pl2.user_id = :current_user_id
-    ) AS IS_LIKED
+    ) AS is_liked
 
 FROM posts p
 JOIN users u ON p.user_id = u.user_id
 LEFT JOIN forums f ON p.forum_id = f.forum_id
+LEFT JOIN forums sf ON p.shared_forum_id = sf.forum_id
 
 WHERE
     p.is_deleted = 0
 AND
 (
-    -- ATURAN FORUM
     p.forum_id IS NULL
-
     OR f.visibility = 'public'
-
     OR (
         f.visibility = 'private'
         AND EXISTS (
@@ -430,19 +432,25 @@ AND
             FROM forum_members fm
             WHERE fm.forum_id = f.forum_id
               AND fm.user_id = :current_user_id
-=======
-        WHERE
-        (
-            p.forum_id IS NULL OR f.visibility = 'public'
-            OR (f.visibility = 'private' AND EXISTS (SELECT 1 FROM forum_members fm WHERE fm.forum_id = f.forum_id AND fm.user_id = :current_user_id))
->>>>>>> 2c1735ace37d01ebab9725fe7bc213b25debd380
         )
-        AND
-        (
-            p.visibility = 'public' OR p.user_id = :current_user_id
-            OR (p.visibility = 'private' AND EXISTS (SELECT 1 FROM follows fo WHERE fo.follower_id = :current_user_id AND fo.following_id = p.user_id))
+    )
+)
+AND
+(
+    p.visibility = 'public'
+    OR p.user_id = :current_user_id
+    OR (
+        p.visibility = 'private'
+        AND EXISTS (
+            SELECT 1
+            FROM follows fo2
+            WHERE fo2.follower_id = :current_user_id
+              AND fo2.following_id = p.user_id
         )
-        ORDER BY p.created_at DESC";
+    )
+)
+ORDER BY p.created_at DESC
+";
 
         $stmt = oci_parse($this->conn, $query);
         oci_bind_by_name($stmt, ":current_user_id", $current_user_id);
@@ -888,19 +896,14 @@ AND
         oci_execute($s);
         return oci_fetch_assoc($s)['TOTAL'];
     }
-<<<<<<< HEAD
+
 
     public function delete($postId)
-{
-    $sql = "UPDATE posts SET is_deleted = 1 WHERE post_id = :id";
-    $stmt = oci_parse($this->conn, $sql);
-    oci_bind_by_name($stmt, ':id', $postId);
-    oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
-    return true;
-}
-
-
-
-=======
->>>>>>> 2c1735ace37d01ebab9725fe7bc213b25debd380
+    {
+        $sql = "UPDATE posts SET is_deleted = 1 WHERE post_id = :id";
+        $stmt = oci_parse($this->conn, $sql);
+        oci_bind_by_name($stmt, ':id', $postId);
+        oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+        return true;
+    }
 }
