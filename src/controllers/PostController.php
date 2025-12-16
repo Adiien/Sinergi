@@ -551,4 +551,43 @@ class PostController
         }
         exit;
     }
+    public function shareForum()
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $user_id = $_SESSION['user_id'];
+            $forum_id = $_POST['forum_id'] ?? null;
+            // Ambil input content dari modal, jika kosong gunakan default
+            $content = !empty($_POST['content']) ? $_POST['content'] : "Shared a community";
+
+            if ($forum_id) {
+                // createPost($uid, $content, $imgs, $vis, $fid, $no_comment, $poll, $share_forum)
+                $success = $this->postModel->createPost(
+                    $user_id,
+                    $content, // <--- Gunakan konten dari user
+                    [],
+                    'public',
+                    null,
+                    0,
+                    [],
+                    $forum_id
+                );
+
+                if ($success) {
+                    $_SESSION['success_message'] = "Forum berhasil dibagikan ke timeline!";
+                } else {
+                    $_SESSION['error_message'] = "Gagal membagikan forum.";
+                }
+            }
+        }
+
+        if (isset($_SERVER['HTTP_REFERER'])) header('Location: ' . $_SERVER['HTTP_REFERER']);
+        else header('Location: ' . BASE_URL . '/home');
+        exit;
+    }
 }

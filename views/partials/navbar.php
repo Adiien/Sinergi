@@ -291,15 +291,15 @@ $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1
              <h3 class="font-bold text-gray-900 text-lg">Notifications</h3>
            </div>
 
-           <div class="bg-white relative z-10 min-h-[100px] flex flex-col items-center justify-center text-center p-6">
+           <div id="notification-list" class="bg-white relative z-10 min-h-[100px] flex flex-col items-center justify-center text-center p-6">
 
              <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                </svg>
              </div>
-
              <p class="text-gray-600 font-medium text-base">No new notifications</p>
+
            </div>
 
            <div class="p-3 text-center bg-white border-t border-gray-100 relative z-10">

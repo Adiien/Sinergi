@@ -74,7 +74,7 @@ switch ($route) {
         $controller = new AdminController();
         $controller->resendVerification();
         break;
-    
+
     case 'admin/update-role':
         require_once 'src/Controllers/AdminController.php';
         $controller = new AdminController();
@@ -92,7 +92,7 @@ switch ($route) {
         $controller = new AdminController();
         $controller->statistik();
         break;
-    
+
     case 'admin/review':
         require_once 'src/Controllers/AdminController.php';
         $controller = new AdminController();
@@ -133,6 +133,11 @@ switch ($route) {
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
         $controller->comment();
+        break;
+
+    case 'post/share-forum': // Route baru
+        require_once 'src/Controllers/PostController.php';
+        (new PostController())->shareForum();
         break;
 
     case 'post/vote': // TAMBAHKAN INI
@@ -176,7 +181,7 @@ switch ($route) {
         $controller = new UserController();
         $controller->follow();
         break;
-    
+
     case 'messages':
         require_once 'src/Controllers/MessageController.php';
         $controller = new MessageController();
@@ -194,7 +199,7 @@ switch ($route) {
         $controller = new MessageController();
         $controller->send();
         break;
-    
+
     case 'api/messages/fetch':
         require_once 'src/Controllers/MessageController.php';
         $controller = new MessageController();
@@ -223,6 +228,12 @@ switch ($route) {
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->join();
+        break;
+
+    case 'forum/invite':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->invite();
         break;
 
     case 'forum/settings':
@@ -289,6 +300,18 @@ switch ($route) {
         require_once 'src/Controllers/NotificationController.php';
         $controller = new NotificationController();
         $controller->markRead();
+        break;
+
+    case 'api/invite/accept':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->apiAcceptInvite();
+        break;
+
+    case 'api/invite/decline':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->apiDeclineInvite();
         break;
 
     case 'logout':
