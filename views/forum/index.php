@@ -84,17 +84,16 @@
                 <nav class="space-y-2 mb-8">
                     <a href="<?= BASE_URL ?>/forum/explore" class="flex items-center px-2 py-2 text-gray-600 hover:text-[#1e293b] font-bold transition group">
                         <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition">
-                            <svg class="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                            <svg class="w-4 h-4 text-gray-600" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M10 20C4.477 20 0 15.523 0 10C0 4.477 4.477 0 10 0C15.523 0 20 4.477 20 10C20 15.523 15.523 20 10 20ZM8.604 8.604L5.647 14.353L11.397 11.396L14.353 5.647L8.603 8.604H8.604Z" fill="#36364C" />
                             </svg>
+
                         </div>
                         Discover
                     </a>
                     <a href="<?= BASE_URL ?>/forum" class="flex items-center px-2 py-2 text-gray-600 hover:text-[#1e293b] font-bold transition group  bg-gray-50 rounded-lg">
                         <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition">
-                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
-                            </svg>
+                            <img src="<?= BASE_URL ?>/public/assets/image/YouForum.png" alt="YouForum" class="w-4 h-4 text-blue-600">
                         </div>
                         Your forums
                     </a>
@@ -247,6 +246,9 @@
         </main>
     </div>
 
+    <script>
+        window.BASE_URL = '<?= BASE_URL ?>';
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const viewList = document.getElementById('view-forum-list');

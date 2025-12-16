@@ -83,8 +83,8 @@
                 <nav class="space-y-2 mb-8">
                     <a href="<?= BASE_URL ?>/forum/explore" class="flex items-center px-2 py-2 text-[#1e293b] font-bold transition group bg-gray-50 rounded-lg">
                         <div class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center mr-3">
-                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                            <svg class="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 20C4.477 20 0 15.523 0 10C0 4.477 4.477 0 10 0C15.523 0 20 4.477 20 10C20 15.523 15.523 20 10 20ZM8.604 8.604L5.647 14.353L11.397 11.396L14.353 5.647L8.603 8.604H8.604Z" fill="#36364C" />
                             </svg>
                         </div>
                         Discover

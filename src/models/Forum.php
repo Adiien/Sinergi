@@ -311,5 +311,25 @@ class ForumModel
         $row = oci_fetch_assoc($stmt);
         return (int) $row['TOTAL'];
     }
+    // Fungsi untuk keluar dari forum
+    public function removeMember($forum_id, $user_id)
+    {
+        $query = "DELETE FROM forum_members WHERE forum_id = :forum_id AND user_id = :user_id";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':forum_id', $forum_id);
+        oci_bind_by_name($stmt, ':user_id', $user_id);
 
+        return oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+    }
+
+    // Cek siapa pembuat forum (untuk mencegah admin keluar sembarangan)
+    public function getCreatorId($forum_id)
+    {
+        $query = "SELECT created_by FROM forums WHERE forum_id = :forum_id";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':forum_id', $forum_id);
+        oci_execute($stmt);
+        $row = oci_fetch_assoc($stmt);
+        return $row ? $row['CREATED_BY'] : null;
+    }
 }

@@ -82,9 +82,10 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                 </div>
 
                 <div class="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 md:mb-3">
+
                     <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $forum['CREATED_BY']): ?>
                         <a href="<?= BASE_URL ?>/forum/settings?id=<?= $forum['FORUM_ID'] ?>"
-                            class="bg-white/90 hover:bg-white text-gray-700 font-bold py-2.5 px-3 rounded-xl flex items-center transition shadow-sm"
+                            class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 font-bold p-2.5 rounded-xl flex items-center transition shadow-sm"
                             title="Forum Settings">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
@@ -92,6 +93,7 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                             </svg>
                         </a>
                     <?php endif; ?>
+
                     <button type="button" onclick="document.getElementById('shareForumModal').classList.remove('hidden')"
                         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl flex items-center transition shadow-sm">
                         <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +103,8 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                     </button>
 
                     <?php if ($isMember): ?>
-                        <button onclick="document.getElementById('inviteModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center transition shadow-sm">
+                        <button onclick="document.getElementById('inviteModal').classList.remove('hidden')"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl flex items-center transition shadow-sm">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
@@ -110,19 +113,56 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                     <?php endif; ?>
 
                     <?php if ($isMember): ?>
-                        <button class="bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold py-2.5 px-5 rounded-xl flex items-center transition cursor-default">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Joined
-                        </button>
+
+                        <style>
+                            .btn-toggle-join .view-leave {
+                                display: none;
+                            }
+
+                            .btn-toggle-join .view-joined {
+                                display: flex;
+                            }
+
+                            /* Saat di-hover, tukar tampilan */
+                            .btn-toggle-join:hover .view-joined {
+                                display: none;
+                            }
+
+                            .btn-toggle-join:hover .view-leave {
+                                display: flex;
+                            }
+                        </style>
+
+                        <form action="<?= BASE_URL ?>/forum/leave" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin keluar dari grup ini?');">
+                            <input type="hidden" name="forum_id" value="<?= $forum['FORUM_ID'] ?>">
+
+                            <button type="submit" class="btn-toggle-join relative bg-green-100 hover:bg-red-100 text-green-700 hover:text-red-700 font-bold py-2.5 px-6 rounded-xl transition shadow-sm overflow-hidden min-w-[120px] flex justify-center items-center">
+
+                                <span class="view-joined items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Joined
+                                </span>
+
+                                <span class="view-leave items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    Leave
+                                </span>
+                            </button>
+                        </form>
+
                     <?php else: ?>
+
                         <form action="<?= BASE_URL ?>/forum/join" method="POST">
                             <input type="hidden" name="forum_id" value="<?= $forum['FORUM_ID'] ?>">
-                            <button type="submit" class="bg-indigo-600 text-white hover:bg-indigo-700 font-bold py-2.5 px-6 rounded-xl transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-xl shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
                                 Join Group
                             </button>
                         </form>
+
                     <?php endif; ?>
                 </div>
             </div>

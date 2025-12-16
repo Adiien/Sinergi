@@ -248,6 +248,12 @@ switch ($route) {
         $controller->explore();
         break;
 
+    case 'forum/leave':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->leave();
+        break;
+
     case 'profile':
         require_once 'src/Controllers/ProfileController.php';
         $controller = new ProfileController();

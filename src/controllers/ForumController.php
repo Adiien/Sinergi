@@ -454,4 +454,37 @@ class ForumController
         }
         exit;
     }
+    public function leave()
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $forum_id = $_POST['forum_id'];
+            $user_id = $_SESSION['user_id'];
+
+            // 1. Cek apakah user adalah Creator/Pembuat Forum
+            $creatorId = $this->forumModel->getCreatorId($forum_id);
+
+            if ($creatorId == $user_id) {
+                $_SESSION['error_message'] = "Pembuat grup tidak bisa keluar. Silakan hapus grup jika ingin membubarkannya.";
+                header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
+                exit;
+            }
+
+            // 2. Proses Keluar
+            if ($this->forumModel->removeMember($forum_id, $user_id)) {
+                $_SESSION['success_message'] = "Anda berhasil keluar dari grup.";
+            } else {
+                $_SESSION['error_message'] = "Gagal keluar dari grup.";
+            }
+        }
+
+        // Redirect kembali ke halaman forum (atau ke list forum jika private)
+        header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
+        exit;
+    }
 }
