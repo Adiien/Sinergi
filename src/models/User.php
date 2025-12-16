@@ -655,4 +655,157 @@ class User
         return isset($row[0]) ? (int)$row[0] : 0;
     }
 
+    public function getUsersPaginated($limit, $offset)
+    {
+        $sql = "
+            SELECT
+                user_id,
+                nama,
+                email,
+                role_name,
+                nim,
+                program_studi,
+                tahun_masuk,
+                status
+            FROM users
+            ORDER BY user_id DESC
+            OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
+        ";
+
+        $stmt = oci_parse($this->conn, $sql);
+        oci_bind_by_name($stmt, ':offset', $offset, SQLT_INT);
+        oci_bind_by_name($stmt, ':limit', $limit, SQLT_INT);
+        oci_execute($stmt);
+
+        $users = [];
+        while ($row = oci_fetch_assoc($stmt)) {
+            $users[] = $row;
+        }
+
+        oci_free_statement($stmt);
+        return $users;
+    }
+    public function countAllUsers()
+{
+    $sql = "SELECT COUNT(*) AS total FROM users";
+    $stmt = oci_parse($this->conn, $sql);
+    oci_execute($stmt);
+
+    $row = oci_fetch_assoc($stmt);
+    return (int)$row['TOTAL'];
+}
+
+    public function getUsersFilteredPaginated($limit, $offset, $role, $nim, $nama)
+{
+    $conditions = [];
+    $params = [];
+
+    if ($role !== '') {
+        $conditions[] = "role_name = :role";
+        $params[':role'] = $role;
+    }
+
+    if ($nim !== '') {
+        $conditions[] = "nim LIKE :nim";
+        $params[':nim'] = "%$nim%";
+    }
+
+    if ($nama !== '') {
+        $conditions[] = "LOWER(nama) LIKE :nama";
+        $params[':nama'] = "%" . strtolower($nama) . "%";
+    }
+
+    $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+    $sql = "
+        SELECT user_id, nama, email, role_name, nim, status
+        FROM users
+        $where
+        ORDER BY nama ASC
+        OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
+    ";
+
+    $stmt = oci_parse($this->conn, $sql);
+
+    foreach ($params as $key => $val) {
+        oci_bind_by_name($stmt, $key, $params[$key]);
+    }
+
+    oci_bind_by_name($stmt, ':offset', $offset, SQLT_INT);
+    oci_bind_by_name($stmt, ':limit', $limit, SQLT_INT);
+
+    oci_execute($stmt);
+
+    $data = [];
+    while ($row = oci_fetch_assoc($stmt)) {
+        $data[] = $row;
+    }
+
+    oci_free_statement($stmt);
+    return $data;
+}
+
+    public function countUsersFiltered($role, $nim, $nama)
+{
+    $conditions = [];
+    $params = [];
+
+    if ($role !== '') {
+        $conditions[] = "role_name = :role";
+        $params[':role'] = $role;
+    }
+
+    if ($nim !== '') {
+        $conditions[] = "nim LIKE :nim";
+        $params[':nim'] = "%$nim%";
+    }
+
+    if ($nama !== '') {
+        $conditions[] = "LOWER(nama) LIKE :nama";
+        $params[':nama'] = "%" . strtolower($nama) . "%";
+    }
+
+    $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+    $sql = "SELECT COUNT(*) AS total FROM users $where";
+
+    $stmt = oci_parse($this->conn, $sql);
+
+    foreach ($params as $key => $val) {
+        oci_bind_by_name($stmt, $key, $params[$key]);
+    }
+
+    oci_execute($stmt);
+
+    $row = oci_fetch_assoc($stmt);
+    return (int)$row['TOTAL'];
+}
+    public function getMostActiveUsers($limit = 5)
+{
+    $sql = "
+        SELECT u.user_id, u.nama, u.email,
+               COUNT(p.post_id) AS total_posts
+        FROM users u
+        LEFT JOIN posts p ON p.user_id = u.user_id
+        GROUP BY u.user_id, u.nama, u.email
+        ORDER BY total_posts DESC
+        FETCH FIRST :limit ROWS ONLY
+    ";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':limit', $limit);
+    oci_execute($stmt);
+
+    $data = [];
+    while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
+        $data[] = $row;
+    }
+    return $data;
+}
+
+
+
+
+
+
 }

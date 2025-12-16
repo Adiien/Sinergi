@@ -132,6 +132,40 @@ class ReportModel
         oci_free_statement($stmt);
         return $res;
     }
+
+    public function countPending() {
+        $query = "SELECT COUNT(*) FROM reports WHERE status = 'pending'";
+        $stmt = oci_parse($this->conn, $query);
+        oci_execute($stmt);
+        
+        $row = oci_fetch_array($stmt, OCI_NUM);
+        return isset($row[0]) ? (int)$row[0] : 0;
+    }
+
+    public function resolveAllByTarget($targetType, $targetId)
+{
+    $sql = "UPDATE reports 
+            SET status = 'reviewed' 
+            WHERE target_type = :type 
+              AND target_id = :id 
+              AND status = 'pending'";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':type', $targetType);
+    oci_bind_by_name($stmt, ':id', $targetId);
+
+    $res = oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+
+    if (!$res) {
+        $e = oci_error($stmt);
+        oci_free_statement($stmt);
+        throw new Exception('Gagal update laporan terkait: ' . $e['message']);
+    }
+
+    oci_free_statement($stmt);
+    return true;
+}
+
     
     // Anda bisa tambahkan fungsi lain di sini nanti
     // Misalnya: updateReportStatus($report_id, $new_status)

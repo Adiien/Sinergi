@@ -29,7 +29,9 @@ $tab = $_GET['tab'] ?? 'users';
     <?php
       switch ($tab) {
         case 'stats':
-          require 'views/admin/stats.php';
+          require_once 'src/controllers/AdminController.php';
+          $controller = new AdminController();
+          $controller->statistik();
           break;
         case 'reports':
           require 'views/admin/reports.php';

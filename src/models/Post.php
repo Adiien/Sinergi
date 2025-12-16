@@ -411,6 +411,8 @@ JOIN users u ON p.user_id = u.user_id
 LEFT JOIN forums f ON p.forum_id = f.forum_id
 
 WHERE
+    p.is_deleted = 0
+AND
 (
     -- ATURAN FORUM
     p.forum_id IS NULL
@@ -894,5 +896,16 @@ ORDER BY p.created_at DESC
         oci_execute($s);
         return oci_fetch_assoc($s)['TOTAL'];
     }
+
+    public function delete($postId)
+{
+    $sql = "UPDATE posts SET is_deleted = 1 WHERE post_id = :id";
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':id', $postId);
+    oci_execute($stmt, OCI_COMMIT_ON_SUCCESS);
+    return true;
+}
+
+
 
 }
