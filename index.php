@@ -99,6 +99,12 @@ switch ($route) {
         $controller->review();
         break;
 
+    case 'api/admin/notifications':
+        require_once 'src/Controllers/AdminController.php';
+        $controller = new AdminController();
+        $controller->apiCheckNotifications();
+        break;
+
     case 'home':
         require_once 'src/Controllers/HomeController.php';
         $controller = new HomeController();

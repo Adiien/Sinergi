@@ -1,6 +1,62 @@
 <div class="bg-white rounded-xl shadow p-6">
   <h2 class="text-xl font-bold mb-4">Manajemen Pengguna</h2>
 
+  <form method="GET" class="mb-4 flex flex-wrap gap-3 items-end">
+
+  <input type="hidden" name="tab" value="users">
+
+  <!-- FILTER NAMA -->
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Nama</label>
+    <input
+      type="text"
+      name="nama"
+      value="<?= htmlspecialchars($_GET['nama'] ?? '') ?>"
+      class="border rounded px-3 py-2 text-sm"
+      placeholder="Cari nama">
+  </div>
+
+  <!-- FILTER NIM -->
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">NIM / NIP</label>
+    <input
+      type="text"
+      name="nim"
+      value="<?= htmlspecialchars($_GET['nim'] ?? '') ?>"
+      class="border rounded px-3 py-2 text-sm"
+      placeholder="Cari NIM/NIP">
+  </div>
+
+  <!-- FILTER ROLE -->
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Role</label>
+    <select name="role" class="border rounded px-3 py-2 text-sm">
+      <option value="">Semua</option>
+      <?php foreach (['admin','mahasiswa','dosen','alumni'] as $r): ?>
+        <option value="<?= $r ?>"
+          <?= ($_GET['role'] ?? '') === $r ? 'selected' : '' ?>>
+          <?= ucfirst($r) ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+
+  <!-- BUTTON -->
+  <div class="flex gap-2">
+    <button
+      type="submit"
+      class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">
+      Filter
+    </button>
+
+    <a href="?tab=users"
+       class="bg-gray-200 px-4 py-2 rounded text-sm hover:bg-gray-300">
+      Reset
+    </a>
+  </div>
+
+</form>
+
   <table class="w-full text-sm">
     <thead class="bg-gray-100">
       <tr>
@@ -78,7 +134,65 @@
     </td>
   </tr>
 <?php endforeach ?>
-</tbody>
 
+</tbody>
   </table>
+  <?php
+  $query = $_GET;
+  $query['tab'] = 'users'; // pastikan tab tetap
+  $range = 2; // jumlah halaman kiri-kanan page aktif
+  $start = max(1, $page - $range);
+  $end   = min($totalPages, $page + $range);
+?>
+
+  <div class="flex justify-center mt-6 gap-1 items-center text-sm">
+
+  <!-- PREV -->
+  <?php if ($page > 1): ?>
+  <a href="?<?= http_build_query(array_merge($query, ['page' => $page - 1])) ?>"
+     class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+    «
+  </a>
+  <?php endif; ?>
+
+
+  <!-- FIRST PAGE -->
+  <?php if ($start > 1): ?>
+    <a href="?<?= http_build_query(array_merge($query, ['page' => 1])) ?>"
+      class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+        1
+    </a>
+
+    <span class="px-2 text-gray-500">…</span>
+  <?php endif; ?>
+
+  <!-- PAGE WINDOW -->
+  <?php for ($i = $start; $i <= $end; $i++): ?>
+  <a href="?<?= http_build_query(array_merge($query, ['page' => $i])) ?>"
+     class="px-3 py-1 rounded
+     <?= $i == $page
+        ? 'bg-indigo-600 text-white'
+        : 'bg-gray-200 hover:bg-gray-300' ?>">
+    <?= $i ?>
+  </a>
+  <?php endfor; ?>
+
+
+  <!-- LAST PAGE -->
+  <?php if ($end < $totalPages): ?>
+    <span class="px-2 text-gray-500">…</span>
+      <a href="?<?= http_build_query(array_merge($query, ['page' => $totalPages])) ?>"
+        class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+        <?= $totalPages ?>
+      </a>
+  <?php endif; ?>
+
+  <!-- NEXT -->
+  <?php if ($page < $totalPages): ?>
+  <a href="?<?= http_build_query(array_merge($query, ['page' => $page + 1])) ?>"
+     class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">
+    »
+  </a>
+  <?php endif; ?>
+  </div>
 </div>

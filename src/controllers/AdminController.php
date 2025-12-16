@@ -57,11 +57,23 @@ class AdminController
             $reportModel = new ReportModel($db); // Sesuaikan nama class model report Anda
             $forumModel = new ForumModel($db);
             $postModel  = new Post($db);
+            $limit = 10;
+            $page  = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+            $offset = ($page - 1) * $limit;
 
             // 4. Logika Pengambilan Data Berdasarkan Tab
             if ($tab === 'users') {
-                $users = $userModel->getAllUsers();
-            } 
+                $role = $_GET['role'] ?? '';
+                $nim  = $_GET['nim'] ?? '';
+                $nama = $_GET['nama'] ?? '';
+                $totalUsers = $this->userModel->countUsersFiltered($role, $nim, $nama);
+                $totalPages = ceil($totalUsers / $limit);
+
+                $users = $this->userModel->getUsersFilteredPaginated(
+                $limit, $offset, $role, $nim, $nama
+                ); 
+            }
+
             elseif ($tab === 'reports') {
                 $pendingReports = $reportModel->getPendingReports();
             }
@@ -277,9 +289,11 @@ public function statistik()
 
     $db = koneksi_oracle();
 
-    require_once 'src/models/User.php';
-    require_once 'src/models/Post.php';
-    require_once 'src/models/ForumModel.php';
+    require_once __DIR__ . '/../models/Forum.php';
+    require_once __DIR__ . '/../models/User.php';
+    require_once __DIR__ . '/../models/Post.php';
+    require_once __DIR__ . '/../models/Report.php';
+
 
     $userModel  = new User($db);
     $forumModel = new ForumModel($db);
@@ -292,65 +306,88 @@ public function statistik()
         'total_posts'  => (int) $postModel->countAll(),
     ];
 
+    $activeUsers  = $userModel->getMostActiveUsers(5);
+    $activeForums = $forumModel->getMostActiveForums(5);
+
     require 'views/admin/stats.php';
 }
 
     public function review()
-    {
-        // 1. Cek Admin
-        if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
-            header('Location: ' . BASE_URL . '/home');
-            exit;
-        }
+{
+    // proteksi admin
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        header('Location: ' . BASE_URL . '/home');
+        exit;
+    }
 
-        $report_id = $_GET['id'] ?? 0;
-        if (!$report_id) {
-            header('Location: ' . BASE_URL . '/admin?tab=reports');
-            exit;
-        }
+    $reportId = $_GET['id'] ?? null;
+    if (!$reportId || !is_numeric($reportId)) {
+        die('Report ID tidak valid');
+    }
 
-        // 2. Ambil Data Laporan
-        $report = $this->reportModel->getReportById($report_id);
+    $reportModel = new ReportModel($this->conn);
+    $postModel   = new Post($this->conn);
 
-        if (!$report) {
-            $_SESSION['error_message'] = "Laporan tidak ditemukan.";
-            header('Location: ' . BASE_URL . '/admin?tab=reports');
-            exit;
-        }
+    // ambil laporan
+    $report = $reportModel->getReportById($reportId);
+    if (!$report) {
+        die('Laporan tidak ditemukan');
+    }
 
-        // 3. Handle Aksi Tombol (POST)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $action = $_POST['action'] ?? '';
+    // HANDLE ACTION
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = $_POST['action'] ?? '';
 
-            try {
-                if ($action === 'dismiss') {
-                    // OPSI 1: Abaikan Laporan (Status -> dismissed)
-                    $this->reportModel->updateStatus($report_id, 'dismissed');
-                    $_SESSION['success_message'] = "Laporan diabaikan.";
-                
-                } elseif ($action === 'delete_content') {
-                    // OPSI 2: Hapus Konten (Post -> deleted, Laporan -> resolved)
-                    if ($report['TARGET_TYPE'] === 'post') {
-                        // Hapus postingan menggunakan PostModel yang sudah ada
-                        $this->postModel->deletePost($report['TARGET_ID']); 
-                    }
-                    
-                    // Update status laporan jadi 'resolved'
-                    $this->reportModel->updateStatus($report_id, 'resolved');
-                    $_SESSION['success_message'] = "Konten berhasil dihapus dan laporan diselesaikan.";
-                }
+        try {
 
-                // Redirect kembali ke daftar laporan
+            if ($action === 'dismiss') {
+                $reportModel->updateStatus($reportId, 'dismissed');
+
+                $_SESSION['success_message'] = 'Laporan berhasil diabaikan.';
                 header('Location: ' . BASE_URL . '/admin?tab=reports');
                 exit;
-
-            } catch (Exception $e) {
-                $error = "Terjadi kesalahan: " . $e->getMessage();
             }
+
+            if ($action === 'delete_content') {
+
+                if ($report['TARGET_TYPE'] === 'post') {
+                    // pastikan method delete ADA di Post model
+                    $postModel->delete($report['TARGET_ID']);
+                    $reportModel->resolveAllByTarget('post', $report['TARGET_ID']);
+                }
+                $_SESSION['success_message'] = 'Konten dihapus dan laporan diselesaikan.';
+                header('Location: ' . BASE_URL . '/admin?tab=reports');
+                exit;
+            }
+
+        } catch (Exception $e) {
+            $error = 'Gagal memproses laporan: ' . $e->getMessage();
+        }
+    }
+
+    require __DIR__ . '/../../views/admin/review.php';
+}
+
+
+    // Notip sidebar
+    public function apiCheckNotifications()
+    {
+        // Pastikan yang akses adalah admin
+        if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['count' => 0]);
+            exit;
         }
 
-        // 4. Tampilkan View
-        require 'views/admin/review.php';
+        try {
+            $count = $this->reportModel->countPending();
+            header('Content-Type: application/json');
+            echo json_encode(['count' => $count]);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode(['count' => 0]);
+            exit;
+        }
     }
 
 }

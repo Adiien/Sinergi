@@ -1,18 +1,58 @@
  <?php
+
+
+// AUTO-SYNC SESSION Fungsinya: Mengecek role terbaru di database setiap kali halaman dimuat.
+
+if (isset($_SESSION['user_id'])) {
+    try {
+
+        require_once __DIR__ . '/../../database.php'; 
+        require_once __DIR__ . '/../../src/models/User.php';
+
+        // Buat koneksi khusus untuk sync
+        $db_sync = koneksi_oracle();
+        $userModel_sync = new User($db_sync);
+
+        // Ambil data terbaru user
+        $freshData = $userModel_sync->getUserById($_SESSION['user_id']);
+
+        // Update Session Browser
+        if ($freshData) {
+            $_SESSION['role_name'] = $freshData['ROLE_NAME']; 
+            $_SESSION['status']    = $freshData['STATUS'];    
+            $_SESSION['nama']      = $freshData['NAMA'];     
+        }
+    } catch (Exception $e) {
+        // Silent error: Jika terjadi error koneksi, biarkan halaman tetap dimuat dengan session lama
+    }
+}
+
+
+
+// LOGIKA TAMPILAN NAVIGASI, Cek URL
+$current_uri = $_SERVER['REQUEST_URI'];
+$is_home = strpos($current_uri, '/home') !== false;
+$is_message = strpos($current_uri, '/messages') !== false;
+$is_forum = strpos($current_uri, '/forum') !== false;
+
+$activeText = 'text-white font-semibold border-b-2 border-white pb-1';
+$inactiveText = 'text-gray-300 hover:text-white border-b-2 border-transparent pb-1 transition-all';
+
+$activeIcon = 'bg-white/20 text-white rounded-lg p-1.5 shadow-inner transition-all';
+$inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
+?>
+ 
+ <?php
   // Cek URL
   $current_uri = $_SERVER['REQUEST_URI'];
   $is_home = strpos($current_uri, '/home') !== false;
   $is_message = strpos($current_uri, '/messages') !== false;
   $is_forum = strpos($current_uri, '/forum') !== false;
 
-  // 1. Style untuk TEKS (Home) - Tetap pakai Underline
+  // TEKS Home Tetap pakai Underline
   $activeText = 'text-white font-semibold border-b-2 border-white pb-1';
   $inactiveText = 'text-gray-300 hover:text-white border-b-2 border-transparent pb-1 transition-all';
-
-  // 2. Style untuk IKON (Messages) - Pakai Background & Rounded
-  // Aktif: Ada background putih transparan, rounded
   $activeIcon = 'bg-white/20 text-white rounded-lg p-1.5 shadow-inner transition-all';
-  // Tidak Aktif: Transparan, tapi hover ada efek sedikit
   $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
   ?>
  <nav id="main-nav" class="bg-[#36364c] h-20 shadow-lg fixed top-0 w-full z-40">
@@ -224,10 +264,15 @@
        </a>
        <a href="<?= BASE_URL ?>/forum" class="<?= $is_forum ? $activeText : $inactiveText ?>">Forums</a>
        <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
-         <a href="<?= BASE_URL ?>/admin" class="text-yellow-400 hover:text-white font-bold pb-1">
-           Admin Panel
-         </a>
-       <?php endif; ?>
+        <a href="<?= BASE_URL ?>/admin?tab=reports" 
+           class="relative text-yellow-400 hover:text-white font-bold pb-1 flex items-center gap-1">
+          Admin Panel
+          <span id="nav-admin-badge" 
+                class="hidden absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#36364c] animate-pulse">
+            0
+          </span>
+        </a>
+      <?php endif; ?>
        <a href="<?= BASE_URL ?>/messages"
          class="<?= $is_message ? $activeIcon : $inactiveIcon ?> flex items-center justify-center">
          <img src="<?= BASE_URL ?>/public/assets/image/MessageIcon.png" alt="Messages" class="w-6 h-6" />
@@ -332,6 +377,39 @@
        </div>
      </div>
    </div>
+   <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const navBadge = document.getElementById('nav-admin-badge');
+
+    // Fungsi Cek Laporan
+    const checkAdminNotif = async () => {
+        try {
+            // Funakan API yang sama dengan Sidebar tadi
+            const res = await fetch('<?= BASE_URL ?>/api/admin/notifications');
+            const data = await res.json();
+            
+            if (data.count > 0) {
+                if(navBadge) {
+                    navBadge.innerText = data.count;     // Update angka
+                    navBadge.classList.remove('hidden'); // Munculkan badge
+                }
+            } else {
+                if(navBadge) navBadge.classList.add('hidden');
+            }
+        } catch (error) {
+            // Silent error agar tidak mengganggu console user biasa jika gagal fetch
+        }
+    };
+
+    // Jalankan pertama kali
+    checkAdminNotif();
+
+    // Jalankan interval setiap 5 detik
+    setInterval(checkAdminNotif, 2000);
+});
+</script>
+<?php endif; ?>
  </nav>
  <script>
    window.BASE_URL = "<?= BASE_URL ?>";
