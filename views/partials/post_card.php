@@ -30,8 +30,9 @@ $isFollowing = ($post['IS_FOLLOWING'] ?? 0) > 0;
 $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user_id']);
 ?>
 
-<div class="bg-white rounded-xl shadow-lg overflow-hidden post-card mb-6 border border-gray-100">
+<div class="bg-white rounded-xl shadow-lg overflow-hidden post-card mb-6">
     <div class="p-5 flex justify-between items-center">
+
         <div class="flex items-center space-x-3">
             <div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center text-white font-bold text-xl">
                 <span><?php echo $initial; ?></span>
@@ -65,21 +66,25 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
 
                 <div class="flex items-center text-sm text-gray-500 space-x-1">
                     <span><?php echo $handle; ?></span>
+
                     <?php if ($timestamp): ?>
                         <span class="text-gray-400">&middot; <?php echo $timestamp; ?></span>
                     <?php endif; ?>
+
                     <span class="text-gray-400">&middot;</span>
                     <?php if ($visibility == 'public'): ?>
                         <div class="group relative flex items-center">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Public">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" />
                             </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Public</span>
                         </div>
                     <?php else: ?>
                         <div class="group relative flex items-center">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Private">
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Private</span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -87,37 +92,67 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div class="flex items-center space-x-3">
-            <?php if (!$isOwnPost):
+            <?php
+            if (!$isOwnPost):
                 $btnText = $isFollowing ? 'Following' : 'Follow';
-                $btnClass = $isFollowing ? 'bg-gray-100 text-gray-500 border-gray-200' : 'border-blue-500 text-blue-500 hover:bg-blue-50';
+                $btnClass = $isFollowing
+                    ? 'bg-gray-100 text-gray-500 border-gray-200'
+                    : 'border-blue-500 text-blue-500 hover:bg-blue-50';
             ?>
-                <button data-user-id="<?php echo $post['USER_ID']; ?>" class="follow-button border <?php echo $btnClass; ?> px-3 py-1 rounded-full text-xs font-bold transition-colors">
+                <button
+                    data-user-id="<?php echo $post['USER_ID']; ?>"
+                    class="follow-button border <?php echo $btnClass; ?> px-3 py-1 rounded-full text-xs font-bold transition-colors">
                     <?php echo $btnText; ?>
                 </button>
             <?php endif; ?>
 
             <div class="relative" data-menu-container>
-                <button type="button" class="post-menu-button text-gray-400 hover:text-gray-600 p-1 rounded-full" data-target-menu-id="<?php echo $post_id; ?>">
+                <button type="button"
+                    class="post-menu-button text-gray-400 hover:text-gray-600 p-1 rounded-full"
+                    data-target-menu-id="<?php echo $post_id; ?>">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
                     </svg>
                 </button>
 
-                <div id="post-menu-<?php echo $post_id; ?>" class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                <div id="post-menu-<?php echo $post_id; ?>"
+                    class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+
                     <?php if (isset($_SESSION['user_id']) && ($isOwnPost || (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'))): ?>
-                        <a href="<?= BASE_URL ?>/post/delete?id=<?php echo $post_id; ?>" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onclick="return confirm('Hapus postingan ini?');">
+                        <a href="<?= BASE_URL ?>/post/delete?id=<?php echo $post_id; ?>"
+                            class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus postingan ini?');">
                             <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
                             Delete
                         </a>
                     <?php endif; ?>
+
                     <?php if ($isOwnPost): ?>
-                        <button type="button" class="disable-comment-btn flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-post-id="<?= $post_id ?>" data-url="<?= BASE_URL ?>/post/toggleComments?id=<?= $post_id ?>&ajax=1">
-                            <?= $isCommentDisabled ? 'Aktifkan Komentar' : 'Nonaktifkan Komentar' ?>
+                        <button type="button"
+                            class="disable-comment-btn flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            data-post-id="<?= $post_id ?>"
+                            data-url="<?= BASE_URL ?>/post/toggleComments?id=<?= $post_id ?>&ajax=1">
+                            <?php if ($isCommentDisabled): ?>
+                                <span class="icon-container mr-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg></span>
+                                <span class="text-label">Aktifkan Komentar</span>
+                            <?php else: ?>
+                                <span class="icon-container mr-2"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg></span>
+                                <span class="text-label">Nonaktifkan Komentar</span>
+                            <?php endif; ?>
                         </button>
                     <?php endif; ?>
-                    <button type="button" class="report-button flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-target-type="post" data-target-id="<?php echo $post_id; ?>">
+
+                    <button type="button"
+                        class="report-button flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        data-target-type="post"
+                        data-target-id="<?php echo $post_id; ?>">
+                        <img src="<?= BASE_URL ?>/public/assets/image/Report.png" alt="Report Icon" class="w-5 h-5 mr-2">
                         Report
                     </button>
                 </div>
@@ -148,7 +183,8 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                     ?>
                         <div class="relative w-full">
                             <?php if (!$hasVoted): ?>
-                                <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)" class="w-full text-left border border-indigo-400 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition font-medium">
+                                <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)"
+                                    class="w-full text-left border border-indigo-400 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition font-medium">
                                     <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
                                 </button>
                             <?php else: ?>
@@ -175,55 +211,6 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
             <?php endif; ?>
         <?php endif; ?>
     </div>
-
-    <?php if (!empty($post['SHARED_FORUM_ID'])): ?>
-        <div class="px-5 pb-5">
-            <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition group cursor-pointer"
-                onclick="window.location.href='<?= BASE_URL ?>/forum/show?id=<?= $post['SHARED_FORUM_ID'] ?>'">
-
-                <div class="h-36 bg-gray-100 relative overflow-hidden">
-                    <?php if (!empty($post['SHARED_FORUM_COVER'])): ?>
-                        <img src="<?= BASE_URL ?>/public/uploads/forums/<?= $post['SHARED_FORUM_COVER'] ?>"
-                            class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
-                    <?php else: ?>
-                        <div class="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-                            <span class="text-white font-bold text-2xl opacity-30">
-                                <?= strtoupper(substr($post['SHARED_FORUM_NAME'] ?? 'F', 0, 1)) ?>
-                            </span>
-                        </div>
-                    <?php endif; ?>
-
-                    <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-700 shadow-sm border border-gray-100">
-                        <?= ucfirst($post['SHARED_FORUM_VISIBILITY'] ?? 'Public') ?> Group
-                    </span>
-                </div>
-
-                <div class="p-4 bg-gray-50/50">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-bold text-lg text-gray-900 leading-tight group-hover:text-indigo-600 transition">
-                                <?= htmlspecialchars($post['SHARED_FORUM_NAME'] ?? '') ?>
-                            </h4>
-                            <p class="text-sm text-gray-500 mt-1 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                <?= number_format($post['SHARED_FORUM_MEMBERS'] ?? 0) ?> Members
-                            </p>
-                        </div>
-                        <span class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-indigo-700 transition">
-                            View
-                        </span>
-                    </div>
-                    <?php if (!empty($post['SHARED_FORUM_DESC'])): ?>
-                        <p class="text-xs text-gray-500 mt-2 line-clamp-2">
-                            <?= htmlspecialchars($post['SHARED_FORUM_DESC']) ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
 
     <?php if (!empty($imageList)): ?>
         <div class="px-5 pb-4">
@@ -298,6 +285,7 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div id="comments-section-<?php echo $post_id; ?>" class="hidden comments-section pt-3">
+
             <?php if (!$isCommentDisabled): ?>
                 <form action="<?= BASE_URL ?>/post/comment" method="POST" class="flex space-x-2 mb-4">
                     <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
@@ -305,16 +293,148 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                     <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Kirim</button>
                 </form>
             <?php else: ?>
-                <div class="disabled-msg bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-center text-sm text-gray-500 italic">Komentar telah dinonaktifkan.</div>
+                <div class="disabled-msg bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-center text-sm text-gray-500 italic">
+                    Komentar telah dinonaktifkan.
+                </div>
             <?php endif; ?>
+
             <div id="comments-list-<?php echo $post_id; ?>" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scroll">
-                <?php include __DIR__ . '/comments_list_recursive.php'; // Menggunakan include agar lebih rapi, atau paste kode loop komentar Anda di sini 
-                ?>
+                <?php $comments_tree = $post['comments_list'] ?? []; ?>
+
+                <?php if (!empty($comments_tree)): ?>
+                    <?php foreach ($comments_tree as $comment): ?>
+                        <?php
+                        $cid = $comment['COMMENT_ID'];
+                        $c_nama = htmlspecialchars($comment['NAMA'] ?? 'User');
+                        $c_content = nl2br(htmlspecialchars($comment['CONTENT'] ?? ''));
+                        $c_initial = strtoupper(substr($c_nama, 0, 1));
+                        $c_likes = $comment['LIKE_COUNT'] ?? 0;
+                        $c_is_liked = ($comment['IS_LIKED'] ?? 0) > 0;
+                        $replies = $comment['REPLIES'] ?? [];
+                        ?>
+
+                        <div class="flex items-start space-x-2 group/item">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0">
+                                <?= $c_initial ?>
+                            </div>
+
+                            <div class="flex-1">
+                                <div class="relative inline-block max-w-full">
+                                    <div class="bg-gray-100 rounded-2xl rounded-tl-none p-3 min-w-[150px] pr-8">
+                                        <h4 class="text-xs font-bold text-gray-900"><?= $c_nama ?></h4>
+                                        <p id="comment-content-<?= $cid ?>" class="text-sm text-gray-800 leading-snug break-all"><?= $c_content ?></p>
+
+                                        <div id="comment-edit-form-<?= $cid ?>" class="hidden mt-2">
+                                            <textarea class="w-full text-xs p-2 border rounded" rows="2"><?= strip_tags($comment['CONTENT'] ?? '') ?></textarea>
+                                            <div class="flex justify-end space-x-2 mt-1">
+                                                <button onclick="cancelEdit(<?= $cid ?>)" class="text-xs text-gray-500 hover:text-gray-700">Batal</button>
+                                                <button onclick="saveEdit(<?= $cid ?>)" class="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Simpan</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <?php if (isset($_SESSION['user_id']) && $comment['USER_ID'] == $_SESSION['user_id']): ?>
+                                        <div class="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                            <button class="text-gray-400 hover:text-gray-600 p-1" onclick="toggleCommentMenu(<?= $cid ?>)">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                </svg>
+                                            </button>
+                                            <div id="comment-menu-<?= $cid ?>" class="hidden absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                                                <button onclick="editCommentUI(<?= $cid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                    <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                    Edit
+                                                </button>
+                                                <button onclick="deleteComment(<?= $cid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-100">
+                                                    <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="flex items-center space-x-4 mt-1 ml-2">
+                                    <button class="comment-like-btn text-xs font-semibold <?= $c_is_liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500' ?>" data-comment-id="<?= $cid ?>">
+                                        Like <span class="comment-like-count"><?= $c_likes > 0 ? $c_likes : '' ?></span>
+                                    </button>
+                                    <button class="reply-button text-xs font-semibold text-gray-400 hover:text-indigo-600" data-parent-id="<?= $cid ?>" data-post-id="<?= $post_id ?>">Reply</button>
+                                </div>
+
+                                <div id="reply-form-container-<?= $cid ?>" class="mt-2 ml-2"></div>
+
+                                <div id="replies-container-<?= $cid ?>" class="ml-2 pl-2 border-l-2 border-gray-100 mt-2 space-y-2">
+                                    <?php if (!empty($replies)): ?>
+                                        <?php foreach ($replies as $reply):
+                                            $rid = $reply['COMMENT_ID'];
+                                            $r_content = nl2br(htmlspecialchars($reply['CONTENT'] ?? ''));
+                                        ?>
+                                            <div class="flex items-start space-x-2 group/reply">
+                                                <div class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-[10px] flex-shrink-0">
+                                                    <?= strtoupper(substr($reply['NAMA'], 0, 1)) ?>
+                                                </div>
+
+                                                <div>
+                                                    <div class="relative inline-block max-w-full">
+                                                        <div class="bg-gray-50 rounded-xl p-2 px-3 inline-block min-w-[120px] pr-8">
+                                                            <h4 class="text-xs font-bold text-gray-900"><?= htmlspecialchars($reply['NAMA']) ?></h4>
+                                                            <p id="comment-content-<?= $rid ?>" class="text-xs text-gray-700 break-all"><?= $r_content ?></p>
+
+                                                            <div id="comment-edit-form-<?= $rid ?>" class="hidden mt-2">
+                                                                <textarea class="w-full text-xs p-2 border rounded" rows="2"><?= strip_tags($reply['CONTENT'] ?? '') ?></textarea>
+                                                                <div class="flex justify-end space-x-2 mt-1">
+                                                                    <button onclick="cancelEdit(<?= $rid ?>)" class="text-xs text-gray-500 hover:text-gray-700">Batal</button>
+                                                                    <button onclick="saveEdit(<?= $rid ?>)" class="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Simpan</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <?php if (isset($_SESSION['user_id']) && $reply['USER_ID'] == $_SESSION['user_id']): ?>
+                                                            <div class="absolute top-1 right-1 opacity-0 group-hover/reply:opacity-100 transition-opacity">
+                                                                <button class="text-gray-400 hover:text-gray-600 p-1" onclick="toggleCommentMenu(<?= $rid ?>)">
+                                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                                    </svg>
+                                                                </button>
+                                                                <div id="comment-menu-<?= $rid ?>" class="hidden absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                                                                    <button onclick="editCommentUI(<?= $rid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100">
+                                                                        <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                        </svg>
+                                                                        Edit
+                                                                    </button>
+                                                                    <button onclick="deleteComment(<?= $rid ?>)" class="flex items-center w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-gray-100">
+                                                                        <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                        </svg>
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                    </div>
+
+                                                    <div class="flex items-center space-x-2 mt-0.5 ml-1">
+                                                        <button class="comment-like-btn text-[10px] font-semibold <?= ($reply['IS_LIKED'] ?? 0) ? 'text-pink-500' : 'text-gray-400' ?>" data-comment-id="<?= $rid ?>">
+                                                            Like <span class="comment-like-count"><?= ($reply['LIKE_COUNT'] ?? 0) > 0 ? $reply['LIKE_COUNT'] : '' ?></span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-sm text-gray-500 text-center py-2 empty-msg">Belum ada komentar.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
-<?php
-// Note: Pastikan logika comments loop ada, saya sederhanakan bagian comments loop di atas agar tidak terlalu panjang.
-// Jika file comments_list_recursive.php tidak ada, Anda bisa paste ulang loop foreach komentar dari kode lama Anda ke dalam div #comments-list.
-?>
