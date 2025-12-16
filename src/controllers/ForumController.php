@@ -134,6 +134,7 @@ class ForumController
                         $p['comments_list'] = $comments_by_post[$p['POST_ID']] ?? [];
                     }
                 }
+                $forumPhotos = $this->forumModel->getForumPhotos($forum_id);
             }
         }
 
@@ -486,5 +487,39 @@ class ForumController
         // Redirect kembali ke halaman forum (atau ke list forum jika private)
         header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
         exit;
+    }
+
+    public function delete()
+    {
+        if (session_status() == PHP_SESSION_NONE) session_start();
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $forum_id = $_POST['forum_id'];
+            $user_id = $_SESSION['user_id'];
+
+            // 1. Validasi: Pastikan dia Creator
+            $creatorId = $this->forumModel->getCreatorId($forum_id);
+
+            if ($creatorId != $user_id) {
+                $_SESSION['error_message'] = "Anda tidak memiliki izin menghapus grup ini.";
+                header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
+                exit;
+            }
+
+            // 2. Proses Hapus
+            if ($this->forumModel->deleteForum($forum_id)) {
+                $_SESSION['success_message'] = "Grup berhasil dihapus permanen.";
+                header("Location: " . BASE_URL . "/forum"); // Balik ke halaman list forum
+                exit;
+            } else {
+                $_SESSION['error_message'] = "Gagal menghapus grup. Pastikan data terkait sudah bersih.";
+                header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
+                exit;
+            }
+        }
     }
 }

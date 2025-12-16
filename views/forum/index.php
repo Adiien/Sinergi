@@ -114,14 +114,28 @@
                 <div class="space-y-4 overflow-y-auto custom-scroll pr-2 flex-1">
                     <?php if (!empty($joinedForums)): ?>
                         <?php foreach ($joinedForums as $jf): ?>
-                            <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-xl transition group">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                                    <?= substr($jf['NAME'], 0, 1) ?>
+
+                            <div onclick="window.location.href='<?= BASE_URL ?>/forum/show?id=<?= $jf['FORUM_ID'] ?>'"
+                                class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-xl transition group">
+
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0 overflow-hidden">
+                                    <?php if (!empty($jf['COVER_IMAGE'])): ?>
+                                        <img src="<?= BASE_URL ?>/public/uploads/forums/<?= $jf['COVER_IMAGE'] ?>" class="w-full h-full object-cover">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($jf['NAME'], 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
+
                                 <div class="overflow-hidden">
-                                    <h4 class="text-sm font-bold text-gray-800 leading-tight truncate group-hover:text-blue-600 transition"><?= htmlspecialchars($jf['NAME']) ?></h4>
+                                    <h4 class="text-sm font-bold text-gray-800 leading-tight truncate group-hover:text-blue-600 transition">
+                                        <?= htmlspecialchars($jf['NAME']) ?>
+                                    </h4>
+                                    <?php if (isset($jf['MEMBER_COUNT'])): ?>
+                                        <p class="text-xs text-gray-500"><?= $jf['MEMBER_COUNT'] ?> Members</p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
+
                         <?php endforeach; ?>
                     <?php else: ?>
                         <div class="flex flex-col items-center justify-center py-6 text-center opacity-60">

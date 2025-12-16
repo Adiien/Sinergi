@@ -332,4 +332,50 @@ class ForumModel
         $row = oci_fetch_assoc($stmt);
         return $row ? $row['CREATED_BY'] : null;
     }
+
+    public function deleteForum($forum_id)
+    {
+        // 1. Hapus Member dulu
+        $queryMembers = "DELETE FROM forum_members WHERE forum_id = :id";
+        $stmt1 = oci_parse($this->conn, $queryMembers);
+        oci_bind_by_name($stmt1, ':id', $forum_id);
+        oci_execute($stmt1, OCI_NO_AUTO_COMMIT);
+
+        // 2. Hapus Postingan (Opsional: Jika postingan terikat forum_id)
+        // Catatan: Jika postingan punya child (komen/like), ini mungkin error jika DB tidak cascade.
+        // Asumsi: Kita hapus post yang terhubung langsung.
+        $queryPosts = "DELETE FROM posts WHERE forum_id = :id";
+        $stmt2 = oci_parse($this->conn, $queryPosts);
+        oci_bind_by_name($stmt2, ':id', $forum_id);
+        oci_execute($stmt2, OCI_NO_AUTO_COMMIT);
+
+        // 3. Hapus Forum Utama
+        $queryForum = "DELETE FROM forums WHERE forum_id = :id";
+        $stmt3 = oci_parse($this->conn, $queryForum);
+        oci_bind_by_name($stmt3, ':id', $forum_id);
+
+        // Eksekusi final
+        $result = oci_execute($stmt3, OCI_COMMIT_ON_SUCCESS);
+
+        return $result;
+    }
+    // Ambil semua foto yang ada di postingan forum ini
+    public function getForumPhotos($forum_id)
+    {
+        $query = "SELECT pi.image_path, p.post_id, p.created_at
+                  FROM post_images pi
+                  JOIN posts p ON pi.post_id = p.post_id
+                  WHERE p.forum_id = :forum_id
+                  ORDER BY p.created_at DESC";
+
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':forum_id', $forum_id);
+        oci_execute($stmt);
+
+        $photos = [];
+        while ($row = oci_fetch_assoc($stmt)) {
+            $photos[] = $row;
+        }
+        return $photos;
+    }
 }

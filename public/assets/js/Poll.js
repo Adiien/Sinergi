@@ -1,5 +1,5 @@
 function submitVote(postId, optionId) {
-  fetch("/coba9/post/vote", {
+  fetch("/Sinergi/post/vote", {
     // Sesuaikan path BASE URL Anda
     method: "POST",
     headers: {

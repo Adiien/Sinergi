@@ -260,6 +260,12 @@ switch ($route) {
         $controller->leave();
         break;
 
+    case 'forum/delete':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->delete();
+        break;
+
     case 'profile':
         require_once 'src/Controllers/ProfileController.php';
         $controller = new ProfileController();

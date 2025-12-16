@@ -92,6 +92,15 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </a>
+
+                        <form action="<?= BASE_URL ?>/forum/delete" method="POST" onsubmit="return confirm('PERINGATAN: Tindakan ini permanen!\n\nSemua postingan dan anggota akan dihapus.\nApakah Anda yakin ingin menghapus grup ini?');" class="mr-3">
+                            <input type="hidden" name="forum_id" value="<?= $forum['FORUM_ID'] ?>">
+                            <button type="submit" class="bg-white hover:bg-red-50 border border-red-200 text-red-500 hover:text-red-600 font-bold p-2.5 rounded-xl flex items-center transition shadow-sm" title="Delete Forum">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </form>
                     <?php endif; ?>
 
                     <button type="button" onclick="document.getElementById('shareForumModal').classList.remove('hidden')"
@@ -196,7 +205,8 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                             Members
                         </a>
 
-                        <a href="#" class="flex items-center px-6 py-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium transition border-l-4 border-transparent">
+                        <a href="<?= BASE_URL ?>/forum/show?id=<?= $forum['FORUM_ID'] ?>&view=photos"
+                            class="flex items-center px-6 py-4 transition <?= $activeTab == 'photos' ? $tabActive : $tabInactive ?>">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
@@ -316,51 +326,90 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                             <?php endif; ?>
                         </div>
 
-                    <?php else: ?>
+                    <?php elseif ($activeTab == 'photos'): ?>
 
-                        <?php if ($isMember): ?>
-                            <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center space-x-4">
-                                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold overflow-hidden">
-                                    <?php if (isset($_SESSION['nama'])): ?><?= strtoupper(substr($_SESSION['nama'], 0, 1)) ?><?php else: ?>?<?php endif; ?>
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-bold text-gray-900 text-xl mb-6 flex items-center">
+                                Forum Media
+                            </h3>
+
+                            <?php if (!empty($forumPhotos)): ?>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    <?php foreach ($forumPhotos as $photo): ?>
+                                        <a href="<?= BASE_URL ?>/forum/show?id=<?= $forum['FORUM_ID'] ?>#post-<?= $photo['POST_ID'] ?>"
+                                            class="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden block border border-gray-200">
+
+                                            <img src="<?= BASE_URL ?>/public/uploads/posts/<?= htmlspecialchars($photo['IMAGE_PATH']) ?>"
+                                                class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500"
+                                                loading="lazy">
+
+                                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-300 flex items-center justify-center">
+                                                <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition duration-300 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </div>
+                                        </a>
+                                    <?php endforeach; ?>
                                 </div>
-                                <div id="create-post-trigger" class="flex-1 bg-gray-100 hover:bg-gray-200 transition rounded-full px-5 py-3 text-gray-500 cursor-pointer text-sm font-medium">Write something to the group...</div>
-                                <button class="text-gray-400 hover:text-indigo-600 transition p-2 hover:bg-gray-100 rounded-full"><img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6"></button>
-                            </div>
+                            <?php else: ?>
+                                <div class="flex flex-col items-center justify-center py-12 text-center">
+                                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-gray-900 font-bold">No photos yet</h3>
+                                    <p class="text-gray-500 text-sm">Photos shared in posts will appear here.</p>
+                                </div>
+                            <?php endif; ?>
+
                         <?php else: ?>
-                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm">
-                                <div class="flex">
-                                    <div class="flex-shrink-0"><svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                        </svg></div>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-blue-700">Anda harus bergabung dengan forum ini untuk membuat postingan.</p>
+
+                            <?php if ($isMember): ?>
+                                <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center space-x-4">
+                                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold overflow-hidden">
+                                        <?php if (isset($_SESSION['nama'])): ?><?= strtoupper(substr($_SESSION['nama'], 0, 1)) ?><?php else: ?>?<?php endif; ?>
+                                    </div>
+                                    <div id="create-post-trigger" class="flex-1 bg-gray-100 hover:bg-gray-200 transition rounded-full px-5 py-3 text-gray-500 cursor-pointer text-sm font-medium">Write something to the group...</div>
+                                    <button class="text-gray-400 hover:text-indigo-600 transition p-2 hover:bg-gray-100 rounded-full"><img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6"></button>
+                                </div>
+                            <?php else: ?>
+                                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r shadow-sm">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0"><svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                            </svg></div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-blue-700">Anda harus bergabung dengan forum ini untuk membuat postingan.</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            <?php endif; ?>
+
+
+                            <?php if (!empty($posts)): ?>
+                                <?php foreach ($posts as $post): ?>
+                                    <?php require 'views/partials/post_card.php'; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                    <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+                                        </svg></div>
+                                    <h3 class="text-xl font-bold text-gray-900">No posts yet</h3>
+                                    <p class="text-gray-500 text-sm mt-1">Be the first to share something in this group!</p>
+                                </div>
+                            <?php endif; ?>
+
                         <?php endif; ?>
 
-                        <?php if (!empty($posts)): ?>
-                            <?php foreach ($posts as $post): ?>
-                                <?php require 'views/partials/post_card.php'; ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
-                                <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
-                                    </svg></div>
-                                <h3 class="text-xl font-bold text-gray-900">No posts yet</h3>
-                                <p class="text-gray-500 text-sm mt-1">Be the first to share something in this group!</p>
-                            </div>
-                        <?php endif; ?>
+                    <?php endif; // [AKHIR MODIFIKASI] End If Access Denied 
+                    ?>
 
-                    <?php endif; ?>
-
-                <?php endif; // [AKHIR MODIFIKASI] End If Access Denied 
-                ?>
+                        </div>
 
             </div>
-
-        </div>
     </main>
 
     <section id="create-post-modal"
@@ -655,6 +704,29 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                 });
             }
         });
+    </script>
+
+    <script>
+        function switchTab(tabName) {
+            // 1. Sembunyikan semua konten tab
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            // 2. Reset style tombol tab (biar ga bold/aktif semua)
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-600', 'border-indigo-600');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // 3. Tampilkan konten yang dipilih
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+
+            // 4. Aktifkan tombol yang dipilih
+            const activeBtn = document.getElementById('btn-' + tabName);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-500', 'border-transparent');
+                activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
+            }
+        }
     </script>
 
     <script>
