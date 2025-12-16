@@ -281,7 +281,6 @@ class AdminController
 
 public function statistik()
 {
-    // proteksi admin
     if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
         header('Location: ' . BASE_URL . '/home');
         exit;
@@ -289,16 +288,15 @@ public function statistik()
 
     $db = koneksi_oracle();
 
-    require_once __DIR__ . '/../models/Forum.php';
-    require_once __DIR__ . '/../models/User.php';
-    require_once __DIR__ . '/../models/Post.php';
-    require_once __DIR__ . '/../models/Report.php';
-
+    require_once 'src/models/User.php';
+    require_once 'src/models/Post.php';
+    require_once 'src/models/forum.php';
 
     $userModel  = new User($db);
     $forumModel = new ForumModel($db);
     $postModel  = new Post($db);
 
+    // KPI
     $stats = [
         'total_users'  => (int) $userModel->countAll(),
         'active_users' => (int) $userModel->countActive(),
@@ -306,11 +304,13 @@ public function statistik()
         'total_posts'  => (int) $postModel->countAll(),
     ];
 
+    // Aktivitas
     $activeUsers  = $userModel->getMostActiveUsers(5);
     $activeForums = $forumModel->getMostActiveForums(5);
 
     require 'views/admin/stats.php';
 }
+
 
     public function review()
 {

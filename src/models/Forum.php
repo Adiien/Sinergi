@@ -332,4 +332,33 @@ class ForumModel
         $row = oci_fetch_assoc($stmt);
         return $row ? $row['CREATED_BY'] : null;
     }
+
+    public function getMostActiveForums($limit = 5)
+{
+    $sql = "
+        SELECT
+            f.forum_id,
+            f.name,
+            COUNT(p.post_id) AS total_posts
+        FROM forums f
+        LEFT JOIN posts p ON p.forum_id = f.forum_id
+        WHERE p.is_deleted = 0
+        GROUP BY f.forum_id, f.name
+        ORDER BY total_posts DESC
+        FETCH FIRST :limit ROWS ONLY
+    ";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':limit', $limit);
+    oci_execute($stmt);
+
+    $forums = [];
+    while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+        $forums[] = $row;
+    }
+
+    oci_free_statement($stmt);
+    return $forums;
+}
+
 }
