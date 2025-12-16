@@ -1,127 +1,118 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Review Laporan - Admin Panel</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-</head>
-<body class="bg-slate-100 min-h-screen py-8">
+<?php
+$stats        = $stats ?? [];
+$activeUsers  = $activeUsers ?? [];
+$activeForums = $activeForums ?? [];
+?>
 
-<div class="max-w-6xl mx-auto px-4">
+<div class="grid grid-cols-12 gap-6">
 
-    <!-- Back -->
-    <a href="<?= BASE_URL ?>/admin?tab=reports"
-       class="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-4">
-        ← Kembali
-    </a>
+  <!-- HEADER -->
+  <div class="col-span-12 flex items-center justify-between">
+    <h1 class="text-xl font-bold">Overview Report</h1>
 
-    <!-- Title -->
-    <h1 class="text-xl font-semibold text-gray-800 mb-6">
-        Detail Review Laporan #<?= $report['REPORT_ID'] ?>
-    </h1>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- LEFT COLUMN -->
-        <div class="space-y-6">
-
-            <!-- Pelapor -->
-            <div class="bg-white rounded-xl shadow p-5">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">
-                    Pelapor
-                </h3>
-
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">
-                        <?= substr($report['REPORTER_NAME'] ?? 'U', 0, 1) ?>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-800">
-                            <?= htmlspecialchars($report['REPORTER_NAME']) ?>
-                        </p>
-                        <p class="text-xs text-gray-500">
-                            <?= htmlspecialchars($report['REPORTER_EMAIL']) ?>
-                        </p>
-                    </div>
-                </div>
-
-                <p class="text-xs text-gray-400 mt-3">
-                    Dilaporkan pada <?= date('d M Y H:i', strtotime($report['CREATED_AT'])) ?>
-                </p>
-            </div>
-
-            <!-- Alasan -->
-            <div class="bg-white rounded-xl shadow p-5 border-l-4 border-red-500">
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-2">
-                    Alasan Pelaporan
-                </h3>
-                <p class="italic text-gray-800">
-                    "<?= htmlspecialchars($report['REASON']) ?>"
-                </p>
-            </div>
-
-        </div>
-
-        <!-- RIGHT COLUMN -->
-        <div class="lg:col-span-2">
-
-            <div class="bg-white rounded-xl shadow p-6">
-
-                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-4">
-                    Konten yang Dilaporkan (<?= ucfirst($report['TARGET_TYPE']) ?>)
-                </h3>
-
-                <!-- Author -->
-                <div class="bg-slate-50 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-gray-600">
-                        Diposting oleh:
-                        <span class="font-semibold text-gray-800">
-                            <?= htmlspecialchars($report['TARGET_USER_NAME']) ?>
-                        </span>
-                        <span class="text-xs text-gray-500">
-                            (<?= htmlspecialchars($report['TARGET_USER_EMAIL']) ?>)
-                        </span>
-                    </p>
-                </div>
-
-                <!-- Post Content -->
-                <div class="border rounded-lg p-4">
-                    <p class="text-gray-800 whitespace-pre-line">
-                        <?= htmlspecialchars($report['POST_CONTENT']) ?>
-                    </p>
-
-                    <?php if (!empty($report['POST_IMAGE'])): ?>
-                        <img src="<?= BASE_URL ?>/uploads/<?= htmlspecialchars($report['POST_IMAGE']) ?>"
-                             class="mt-4 max-h-72 rounded-lg border mx-auto">
-                    <?php endif; ?>
-                </div>
-
-                <!-- ACTIONS -->
-                <div class="flex justify-end gap-4 mt-8 pt-6 border-t">
-
-                    <form method="POST"
-                          onsubmit="return confirm('Abaikan laporan ini?')">
-                        <input type="hidden" name="action" value="dismiss">
-                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                            ✕ Abaikan Laporan
-                        </button>
-                    </form>
-
-                    <form method="POST"
-                          onsubmit="return confirm('Konten akan dihapus permanen. Lanjutkan?')">
-                        <input type="hidden" name="action" value="delete_content">
-                        <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                            🗑 Hapus Konten & Selesaikan
-                        </button>
-                    </form>
-
-                </div>
-
-            </div>
-
-        </div>
+    <div class="flex bg-gray-100 rounded-lg p-1 text-sm">
+      <button
+        onclick="showUsers()"
+        id="btnUsers"
+        class="px-3 py-1 rounded-md bg-white shadow text-indigo-600 font-medium">
+        User Aktif
+      </button>
+      <button
+        onclick="showForums()"
+        id="btnForums"
+        class="px-3 py-1 rounded-md text-gray-500">
+        Forum Aktif
+      </button>
     </div>
-</div>
-</body>
+  </div>
 
-</html>
+  <!-- AKTIVITAS CARD -->
+  <div class="col-span-12 lg:col-span-4 bg-white rounded-xl shadow p-4">
+
+    <!-- USER LIST -->
+    <div id="usersList">
+      <?php foreach ($activeUsers as $index => $u): ?>
+        <div class="flex items-center justify-between py-3 border-b last:border-b-0">
+
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600
+                        flex items-center justify-center text-sm font-bold">
+              <?= strtoupper(substr($u['NAMA'], 0, 1)) ?>
+            </div>
+
+            <div>
+              <p class="text-sm font-medium"><?= htmlspecialchars($u['NAMA']) ?></p>
+              <p class="text-xs text-gray-500">
+                <?= $index === 0 ? 'Paling aktif' : 'User aktif' ?>
+              </p>
+            </div>
+          </div>
+
+          <span class="text-xs text-gray-600">
+            <?= (int)$u['TOTAL_POSTS'] ?> post
+          </span>
+
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+    <!-- FORUM LIST -->
+    <div id="forumsList" class="hidden">
+      <?php foreach ($activeForums as $index => $f): ?>
+        <div class="flex items-center justify-between py-3 border-b last:border-b-0">
+
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-green-100 text-green-600
+                        flex items-center justify-center text-sm font-bold">
+              #
+            </div>
+
+            <div>
+              <p class="text-sm font-medium"><?= htmlspecialchars($f['NAME']) ?></p>
+              <p class="text-xs text-gray-500">
+                <?= $index === 0 ? 'Forum teraktif' : 'Forum aktif' ?>
+              </p>
+            </div>
+          </div>
+
+          <span class="text-xs text-gray-600">
+            <?= (int)$f['TOTAL_POSTS'] ?> post
+          </span>
+
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+  </div>
+
+  <!-- AREA KANAN (CHART / KPI) -->
+  <div class="col-span-12 lg:col-span-8 bg-white rounded-xl shadow p-6 flex items-center justify-center text-gray-400">
+    Statistik Aktivitas (Chart nanti)
+  </div>
+
+</div>
+
+<script>
+const usersList  = document.getElementById('usersList');
+const forumsList = document.getElementById('forumsList');
+const btnUsers   = document.getElementById('btnUsers');
+const btnForums  = document.getElementById('btnForums');
+
+function showUsers() {
+  usersList.classList.remove('hidden');
+  forumsList.classList.add('hidden');
+
+  btnUsers.classList.add('bg-white','shadow','text-indigo-600');
+  btnForums.classList.remove('bg-white','shadow','text-indigo-600');
+  btnForums.classList.add('text-gray-500');
+}
+
+function showForums() {
+  forumsList.classList.remove('hidden');
+  usersList.classList.add('hidden');
+
+  btnForums.classList.add('bg-white','shadow','text-indigo-600');
+  btnUsers.classList.remove('bg-white','shadow','text-indigo-600');
+  btnUsers.classList.add('text-gray-500');
+}
+</script>

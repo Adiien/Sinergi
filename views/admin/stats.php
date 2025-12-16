@@ -18,7 +18,10 @@ $stats = $stats ?? [
 
   <!-- HEADER -->
   <div class="flex items-center justify-between mb-4">
-  <h3 class="font-semibold text-lg">Aktivitas</h3>
+  <h1 class="text-xl font-bold mb-6 text-center">
+  Overview Report
+  </h1>
+
 
   <div class="flex bg-gray-100 rounded-lg p-1 text-sm">
     <button

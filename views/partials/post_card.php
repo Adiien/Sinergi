@@ -30,8 +30,9 @@ $isFollowing = ($post['IS_FOLLOWING'] ?? 0) > 0;
 $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user_id']);
 ?>
 
-<div class="bg-white rounded-xl shadow-lg overflow-hidden post-card mb-6 border border-gray-100">
+<div class="bg-white rounded-xl shadow-lg overflow-hidden post-card mb-6">
     <div class="p-5 flex justify-between items-center">
+
         <div class="flex items-center space-x-3">
             <div class="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center text-white font-bold text-xl">
                 <span><?php echo $initial; ?></span>
@@ -65,21 +66,25 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
 
                 <div class="flex items-center text-sm text-gray-500 space-x-1">
                     <span><?php echo $handle; ?></span>
+
                     <?php if ($timestamp): ?>
                         <span class="text-gray-400">&middot; <?php echo $timestamp; ?></span>
                     <?php endif; ?>
+
                     <span class="text-gray-400">&middot;</span>
                     <?php if ($visibility == 'public'): ?>
                         <div class="group relative flex items-center">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Public">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" />
                             </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Public</span>
                         </div>
                     <?php else: ?>
                         <div class="group relative flex items-center">
-                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="Private">
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
+                            <span class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-90">Private</span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -87,31 +92,43 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div class="flex items-center space-x-3">
-            <?php if (!$isOwnPost):
+            <?php
+            if (!$isOwnPost):
                 $btnText = $isFollowing ? 'Following' : 'Follow';
-                $btnClass = $isFollowing ? 'bg-gray-100 text-gray-500 border-gray-200' : 'border-blue-500 text-blue-500 hover:bg-blue-50';
+                $btnClass = $isFollowing
+                    ? 'bg-gray-100 text-gray-500 border-gray-200'
+                    : 'border-blue-500 text-blue-500 hover:bg-blue-50';
             ?>
-                <button data-user-id="<?php echo $post['USER_ID']; ?>" class="follow-button border <?php echo $btnClass; ?> px-3 py-1 rounded-full text-xs font-bold transition-colors">
+                <button
+                    data-user-id="<?php echo $post['USER_ID']; ?>"
+                    class="follow-button border <?php echo $btnClass; ?> px-3 py-1 rounded-full text-xs font-bold transition-colors">
                     <?php echo $btnText; ?>
                 </button>
             <?php endif; ?>
 
             <div class="relative" data-menu-container>
-                <button type="button" class="post-menu-button text-gray-400 hover:text-gray-600 p-1 rounded-full" data-target-menu-id="<?php echo $post_id; ?>">
+                <button type="button"
+                    class="post-menu-button text-gray-400 hover:text-gray-600 p-1 rounded-full"
+                    data-target-menu-id="<?php echo $post_id; ?>">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
                     </svg>
                 </button>
 
-                <div id="post-menu-<?php echo $post_id; ?>" class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+                <div id="post-menu-<?php echo $post_id; ?>"
+                    class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-100">
+
                     <?php if (isset($_SESSION['user_id']) && ($isOwnPost || (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'))): ?>
-                        <a href="<?= BASE_URL ?>/post/delete?id=<?php echo $post_id; ?>" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" onclick="return confirm('Hapus postingan ini?');">
+                        <a href="<?= BASE_URL ?>/post/delete?id=<?php echo $post_id; ?>"
+                            class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus postingan ini?');">
                             <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                             </svg>
                             Delete
                         </a>
                     <?php endif; ?>
+
                     <?php if ($isOwnPost): ?>
                         <button type="button"
                             class="disable-comment-btn flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -130,6 +147,10 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                             <?php endif; ?>
                         </button>
                     <?php endif; ?>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9d00ec8edff5bef1bd634a13b9d23638b5f522f8
                     <button type="button"
                         class="report-button flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         data-target-type="post"
@@ -165,7 +186,8 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                     ?>
                         <div class="relative w-full">
                             <?php if (!$hasVoted): ?>
-                                <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)" class="w-full text-left border border-indigo-400 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition font-medium">
+                                <button onclick="submitVote(<?php echo $post_id; ?>, <?php echo $opt['OPTION_ID']; ?>)"
+                                    class="w-full text-left border border-indigo-400 text-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition font-medium">
                                     <?php echo htmlspecialchars($opt['OPTION_TEXT']); ?>
                                 </button>
                             <?php else: ?>
@@ -192,55 +214,6 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
             <?php endif; ?>
         <?php endif; ?>
     </div>
-
-    <?php if (!empty($post['SHARED_FORUM_ID'])): ?>
-        <div class="px-5 pb-5">
-            <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition group cursor-pointer"
-                onclick="window.location.href='<?= BASE_URL ?>/forum/show?id=<?= $post['SHARED_FORUM_ID'] ?>'">
-
-                <div class="h-36 bg-gray-100 relative overflow-hidden">
-                    <?php if (!empty($post['SHARED_FORUM_COVER'])): ?>
-                        <img src="<?= BASE_URL ?>/public/uploads/forums/<?= $post['SHARED_FORUM_COVER'] ?>"
-                            class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
-                    <?php else: ?>
-                        <div class="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-                            <span class="text-white font-bold text-2xl opacity-30">
-                                <?= strtoupper(substr($post['SHARED_FORUM_NAME'] ?? 'F', 0, 1)) ?>
-                            </span>
-                        </div>
-                    <?php endif; ?>
-
-                    <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-700 shadow-sm border border-gray-100">
-                        <?= ucfirst($post['SHARED_FORUM_VISIBILITY'] ?? 'Public') ?> Group
-                    </span>
-                </div>
-
-                <div class="p-4 bg-gray-50/50">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h4 class="font-bold text-lg text-gray-900 leading-tight group-hover:text-indigo-600 transition">
-                                <?= htmlspecialchars($post['SHARED_FORUM_NAME'] ?? '') ?>
-                            </h4>
-                            <p class="text-sm text-gray-500 mt-1 flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                <?= number_format($post['SHARED_FORUM_MEMBERS'] ?? 0) ?> Members
-                            </p>
-                        </div>
-                        <span class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-indigo-700 transition">
-                            View
-                        </span>
-                    </div>
-                    <?php if (!empty($post['SHARED_FORUM_DESC'])): ?>
-                        <p class="text-xs text-gray-500 mt-2 line-clamp-2">
-                            <?= htmlspecialchars($post['SHARED_FORUM_DESC']) ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
 
     <?php if (!empty($imageList)): ?>
         <div class="px-5 pb-4">
@@ -315,6 +288,7 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
 
         <div id="comments-section-<?php echo $post_id; ?>" class="hidden comments-section pt-3">
+
             <?php if (!$isCommentDisabled): ?>
                 <form action="<?= BASE_URL ?>/post/comment" method="POST" class="flex space-x-2 mb-4">
                     <input type="hidden" name="post_id" value="<?php echo $post_id; ?>">
@@ -322,8 +296,11 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                     <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Kirim</button>
                 </form>
             <?php else: ?>
-                <div class="disabled-msg bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-center text-sm text-gray-500 italic">Komentar telah dinonaktifkan.</div>
+                <div class="disabled-msg bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 text-center text-sm text-gray-500 italic">
+                    Komentar telah dinonaktifkan.
+                </div>
             <?php endif; ?>
+
             <div id="comments-list-<?php echo $post_id; ?>" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scroll">
                 <?php $comments_tree = $post['comments_list'] ?? []; ?>
 
@@ -464,7 +441,3 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         </div>
     </div>
 </div>
-<?php
-// Note: Pastikan logika comments loop ada, saya sederhanakan bagian comments loop di atas agar tidak terlalu panjang.
-// Jika file comments_list_recursive.php tidak ada, Anda bisa paste ulang loop foreach komentar dari kode lama Anda ke dalam div #comments-list.
-?>
