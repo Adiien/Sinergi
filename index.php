@@ -62,7 +62,7 @@ switch ($route) {
         $controller->verify();
         break;
 
-    case 'mitra':            
+    case 'mitra':
         require_once 'src/Controllers/MitraController.php';
         $controller = new MitraController();
         $controller->index();
@@ -279,6 +279,12 @@ switch ($route) {
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->leave();
+        break;
+
+    case 'forum/delete':
+        require_once 'src/Controllers/ForumController.php';
+        $controller = new ForumController();
+        $controller->delete();
         break;
 
     case 'profile':

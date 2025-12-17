@@ -211,6 +211,56 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
         <?php endif; ?>
     </div>
 
+    <?php if (!empty($post['SHARED_FORUM_ID'])): ?>
+        <div class="px-5 pb-5">
+            <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition group cursor-pointer"
+                onclick="window.location.href='<?= BASE_URL ?>/forum/show?id=<?= $post['SHARED_FORUM_ID'] ?>'">
+
+                <div class="h-36 bg-gray-100 relative overflow-hidden">
+                    <?php if (!empty($post['SHARED_FORUM_COVER'])): ?>
+                        <img src="<?= BASE_URL ?>/public/uploads/forums/<?= $post['SHARED_FORUM_COVER'] ?>"
+                            class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
+                    <?php else: ?>
+                        <div class="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
+                            <span class="text-white font-bold text-2xl opacity-30">
+                                <?= strtoupper(substr($post['SHARED_FORUM_NAME'] ?? 'F', 0, 1)) ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+
+                    <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-700 shadow-sm border border-gray-100">
+                        <?= ucfirst($post['SHARED_FORUM_VISIBILITY'] ?? 'Public') ?> Group
+                    </span>
+                </div>
+
+                <div class="p-4 bg-gray-50/50">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-900 leading-tight group-hover:text-indigo-600 transition">
+                                <?= htmlspecialchars($post['SHARED_FORUM_NAME'] ?? '') ?>
+                            </h4>
+                            <p class="text-sm text-gray-500 mt-1 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <?= number_format($post['SHARED_FORUM_MEMBERS'] ?? 0) ?> Members
+                            </p>
+                        </div>
+                        <span class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm group-hover:bg-indigo-700 transition">
+                            View
+                        </span>
+                    </div>
+                    <?php if (!empty($post['SHARED_FORUM_DESC'])): ?>
+                        <p class="text-xs text-gray-500 mt-2 line-clamp-2">
+                            <?= htmlspecialchars($post['SHARED_FORUM_DESC']) ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+
     <?php if (!empty($imageList)): ?>
         <div class="px-5 pb-4">
             <div class="relative group w-full bg-gray-100 border border-gray-200 rounded-lg overflow-hidden">

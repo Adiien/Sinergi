@@ -1,47 +1,47 @@
  <?php
 
 
-// AUTO-SYNC SESSION Fungsinya: Mengecek role terbaru di database setiap kali halaman dimuat.
+  // AUTO-SYNC SESSION Fungsinya: Mengecek role terbaru di database setiap kali halaman dimuat.
 
-if (isset($_SESSION['user_id'])) {
+  if (isset($_SESSION['user_id'])) {
     try {
 
-        require_once __DIR__ . '/../../database.php'; 
-        require_once __DIR__ . '/../../src/models/User.php';
+      require_once __DIR__ . '/../../database.php';
+      require_once __DIR__ . '/../../src/models/User.php';
 
-        // Buat koneksi khusus untuk sync
-        $db_sync = koneksi_oracle();
-        $userModel_sync = new User($db_sync);
+      // Buat koneksi khusus untuk sync
+      $db_sync = koneksi_oracle();
+      $userModel_sync = new User($db_sync);
 
-        // Ambil data terbaru user
-        $freshData = $userModel_sync->getUserById($_SESSION['user_id']);
+      // Ambil data terbaru user
+      $freshData = $userModel_sync->getUserById($_SESSION['user_id']);
 
-        // Update Session Browser
-        if ($freshData) {
-            $_SESSION['role_name'] = $freshData['ROLE_NAME']; 
-            $_SESSION['status']    = $freshData['STATUS'];    
-            $_SESSION['nama']      = $freshData['NAMA'];     
-        }
+      // Update Session Browser
+      if ($freshData) {
+        $_SESSION['role_name'] = $freshData['ROLE_NAME'];
+        $_SESSION['status']    = $freshData['STATUS'];
+        $_SESSION['nama']      = $freshData['NAMA'];
+      }
     } catch (Exception $e) {
-        // Silent error: Jika terjadi error koneksi, biarkan halaman tetap dimuat dengan session lama
+      // Silent error: Jika terjadi error koneksi, biarkan halaman tetap dimuat dengan session lama
     }
-}
+  }
 
 
 
-// LOGIKA TAMPILAN NAVIGASI, Cek URL
-$current_uri = $_SERVER['REQUEST_URI'];
-$is_home = strpos($current_uri, '/home') !== false;
-$is_message = strpos($current_uri, '/messages') !== false;
-$is_forum = strpos($current_uri, '/forum') !== false;
+  // LOGIKA TAMPILAN NAVIGASI, Cek URL
+  $current_uri = $_SERVER['REQUEST_URI'];
+  $is_home = strpos($current_uri, '/home') !== false;
+  $is_message = strpos($current_uri, '/messages') !== false;
+  $is_forum = strpos($current_uri, '/forum') !== false;
 
-$activeText = 'text-white font-semibold border-b-2 border-white pb-1';
-$inactiveText = 'text-gray-300 hover:text-white border-b-2 border-transparent pb-1 transition-all';
+  $activeText = 'text-white font-semibold border-b-2 border-white pb-1';
+  $inactiveText = 'text-gray-300 hover:text-white border-b-2 border-transparent pb-1 transition-all';
 
-$activeIcon = 'bg-white/20 text-white rounded-lg p-1.5 shadow-inner transition-all';
-$inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
-?>
- 
+  $activeIcon = 'bg-white/20 text-white rounded-lg p-1.5 shadow-inner transition-all';
+  $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1.5 transition-all';
+  ?>
+
  <?php
   // Cek URL
   $current_uri = $_SERVER['REQUEST_URI'];
@@ -264,15 +264,15 @@ $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1
        </a>
        <a href="<?= BASE_URL ?>/forum" class="<?= $is_forum ? $activeText : $inactiveText ?>">Forums</a>
        <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
-        <a href="<?= BASE_URL ?>/admin?tab=reports" 
+         <a href="<?= BASE_URL ?>/admin?tab=reports"
            class="relative text-yellow-400 hover:text-white font-bold pb-1 flex items-center gap-1">
-          Admin Panel
-          <span id="nav-admin-badge" 
-                class="hidden absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#36364c] animate-pulse">
-            0
-          </span>
-        </a>
-      <?php endif; ?>
+           Admin Panel
+           <span id="nav-admin-badge"
+             class="hidden absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#36364c] animate-pulse">
+             0
+           </span>
+         </a>
+       <?php endif; ?>
        <a href="<?= BASE_URL ?>/messages"
          class="<?= $is_message ? $activeIcon : $inactiveIcon ?> flex items-center justify-center">
          <img src="<?= BASE_URL ?>/public/assets/image/MessageIcon.png" alt="Messages" class="w-6 h-6" />
@@ -356,15 +356,6 @@ $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1
              Edit Setting
            </a>
            <a
-             href="#"
-             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-             role="menuitem">
-             <svg class="w-5 h-5 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-               <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-             </svg>
-             My Bin
-           </a>
-           <a
              href="<?= BASE_URL ?>/logout"
              class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
              role="menuitem">
@@ -378,38 +369,38 @@ $inactiveIcon = 'text-gray-300 hover:bg-white/10 hover:text-white rounded-lg p-1
      </div>
    </div>
    <?php if (isset($_SESSION['role_name']) && $_SESSION['role_name'] == 'admin'): ?>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const navBadge = document.getElementById('nav-admin-badge');
+     <script>
+       document.addEventListener("DOMContentLoaded", () => {
+         const navBadge = document.getElementById('nav-admin-badge');
 
-    // Fungsi Cek Laporan
-    const checkAdminNotif = async () => {
-        try {
-            // Funakan API yang sama dengan Sidebar tadi
-            const res = await fetch('<?= BASE_URL ?>/api/admin/notifications');
-            const data = await res.json();
-            
-            if (data.count > 0) {
-                if(navBadge) {
-                    navBadge.innerText = data.count;     // Update angka
-                    navBadge.classList.remove('hidden'); // Munculkan badge
-                }
-            } else {
-                if(navBadge) navBadge.classList.add('hidden');
-            }
-        } catch (error) {
-            // Silent error agar tidak mengganggu console user biasa jika gagal fetch
-        }
-    };
+         // Fungsi Cek Laporan
+         const checkAdminNotif = async () => {
+           try {
+             // Funakan API yang sama dengan Sidebar tadi
+             const res = await fetch('<?= BASE_URL ?>/api/admin/notifications');
+             const data = await res.json();
 
-    // Jalankan pertama kali
-    checkAdminNotif();
+             if (data.count > 0) {
+               if (navBadge) {
+                 navBadge.innerText = data.count; // Update angka
+                 navBadge.classList.remove('hidden'); // Munculkan badge
+               }
+             } else {
+               if (navBadge) navBadge.classList.add('hidden');
+             }
+           } catch (error) {
+             // Silent error agar tidak mengganggu console user biasa jika gagal fetch
+           }
+         };
 
-    // Jalankan interval setiap 5 detik
-    setInterval(checkAdminNotif, 2000);
-});
-</script>
-<?php endif; ?>
+         // Jalankan pertama kali
+         checkAdminNotif();
+
+         // Jalankan interval setiap 5 detik
+         setInterval(checkAdminNotif, 2000);
+       });
+     </script>
+   <?php endif; ?>
  </nav>
  <script>
    window.BASE_URL = "<?= BASE_URL ?>";

@@ -68,7 +68,9 @@
 
       <div class="bg-white rounded-xl shadow-lg p-5">
         <div class="flex space-x-4 border-b pb-4 mb-4">
-          <button class="font-medium text-gray-700">Create Post</button>
+          <button id="home-btn-post" class="font-medium text-gray-500 hover:text-gray-700 ">
+            Create Post
+          </button>
           <button id="home-btn-poll" class="font-medium text-gray-500 hover:text-gray-700">Create Poll</button>
         </div>
         <div id="create-post-trigger" class="w-full flex-1 bg-gray-100 border-none rounded-lg p-3 text-gray-500 cursor-pointer hover:bg-gray-200">
@@ -423,6 +425,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       // --- Referensi Elemen ---
+      const homePostBtn = document.getElementById('home-btn-post');
       const homePollBtn = document.getElementById('home-btn-poll');
       const modalTrigger = document.getElementById('create-post-trigger');
 
@@ -454,6 +457,14 @@
           pollContainer.classList.add('hidden');
           if (uploadBtns) uploadBtns.classList.remove('opacity-50', 'pointer-events-none');
         }
+      }
+
+      if (homePostBtn) {
+        homePostBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          modalTrigger.click(); // Buka Modal
+          switchMode('post'); // Pindah ke mode Post
+        });
       }
 
       // --- Event Listener Tombol Home ---
