@@ -516,79 +516,73 @@ ORDER BY p.created_at DESC
      */
     public function getPostsByAuthor($author_id, $viewer_id)
     {
-        $query = 'SELECT 
-                    p.post_id, 
-                    p.content,
-                    p.image_path,
-                    p.visibility,
-                    p.is_comment_disabled,
-                    -- [FIXED] Ganti alias menjadi CREATED_AT_FMT
-                    TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
-                    u.user_id, 
-                    u.nama, 
-                    u.email,
-                    u.role_name,
-                    (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
-                 FROM 
-                 post_images pi 
-                 WHERE 
-                 pi.post_id = p.post_id) 
-                 AS 
-                 IMAGE_PATHS,
-                    (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
-                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
-                    
-                    (SELECT COUNT(*) FROM FOLLOWS f WHERE f.follower_id = :viewer_id AND f.following_id = p.user_id) AS IS_FOLLOWING,
-                    (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id AND pl2.user_id = :viewer_id) AS IS_LIKED
-                  FROM 
-                    posts p
-                  JOIN 
-                    users u ON p.user_id = u.user_id
-                  WHERE 
-                    p.user_id = :author_id 
-                    
-                    AND (
-                        -- 1. Tampilkan jika Public
-                        p.visibility = \'public\' 
-                        
-                        -- 2. ATAU yang melihat adalah pemilik post itu sendiri
-                        OR p.user_id = :viewer_id
-                        
-                        -- 3. ATAU Private dan viewer sudah follow author
-                        OR (
-                            p.visibility = \'private\' 
-                            AND EXISTS (
-                                SELECT 1 FROM follows f 
-                                WHERE f.follower_id = :viewer_id 
-                                AND f.following_id = p.user_id
-                            )
+    $query = 'SELECT 
+                p.post_id, 
+                p.content,
+                p.image_path,
+                p.visibility,
+                p.is_comment_disabled,
+                TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT_FMT,
+                u.user_id, 
+                u.nama, 
+                u.email,
+                u.role_name,
+                (SELECT LISTAGG(image_path, \',\') 
+                    WITHIN GROUP (ORDER BY image_id) 
+                 FROM post_images pi 
+                 WHERE pi.post_id = p.post_id
+                ) AS IMAGE_PATHS,
+                (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS like_count,
+                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                (SELECT COUNT(*) 
+                    FROM follows f 
+                    WHERE f.follower_id = :viewer_id 
+                      AND f.following_id = p.user_id
+                ) AS IS_FOLLOWING,
+                (SELECT COUNT(*) 
+                    FROM post_likes pl2 
+                    WHERE pl2.post_id = p.post_id 
+                      AND pl2.user_id = :viewer_id
+                ) AS IS_LIKED
+              FROM posts p
+              JOIN users u ON p.user_id = u.user_id
+              WHERE p.user_id = :author_id
+                AND p.is_deleted = 0
+                AND (
+                    p.visibility = \'public\'
+                    OR p.user_id = :viewer_id
+                    OR (
+                        p.visibility = \'private\'
+                        AND EXISTS (
+                            SELECT 1 
+                            FROM follows f 
+                            WHERE f.follower_id = :viewer_id 
+                              AND f.following_id = p.user_id
                         )
                     )
-                  ORDER BY 
-                    p.created_at DESC';
+                )
+              ORDER BY p.created_at DESC';
 
-        $stmt = oci_parse($this->conn, $query);
+    $stmt = oci_parse($this->conn, $query);
+    oci_bind_by_name($stmt, ':author_id', $author_id);
+    oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
 
-        oci_bind_by_name($stmt, ':author_id', $author_id);
-        oci_bind_by_name($stmt, ':viewer_id', $viewer_id);
+    $exec = oci_execute($stmt);
+    if (!$exec) return [];
 
-        $exec = oci_execute($stmt);
-        if (!$exec) return [];
-
-        $posts = [];
-        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-            if (is_object($row['CONTENT'])) {
-                $row['CONTENT'] = $row['CONTENT']->load();
-            }
-
-            // [BARU DITAMBAHKAN] Konversi key agar View tidak error
-            $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
-
-            $posts[] = $row;
+    $posts = [];
+    while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+        if (is_object($row['CONTENT'])) {
+            $row['CONTENT'] = $row['CONTENT']->load();
         }
-        oci_free_statement($stmt);
-        return $posts;
+        $row['CREATED_AT'] = $row['CREATED_AT_FMT'];
+        $posts[] = $row;
     }
+
+    oci_free_statement($stmt);
+    return $posts;
+    }
+
 
     /**
      * [PERBAIKAN ORA-01791] Mengambil postingan activity (Like/Comment)
@@ -679,7 +673,7 @@ ORDER BY p.created_at DESC
     public function getPostsByForum($forum_id, $current_user_id)
     {
         $query = 'SELECT 
-                p.post_id, p.content, p.image_path, 
+                p.post_id, p.content, p.image_path,     p.is_poll,
                 TO_CHAR(p.created_at, \'YYYY-MM-DD"T"HH24:MI:SS\') AS CREATED_AT,
                 u.user_id, u.nama, u.email, u.role_name,
                 (SELECT LISTAGG(image_path, \',\') WITHIN GROUP (ORDER BY image_id) 
@@ -691,6 +685,7 @@ ORDER BY p.created_at DESC
               FROM posts p
               JOIN users u ON p.user_id = u.user_id
               WHERE p.forum_id = :forum_id
+              AND p.is_deleted = 0
               ORDER BY p.created_at DESC';
 
         $stmt = oci_parse($this->conn, $query);
