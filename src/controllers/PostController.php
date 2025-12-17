@@ -25,9 +25,9 @@ class PostController
      */
     public function create()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
-        // Cek apakah request ini AJAX
+        // Check if request is AJAX
         $isAjax = isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
         if (session_status() == PHP_SESSION_NONE) session_start();
@@ -37,24 +37,28 @@ class PostController
                 $user_id = $_SESSION['user_id'];
                 $content = $_POST['content'];
                 $visibility = $_POST['visibility'] ?? 'public';
+
+                // Normal Forum ID (Posting INSIDE a forum)
                 $forum_id = !empty($_POST['forum_id']) ? $_POST['forum_id'] : null;
-                // Ambil nilai checkbox 'Turn off commenting'
-                // Jika dicentang nilainya 1, jika tidak 0
+
+                // [NEW] Shared Forum ID (Sharing a forum TO the feed)
+                $shared_forum_id = !empty($_POST['shared_forum_id']) ? $_POST['shared_forum_id'] : null;
+
+                // Turn off commenting checkbox
                 $is_comment_disabled = isset($_POST['is_comment_disabled']) ? 1 : 0;
 
+                // Poll Options
                 $poll_options = isset($_POST['poll_options']) ? $_POST['poll_options'] : [];
-                // Filter opsi yang kosong
                 $poll_options = array_filter($poll_options, function ($value) {
                     return !empty(trim($value));
                 });
 
-                // --- Logika Upload File (Gambar & Dokumen) ---
-                // (Asumsi logika upload file Anda sudah ada di sini seperti file asli)
+                // --- File Upload Logic ---
                 $uploaded_files = [];
                 $uploadDir = 'public/uploads/posts/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-                // 1. Gambar
+                // 1. Process Images
                 if (isset($_FILES['post_images']) && !empty($_FILES['post_images']['name'][0])) {
                     $files = $_FILES['post_images'];
                     $count = count($files['name']);
@@ -71,21 +75,17 @@ class PostController
                     }
                 }
 
-                // 2. [BARU] PROSES DOKUMEN (post_files)
+                // 2. Process Documents
                 if (isset($_FILES['post_files']) && !empty($_FILES['post_files']['name'][0])) {
                     $files = $_FILES['post_files'];
                     $count = count($files['name']);
-
-                    // Daftar ekstensi yang diizinkan (sesuai accept di HTML)
                     $allowed_docs = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'];
 
                     for ($i = 0; $i < $count; $i++) {
                         if ($files['error'][$i] === UPLOAD_ERR_OK) {
                             $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
-
                             if (in_array($ext, $allowed_docs)) {
-                                // Format nama file: file_{uniqid}_{NamaAsli}
-                                // Ini penting agar di post_card.php nama aslinya bisa diambil kembali
+                                // Format: file_{uniqid}_{OriginalName}
                                 $cleanFileName = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($files['name'][$i]));
                                 $newName = uniqid('file_') . '_' . $cleanFileName;
 
@@ -97,15 +97,15 @@ class PostController
                     }
                 }
 
-                // Validasi input kosong
-                if (empty($content) && empty($uploaded_files)) {
+                // Validation: Content can be empty ONLY if sharing a forum or uploading files
+                if (empty($content) && empty($uploaded_files) && empty($shared_forum_id)) {
                     throw new Exception('Postingan tidak boleh kosong.');
                 }
 
-                // [SIMPAN] Panggil model dengan parameter is_comment_disabled
-                if ($this->postModel->createPost($user_id, $content, $uploaded_files, $visibility, $forum_id, $is_comment_disabled, $poll_options)) {
+                // [SAVE] Call Model with all parameters including shared_forum_id
+                if ($this->postModel->createPost($user_id, $content, $uploaded_files, $visibility, $forum_id, $is_comment_disabled, $poll_options, $shared_forum_id)) {
 
-                    // Respon sukses untuk AJAX
+                    // AJAX Response
                     if ($isAjax) {
                         echo json_encode(['success' => true, 'message' => 'Postingan berhasil dibuat!']);
                         exit;
@@ -115,17 +115,21 @@ class PostController
                     throw new Exception('Gagal menyimpan postingan.');
                 }
             } catch (Exception $e) {
-                // Respon error untuk AJAX
+                // Error Response
                 if ($isAjax) {
-                    http_response_code(400); // Bad Request
+                    http_response_code(400);
                     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
                     exit;
                 }
                 $_SESSION['error_message'] = $e->getMessage();
             }
 
-            // Redirect fallback jika JS mati
-            header('Location: ' . BASE_URL . '/home');
+            // Redirect Logic
+            if ($forum_id) {
+                header('Location: ' . BASE_URL . '/forum/show?id=' . $forum_id);
+            } else {
+                header('Location: ' . BASE_URL . '/home');
+            }
             exit;
         }
     }
@@ -134,7 +138,7 @@ class PostController
      */
     public function delete()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         // ... (Validasi Login & ID tetap sama seperti sebelumnya) ...
         if (!isset($_SESSION['user_id'])) { /* ... */
@@ -250,7 +254,7 @@ class PostController
      */
     public function comment()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         // Cek flag AJAX
         $isAjax = isset($_GET['ajax']);
@@ -360,7 +364,7 @@ class PostController
      */
     public function likeComment()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
@@ -471,7 +475,7 @@ class PostController
      */
     public function vote()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         // Set header JSON agar JS tidak error "Unexpected token"
         header('Content-Type: application/json');
@@ -514,7 +518,7 @@ class PostController
      */
     public function deleteComment()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
@@ -544,7 +548,7 @@ class PostController
      */
     public function updateComment()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
@@ -569,7 +573,7 @@ class PostController
     }
     public function shareForum()
     {
-            RoleGuard::forbid(['mitra']);
+        RoleGuard::forbid(['mitra']);
 
         if (session_status() == PHP_SESSION_NONE) session_start();
         if (!isset($_SESSION['user_id'])) {

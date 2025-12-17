@@ -195,10 +195,6 @@
                                             <div class="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500 group-hover:scale-105 transition-transform duration-500"></div>
                                         <?php endif; ?>
                                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
-
-                                        <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
-                                            <?= isset($forum['VISIBILITY']) ? ucfirst($forum['VISIBILITY']) : 'Public' ?>
-                                        </div>
                                     </div>
 
                                     <div class="p-5 flex-1 flex flex-col justify-between">
@@ -206,14 +202,15 @@
                                             <h3 class="font-bold text-lg text-gray-800 leading-tight mb-1 truncate" title="<?= htmlspecialchars($forum['NAME']) ?>">
                                                 <?= htmlspecialchars($forum['NAME']) ?>
                                             </h3>
-                                            <p class="text-xs text-gray-500 flex items-center">
+                                            <p class="text-xs text-gray-500 flex items-center gap-1">
                                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
                                                 </svg>
-                                                <?= number_format($forum['MEMBER_COUNT'] ?? 0) ?> Members
-                                            </p>
-                                            <p class="text-xs text-gray-400 mt-2 line-clamp-2">
-                                                <?= !empty($forum['DESCRIPTION']) ? htmlspecialchars($forum['DESCRIPTION']) : 'No description available.' ?>
+                                                <span><?= $forum['MEMBER_COUNT'] ?? 0 ?> Members</span>
+                                                <span>&bull;</span>
+                                                <span class="<?= (isset($forum['VISIBILITY']) && strtolower($forum['VISIBILITY']) == 'private') ? 'text-red-500 font-medium' : 'text-green-600 font-medium' ?>">
+                                                    <?= isset($forum['VISIBILITY']) && strtolower($forum['VISIBILITY']) == 'private' ? 'Private Forum' : 'Public Forum' ?>
+                                                </span>
                                             </p>
                                         </div>
 

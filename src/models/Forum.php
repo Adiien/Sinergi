@@ -380,8 +380,8 @@ class ForumModel
     }
 
     public function getMostActiveForums($limit = 5)
-{
-    $sql = "
+    {
+        $sql = "
         SELECT
             f.forum_id,
             f.name,
@@ -394,16 +394,27 @@ class ForumModel
         FETCH FIRST :limit ROWS ONLY
     ";
 
-    $stmt = oci_parse($this->conn, $sql);
-    oci_bind_by_name($stmt, ':limit', $limit);
-    oci_execute($stmt);
+        $stmt = oci_parse($this->conn, $sql);
+        oci_bind_by_name($stmt, ':limit', $limit);
+        oci_execute($stmt);
 
-    $forums = [];
-    while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
-        $forums[] = $row;
+        $forums = [];
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+            $forums[] = $row;
+        }
+
+        oci_free_statement($stmt);
+        return $forums;
     }
 
-    oci_free_statement($stmt);
-    return $forums;
-}
+    public function getMemberCount($forum_id)
+    {
+        $query = "SELECT COUNT(*) AS total FROM forum_members WHERE forum_id = :id";
+        $stmt = oci_parse($this->conn, $query);
+        oci_bind_by_name($stmt, ':id', $forum_id);
+        oci_execute($stmt);
+
+        $row = oci_fetch_assoc($stmt);
+        return $row ? (int)$row['TOTAL'] : 0;
+    }
 }

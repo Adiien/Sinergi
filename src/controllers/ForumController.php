@@ -467,26 +467,38 @@ class ForumController
             $forum_id = $_POST['forum_id'];
             $user_id = $_SESSION['user_id'];
 
-            // 1. Cek apakah user adalah Creator/Pembuat Forum
+            // 1. Ambil Data Creator & Jumlah Member
             $creatorId = $this->forumModel->getCreatorId($forum_id);
+            $memberCount = $this->forumModel->getMemberCount($forum_id);
 
+            // 2. Logika Pengecekan Creator
             if ($creatorId == $user_id) {
-                $_SESSION['error_message'] = "Pembuat grup tidak bisa keluar. Silakan hapus grup jika ingin membubarkannya.";
+                // Jika Admin mencoba keluar TAPI masih ada member lain (Total > 1)
+                if ($memberCount > 1) {
+                    $_SESSION['error_message'] = "Sebagai Admin, Anda tidak bisa keluar jika masih ada anggota lain. Silakan keluarkan anggota lain terlebih dahulu atau Hapus Forum.";
+                    header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
+                    exit;
+                }
+
+                // Jika memberCount == 1 (Hanya Admin sendiri), maka dia BOLEH keluar.
+                // Logika akan lanjut ke bawah (removeMember).
+            }
+
+            // 3. Proses Keluar
+            if ($this->forumModel->removeMember($forum_id, $user_id)) {
+
+                // Jika setelah keluar member jadi 0, opsional: Hapus Forum Otomatis
+                // Tapi untuk amannya, kita redirect ke list forum saja.
+
+                $_SESSION['success_message'] = "Anda berhasil keluar dari grup.";
+                header("Location: " . BASE_URL . "/forum"); // Redirect ke halaman list forum utama
+                exit;
+            } else {
+                $_SESSION['error_message'] = "Gagal keluar dari grup.";
                 header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
                 exit;
             }
-
-            // 2. Proses Keluar
-            if ($this->forumModel->removeMember($forum_id, $user_id)) {
-                $_SESSION['success_message'] = "Anda berhasil keluar dari grup.";
-            } else {
-                $_SESSION['error_message'] = "Gagal keluar dari grup.";
-            }
         }
-
-        // Redirect kembali ke halaman forum (atau ke list forum jika private)
-        header("Location: " . BASE_URL . "/forum/show?id=" . $forum_id);
-        exit;
     }
 
     public function delete()
