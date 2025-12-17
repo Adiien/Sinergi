@@ -147,10 +147,6 @@ $isOwnPost = isset($_SESSION['user_id']) && ($post['USER_ID'] == $_SESSION['user
                             <?php endif; ?>
                         </button>
                     <?php endif; ?>
-<<<<<<< HEAD
-=======
-
->>>>>>> 9d00ec8edff5bef1bd634a13b9d23638b5f522f8
                     <button type="button"
                         class="report-button flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         data-target-type="post"
