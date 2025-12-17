@@ -1,111 +1,196 @@
 <?php
-$stats         = $stats         ?? [];
-$activeUsers   = $activeUsers   ?? [];
-$activeForums  = $activeForums  ?? [];
-?>
-
-<?php
-// Guard kecil biar ga berisik kalau controller lupa kirim data
-$stats = $stats ?? [
-    'total_users'  => 0,
-    'active_users' => 0,
-    'total_forums' => 0,
-    'total_posts'  => 0,
-];
+$activeUsers  = $activeUsers  ?? [];
+$activeForums = $activeForums ?? [];
 ?>
 
 <div class="grid grid-cols-12 gap-6">
 
   <!-- HEADER -->
-  <div class="flex items-center justify-between mb-4">
-  <h1 class="text-xl font-bold mb-6 text-center">
-  Overview Report
-  </h1>
+  <div class="col-span-12 flex items-center justify-between">
+    <h1 class="text-xl font-bold">Overview Report</h1>
+
+    <div class="flex bg-gray-100 rounded-lg p-1 text-xs">
+      <button
+        onclick="showUsers()"
+        id="btnUsers"
+        class="px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600 font-medium">
+        User Aktif
+      </button>
+      <button
+        onclick="showForums()"
+        id="btnForums"
+        class="px-3 py-1 rounded-md text-gray-500">
+        Forum Aktif
+      </button>
+    </div>
+  </div>
+
+  <!-- AKTIVITAS CARD -->
+  <div class="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+
+    <!-- USER LIST -->
+    <div id="usersList">
+      <?php foreach ($activeUsers as $index => $u): ?>
+        <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+              <?= $index === 0 ? 'bg-yellow-100 text-yellow-700'
+                 : ($index === 1 ? 'bg-gray-200 text-gray-700'
+                 : ($index === 2 ? 'bg-orange-100 text-orange-700'
+                 : 'bg-indigo-100 text-indigo-600')) ?>">
+              <?= $index < 3 ? '#' . ($index + 1) : strtoupper(substr($u['NAMA'], 0, 1)) ?>
+            </div>
+
+            <div>
+              <p class="text-sm font-medium"><?= htmlspecialchars($u['NAMA']) ?></p>
+              <p class="text-xs text-gray-500">User aktif</p>
+            </div>
+          </div>
+
+          <span class="text-xs text-gray-400">
+            <?= (int)$u['TOTAL_POSTS'] ?> post
+          </span>
+
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+    <!-- FORUM LIST -->
+    <div id="forumsList" class="hidden">
+      <?php foreach ($activeForums as $index => $f): ?>
+        <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+              <?= $index === 0 ? 'bg-yellow-100 text-yellow-700'
+                 : ($index === 1 ? 'bg-gray-200 text-gray-700'
+                 : ($index === 2 ? 'bg-orange-100 text-orange-700'
+                 : 'bg-green-100 text-green-600')) ?>">
+              <?= $index < 3 ? '#' . ($index + 1) : '#' ?>
+            </div>
+
+            <div>
+              <p class="text-sm font-medium"><?= htmlspecialchars($f['NAME']) ?></p>
+              <p class="text-xs text-gray-500">Forum aktif</p>
+            </div>
+          </div>
+
+          <span class="text-xs text-gray-400">
+            <?= (int)$f['TOTAL_POSTS'] ?> post
+          </span>
+
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+  </div>
+
+  <!-- PANEL KANAN -->
+  <div class="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+  <h2 class="text-sm font-semibold text-gray-700 mb-4">
+    Traffic Aktivitas
+  </h2>
+
+  <div class="space-y-3">
+
+    <?php
+    // ambil max post buat skala bar
+    $maxPosts = 1;
+    foreach ($activeUsers as $u) {
+        $maxPosts = max($maxPosts, (int)$u['TOTAL_POSTS']);
+    }
+    ?>
+
+    <?php foreach ($activeUsers as $u): 
+      $percent = round(($u['TOTAL_POSTS'] / $maxPosts) * 100);
+    ?>
+      <div>
+        <div class="flex justify-between text-xs text-gray-500 mb-1">
+          <span><?= htmlspecialchars($u['NAMA']) ?></span>
+          <span><?= (int)$u['TOTAL_POSTS'] ?> post</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2">
+          <div
+            class="bg-indigo-500 h-2 rounded-full"
+            style="width: <?= $percent ?>%">
+          </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+
+  </div>
+
+  </div>
 
 
-  <div class="flex bg-gray-100 rounded-lg p-1 text-sm">
-    <button
-      onclick="showUsers()"
-      id="btnUsers"
-      class="px-3 py-1 rounded-md bg-white shadow text-indigo-600 font-medium">
-      User Aktif
-    </button>
-    <button
-      onclick="showForums()"
-      id="btnForums"
-      class="px-3 py-1 rounded-md text-gray-500">
-      Forum Aktif
-    </button>
+</div>
+
+<div class="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-sm font-semibold text-gray-700">
+    Insight & Peringatan
+  </h2>
+
+  <span class="text-xs text-gray-400">
+    Update terakhir: hari ini
+  </span>
+</div>
+<div class="mb-4 flex items-start gap-3 bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+  <span class="text-yellow-600 text-sm">⚠</span>
+  <div>
+    <p class="text-sm font-medium text-yellow-800">
+      Anomali Trafik Terdeteksi
+    </p>
+    <p class="text-xs text-yellow-700 mt-1">
+      Bounce rate dari Instagram naik 32% dibanding rata-rata 7 hari.
+    </p>
+  </div>
+</div>
+<div class="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+  <div>
+    <p class="text-xs text-gray-400">Sessions (24j)</p>
+    <p class="font-semibold text-gray-800">1.240</p>
+  </div>
+  <div>
+    <p class="text-xs text-gray-400">Bounce Rate</p>
+    <p class="font-semibold text-gray-800">68%</p>
+  </div>
+  <div>
+    <p class="text-xs text-gray-400">Sumber Utama</p>
+    <p class="font-semibold text-gray-800">Instagram</p>
+  </div>
+  <div>
+    <p class="text-xs text-gray-400">Perubahan</p>
+    <p class="font-semibold text-green-600">+12%</p>
+  </div>
+</div>
+<div class="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+  <span class="text-indigo-600 text-sm">⬆</span>
+  <div>
+    <p class="text-sm font-medium text-indigo-800">
+      CTA Terbaik Minggu Ini
+    </p>
+    <p class="text-xs text-indigo-700 mt-1">
+      “Daftar Sekarang” mencatat konversi 1.2% dari trafik sosial.
+    </p>
   </div>
 </div>
 
-
-  <!-- USER LIST -->
-  <div id="usersList">
-  <?php foreach ($activeUsers as $index => $u): ?>
-    <div class="flex items-center justify-between py-3 border-b">
-
-      <div class="flex items-center gap-3">
-        <!-- pseudo avatar -->
-        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600
-                    flex items-center justify-center text-sm font-bold">
-          <?= strtoupper(substr($u['NAMA'], 0, 1)) ?>
-        </div>
-
-        <div>
-          <p class="text-sm font-medium"><?= htmlspecialchars($u['NAMA']) ?></p>
-          <p class="text-xs text-gray-500">
-            <?= $index === 0 ? 'Paling aktif' : 'User aktif' ?>
-          </p>
-        </div>
-      </div>
-
-      <span class="text-sm text-gray-600">
-        <?= (int)$u['TOTAL_POSTS'] ?> post
-      </span>
-
-    </div>
-  <?php endforeach; ?>
-</div>
-
-
-  <!-- FORUM LIST -->
-  <div id="forumsList" class="hidden">
-  <?php foreach ($activeForums as $index => $f): ?>
-    <div class="flex items-center justify-between py-3 border-b">
-
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-green-100 text-green-600
-                    flex items-center justify-center text-sm font-bold">
-          #
-        </div>
-
-        <div>
-          <p class="text-sm font-medium"><?= htmlspecialchars($f['NAME']) ?></p>
-          <p class="text-xs text-gray-500">
-            <?= $index === 0 ? 'Forum teraktif' : 'Forum aktif' ?>
-          </p>
-        </div>
-      </div>
-
-      <span class="text-sm text-gray-600">
-        <?= (int)$f['TOTAL_POSTS'] ?> post
-      </span>
-
-    </div>
-  <?php endforeach; ?>
-</div>
-
-
-</div>
-
 <script>
+const usersList  = document.getElementById('usersList');
+const forumsList = document.getElementById('forumsList');
+const btnUsers   = document.getElementById('btnUsers');
+const btnForums  = document.getElementById('btnForums');
+
 function showUsers() {
   usersList.classList.remove('hidden');
   forumsList.classList.add('hidden');
 
-  btnUsers.classList.add('bg-white','shadow','text-indigo-600');
-  btnForums.classList.remove('bg-white','shadow','text-indigo-600');
+  btnUsers.classList.add('bg-white','shadow-sm','text-indigo-600');
+  btnForums.classList.remove('bg-white','shadow-sm','text-indigo-600');
   btnForums.classList.add('text-gray-500');
 }
 
@@ -113,9 +198,8 @@ function showForums() {
   forumsList.classList.remove('hidden');
   usersList.classList.add('hidden');
 
-  btnForums.classList.add('bg-white','shadow','text-indigo-600');
-  btnUsers.classList.remove('bg-white','shadow','text-indigo-600');
+  btnForums.classList.add('bg-white','shadow-sm','text-indigo-600');
+  btnUsers.classList.remove('bg-white','shadow-sm','text-indigo-600');
   btnUsers.classList.add('text-gray-500');
 }
 </script>
-

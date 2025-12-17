@@ -157,6 +157,9 @@ class User
                 if ($status == 'pending_approval') {
                     throw new Exception("Akun Alumni Anda sedang menunggu persetujuan Admin.");
                 }
+                if ($status == 'pending_mitra') {
+                    throw new Exception("Akun mitra Anda sedang menunggu aktivasi.");
+                }
                 if ($status == 'banned' || $status == 'inactive') {
                     throw new Exception("Akun Anda dinonaktifkan.");
                 }
@@ -803,9 +806,61 @@ class User
     return $data;
 }
 
+    public function createPendingMitra($email, $password)
+{
+    $sql = "INSERT INTO users (USER_ID, NAMA, EMAIL, PASS_USER, ROLE_NAME, STATUS)
+            VALUES (USERS_SEQ.NEXTVAL, 'PENDING_MITRA', :email, :pass, 'mitra', 'pending_mitra')";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':email', $email);
+    oci_bind_by_name($stmt, ':pass', $password);
+
+    $result = oci_execute($stmt, OCI_NO_AUTO_COMMIT);
+
+    if (!$result) {
+        $e = oci_error($this->conn);
+        error_log('ORACLE ERROR: ' . $e['message']);
+        oci_rollback($this->conn);
+        return false;
+    }
+
+    oci_commit($this->conn);
+    return true;
+}
 
 
+    public function activateMitra($email, $hash)
+{
+    $sql = "UPDATE users
+            SET PASS_USER = :pass, STATUS = 'active'
+            WHERE EMAIL = :email
+              AND ROLE_NAME = 'mitra'
+              AND STATUS = 'pending_mitra'";
 
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':pass', $hash);
+    oci_bind_by_name($stmt, ':email', $email);
 
+    return oci_execute($stmt);
+}
+
+    public function getPendingMitra()
+{
+    $sql = "SELECT USER_ID, EMAIL
+            FROM users
+            WHERE ROLE_NAME = 'mitra'
+              AND STATUS = 'pending_mitra'
+            ORDER BY USER_ID DESC";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_execute($stmt);
+
+    $result = [];
+    while ($row = oci_fetch_assoc($stmt)) {
+        $result[] = $row;
+    }
+
+    return $result;
+}
 
 }

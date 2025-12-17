@@ -333,7 +333,6 @@ class ForumModel
         return $row ? $row['CREATED_BY'] : null;
     }
 
-<<<<<<< HEAD
     public function deleteForum($forum_id)
     {
         // 1. Hapus Member dulu
@@ -379,7 +378,7 @@ class ForumModel
         }
         return $photos;
     }
-=======
+
     public function getMostActiveForums($limit = 5)
 {
     $sql = "
@@ -407,6 +406,4 @@ class ForumModel
     oci_free_statement($stmt);
     return $forums;
 }
-
->>>>>>> 9d00ec8edff5bef1bd634a13b9d23638b5f522f8
 }

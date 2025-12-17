@@ -66,6 +66,13 @@ class HomeController
             exit;
         }
 
+        $allowedRoles = ['mahasiswa', 'dosen', 'alumni', 'mitra', 'admin'];
+
+        if (!in_array($_SESSION['role_name'], $allowedRoles)) {
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
         $posts = [];
         $myPostCount = 0;
 

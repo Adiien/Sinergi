@@ -2,6 +2,8 @@
 require_once 'src/models/Post.php';
 require_once 'src/models/Notification.php';
 require_once 'src/helpers/AuthGuard.php';
+require_once 'src/helpers/RoleGuard.php';
+
 
 class PostController
 {
@@ -23,6 +25,8 @@ class PostController
      */
     public function create()
     {
+            RoleGuard::forbid(['mitra']);
+
         // Cek apakah request ini AJAX
         $isAjax = isset($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
 
@@ -130,6 +134,8 @@ class PostController
      */
     public function delete()
     {
+            RoleGuard::forbid(['mitra']);
+
         // ... (Validasi Login & ID tetap sama seperti sebelumnya) ...
         if (!isset($_SESSION['user_id'])) { /* ... */
         }
@@ -244,6 +250,8 @@ class PostController
      */
     public function comment()
     {
+            RoleGuard::forbid(['mitra']);
+
         // Cek flag AJAX
         $isAjax = isset($_GET['ajax']);
 
@@ -352,6 +360,8 @@ class PostController
      */
     public function likeComment()
     {
+            RoleGuard::forbid(['mitra']);
+
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Login required']);
@@ -461,6 +471,8 @@ class PostController
      */
     public function vote()
     {
+            RoleGuard::forbid(['mitra']);
+
         // Set header JSON agar JS tidak error "Unexpected token"
         header('Content-Type: application/json');
 
@@ -502,6 +514,8 @@ class PostController
      */
     public function deleteComment()
     {
+            RoleGuard::forbid(['mitra']);
+
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Login required']);
@@ -530,6 +544,8 @@ class PostController
      */
     public function updateComment()
     {
+            RoleGuard::forbid(['mitra']);
+
         header('Content-Type: application/json');
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'Login required']);
@@ -553,6 +569,8 @@ class PostController
     }
     public function shareForum()
     {
+            RoleGuard::forbid(['mitra']);
+
         if (session_status() == PHP_SESSION_NONE) session_start();
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . BASE_URL . '/login');

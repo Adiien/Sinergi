@@ -139,38 +139,63 @@ class AuthController
         header('Location: ' . BASE_URL);
         exit;
     }
-
     unset($_SESSION['captcha_string']);
 
     try {
-        $identifier = $_POST['identifier'] ?? '';
+        $identifier = trim($_POST['identifier'] ?? '');
         $password   = $_POST['password'] ?? '';
 
-        // 1️⃣ AMBIL USER
+        // 1️⃣ Ambil user (email / identifier)
         $user = $this->userModel->loginUser($identifier, $password);
 
-        if (!$user) {
+        // ❌ Jangan bocorin mana yang salah
+        if (!$user || !password_verify($password, $user['PASS_USER'])) {
             $_SESSION['error_message'] = 'Login gagal. Periksa kredensial.';
             $_SESSION['open_modal'] = 'login';
             header('Location: ' . BASE_URL);
             exit;
         }
 
-        // 2️⃣ CEK STATUS USER (INI YANG KEMARIN SALAH TEMPAT)
-        if (isset($user['STATUS']) && strtolower($user['STATUS']) === 'suspended') {
-            $_SESSION['error_message'] = 'Akun Anda telah disuspend oleh admin.';
+        // 2️⃣ VALIDASI STATUS (INI KUNCI SEMUANYA)
+        if (strtolower($user['STATUS']) !== 'active') {
+
+            switch (strtolower($user['STATUS'])) {
+                case 'pending_mitra':
+                    $msg = 'Akun mitra Anda masih menunggu aktivasi.';
+                    break;
+                case 'pending_verification':
+                    $msg = 'Silakan verifikasi email Anda terlebih dahulu.';
+                    break;
+                case 'suspended':
+                    $msg = 'Akun Anda telah disuspend oleh admin.';
+                    break;
+                default:
+                    $msg = 'Akun Anda belum aktif.';
+            }
+
+            $_SESSION['error_message'] = $msg;
             $_SESSION['open_modal'] = 'login';
             header('Location: ' . BASE_URL);
             exit;
         }
 
-        // 3️⃣ SET SESSION (BARU BOLEH)
+        // 3️⃣ BARU SET SESSION (SEKARANG SAH)
         $_SESSION['user_id']   = $user['USER_ID'];
         $_SESSION['nama']      = $user['NAMA'];
         $_SESSION['email']     = $user['EMAIL'];
         $_SESSION['role_name'] = $user['ROLE_NAME'];
 
-        header('Location: ' . BASE_URL . '/home');
+        // 4️⃣ Redirect berbasis role
+        switch ($user['ROLE_NAME']) {
+            case 'admin':
+                header('Location: ' . BASE_URL . '/admin');
+                break;
+            case 'mitra':
+                header('Location: ' . BASE_URL . '/mitra');
+                break;
+            default:
+                header('Location: ' . BASE_URL . '/home');
+        }
         exit;
 
     } catch (Exception $e) {
@@ -179,6 +204,7 @@ class AuthController
         exit;
     }
 }
+
     // ...
 
     /**
@@ -315,4 +341,65 @@ class AuthController
         header('Location: ' . BASE_URL);
         exit;
     }
+
+    public function activateMitra($email, $hash)
+{
+    $sql = "UPDATE users
+            SET PASS_USER = :pass, STATUS = 'active'
+            WHERE EMAIL = :email
+              AND ROLE_NAME = 'mitra'
+              AND STATUS = 'pending_mitra'";
+
+    $stmt = oci_parse($this->conn, $sql);
+    oci_bind_by_name($stmt, ':pass', $hash);
+    oci_bind_by_name($stmt, ':email', $email);
+
+    return oci_execute($stmt);
+}
+   public function requestMitra()
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
+    if (!$email) {
+        $_SESSION['error_message'] = 'Email tidak valid.';
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    // Cek apakah email sudah terdaftar
+    if ($this->userModel->getUserByEmail($email)) {
+        $_SESSION['error_message'] = 'Email sudah terdaftar.';
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    // 1️⃣ Generate password SEBENARNYA
+    $plain = bin2hex(random_bytes(4)); // 8 karakter
+    $hash  = password_hash($plain, PASSWORD_DEFAULT);
+
+    // 2️⃣ Simpan sebagai pending mitra
+    $ok = $this->userModel->createPendingMitra($email, $hash);
+
+    if (!$ok) {
+        $_SESSION['error_message'] = 'Gagal mengirim permintaan mitra.';
+        header('Location: ' . BASE_URL);
+        exit;
+    }
+
+    // 3️⃣ Kirim email SEKARANG
+    MailHelper::sendMitraCredential($email, $plain);
+
+    $_SESSION['success_message'] =
+        'Permintaan mitra diterima. Silakan cek email Anda. Akun menunggu aktivasi admin.';
+
+    header('Location: ' . BASE_URL);
+    exit;
+}
+
+
+
 }

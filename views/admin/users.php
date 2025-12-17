@@ -32,7 +32,7 @@
     <label class="block text-xs text-gray-500 mb-1">Role</label>
     <select name="role" class="border rounded px-3 py-2 text-sm">
       <option value="">Semua</option>
-      <?php foreach (['admin','mahasiswa','dosen','alumni'] as $r): ?>
+      <?php foreach (['admin','mahasiswa','dosen','alumni', 'mitra'] as $r): ?>
         <option value="<?= $r ?>"
           <?= ($_GET['role'] ?? '') === $r ? 'selected' : '' ?>>
           <?= ucfirst($r) ?>
@@ -93,7 +93,7 @@
               ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
               : 'border-green-300 bg-green-50 text-green-700' ?>">
 
-          <?php foreach (['admin','mahasiswa','dosen','alumni'] as $r): ?>
+          <?php foreach (['admin','mahasiswa','dosen','alumni', 'mitra'] as $r): ?>
             <option value="<?= $r ?>" <?= $u['ROLE_NAME']===$r?'selected':'' ?>>
               <?= ucfirst($r) ?>
             </option>

@@ -163,6 +163,13 @@
         Already have an account?
         <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-login-from-register">Login</a>
       </p>
+      <button
+              onclick="document.getElementById('mitraModal').classList.remove('hidden')"
+              type="button"
+              class="text-sm text-blue-600 underline"
+>
+              Bukan instansi kampus?
+            </button>
     </div>
   </section>
   <!-- Login Section-->
@@ -215,6 +222,7 @@
 
           <div class="text-right">
             <a href="<?= BASE_URL ?>/auth/forgot" class="text-xs font-semibold text-indigo-600 hover:underline">Forgot Password?</a>
+
           </div>
 
         </div>
@@ -306,6 +314,48 @@
       </form>
     </div>
   </section>
+
+  <!-- MODAL REQUEST MITRA -->
+<div id="mitraModal" class="hidden fixed inset-0 z-[200] bg-black/50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md relative">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-4">
+      Permintaan Akun Mitra
+    </h2>
+
+    <form action="<?= BASE_URL ?>/auth/request-mitra" method="POST">
+      <label class="block text-sm font-semibold text-gray-600 mb-2">
+        Email
+      </label>
+
+      <input
+        type="email"
+        name="email"
+        required
+        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 mb-4"
+        placeholder="@gmail.com"
+      >
+
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          onclick="document.getElementById('mitraModal').classList.add('hidden')"
+          class="px-4 py-2 border rounded-lg"
+        >
+          Batal
+        </button>
+
+        <button
+          type="submit"
+          class="px-4 py-2 bg-[#5e5e8f] text-white rounded-lg"
+        >
+          Kirim
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
 
   <script src="<?= BASE_URL ?>/public/assets/js/register.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/transitions.js"></script>

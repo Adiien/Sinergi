@@ -108,4 +108,45 @@ class MailHelper
             return false;
         }
     }
+
+    public static function sendMitraCredential($toEmail, $password)
+{
+    $mail = new PHPMailer(true);
+
+    try {
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'farissinergi@gmail.com';
+        $mail->Password   = 'wute osvo rcaa yjsm'; // App Password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        // HARUS sama dengan Username
+        $mail->setFrom('farissinergi@gmail.com', 'Admin SINERGI');
+        $mail->addAddress($toEmail);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Akun Mitra SINERGI Aktif';
+        $mail->Body = "
+            <p>Halo,</p>
+            <p>Akun mitra Anda telah <b>diaktifkan</b>.</p>
+            <p>
+                <b>Email:</b> {$toEmail}<br>
+                <b>Password sementara:</b> {$password}
+            </p>
+            <p>Silakan login dan segera ganti password Anda.</p>
+        ";
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        error_log('MAIL ERROR (MITRA): ' . $mail->ErrorInfo);
+        return false;
+    }
+}
+
+
+
 }

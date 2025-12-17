@@ -27,6 +27,11 @@ switch ($route) {
         $controller->login();
         break;
 
+    case 'auth/request-mitra':
+        require_once 'src/Controllers/AuthController.php';
+        (new AuthController())->requestMitra();
+        break;
+
     case 'auth/forgot':
         require_once 'src/Controllers/AuthController.php';
         $controller = new AuthController();
@@ -57,10 +62,26 @@ switch ($route) {
         $controller->verify();
         break;
 
+    case 'mitra':            
+        require_once 'src/Controllers/MitraController.php';
+        $controller = new MitraController();
+        $controller->index();
+        break;
+
     case 'admin':
         require_once 'src/Controllers/AdminController.php';
         $controller = new AdminController();
         $controller->index();
+        break;
+
+    case 'admin/mitra':
+        require_once 'src/Controllers/AdminController.php';
+        (new AdminController())->listMitra();
+        break;
+
+    case 'admin/approve-mitra':
+        require_once 'src/Controllers/AdminController.php';
+        (new AdminController())->approveMitra();
         break;
 
     case 'admin/delete':
@@ -140,7 +161,7 @@ switch ($route) {
         (new PostController())->shareForum();
         break;
 
-    case 'post/vote': // TAMBAHKAN INI
+    case 'post/vote':
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
         $controller->vote();
@@ -258,12 +279,6 @@ switch ($route) {
         require_once 'src/Controllers/ForumController.php';
         $controller = new ForumController();
         $controller->leave();
-        break;
-
-    case 'forum/delete':
-        require_once 'src/Controllers/ForumController.php';
-        $controller = new ForumController();
-        $controller->delete();
         break;
 
     case 'profile':

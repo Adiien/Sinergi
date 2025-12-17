@@ -390,4 +390,51 @@ public function statistik()
         }
     }
 
+    public function approveMitra()
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . BASE_URL . '/admin?tab=mitra');
+        exit;
+    }
+
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        http_response_code(403);
+        die('Akses ditolak');
+    }
+
+    $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
+    if (!$email) {
+        $_SESSION['error_message'] = 'Email tidak valid.';
+        header('Location: ' . BASE_URL . '/admin?tab=mitra');
+        exit;
+    }
+
+    // HANYA update status
+    $ok = $this->userModel->activateMitraStatusOnly($email);
+
+    if (!$ok) {
+        $_SESSION['error_message'] = 'Gagal mengaktifkan mitra.';
+    } else {
+        $_SESSION['success_message'] = 'Mitra berhasil diaktifkan.';
+    }
+
+    header('Location: ' . BASE_URL . '/admin?tab=mitra');
+    exit;
+}
+
+
+
+    public function listMitra()
+{
+    // Guard admin (kalau belum ada di constructor)
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        http_response_code(403);
+        die('Akses ditolak');
+    }
+
+    $mitraPending = $this->userModel->getPendingMitra();
+
+    require_once 'views/admin/mitra.php';
+}
+
 }

@@ -33,11 +33,13 @@ $tab = $_GET['tab'] ?? 'users';
           $controller = new AdminController();
           $controller->statistik();
           break;
+          
         case 'reports':
           require 'views/admin/reports.php';
           break;
+
         case 'users':
-        default:
+          default:
           require 'views/admin/users.php';
           break;
       }
