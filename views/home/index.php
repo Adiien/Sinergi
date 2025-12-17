@@ -404,6 +404,8 @@
     </div>
   </section>
 
+  <?php require_once 'views/partials/footer.php'; ?>
+
   <script>
     window.BASE_URL = '<?= BASE_URL ?>';
   </script>

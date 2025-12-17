@@ -73,14 +73,20 @@
     </div>
   </nav>
   <!-- Hero Section -->
-  <section id="hero-section" class="bg-[#ffffff] h-screen ">
+  <section id="hero-section" class="bg-[#E4ECFE] h-screen ">
     <div class="flex flex-col md:flex-row items-center h-full">
       <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0 px-6 md:px-12">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-[#36344B] leading-tight mb-6">
-          Judul Besar yang Menarik Perhatian Pengunjung
+        <a href="#" class="flex items-center space-x-1">
+          <div class="p-1.5">
+            <img src="<?= BASE_URL ?>/public/assets/image/LOGOSINERGIBORDER.png" alt="Logo" class="w-25 h-25" />
+          </div>
+          <span class="text-[#36344B] text-5xl md:text-6xl tracking-widest font-azeret font-extrabold">SINERGI</span>
+        </a>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-[#36344B] leading-tight mb-6">
+          Sistem Interaksi, Edukasi, Riset, Gagasan dan Inovasi
         </h1>
-        <p class="text-lg text-gray-300 mb-8">
-          Deskripsi singkat atau slogan yang menjelaskan nilai utama atau tujuan dari situs web Anda.
+        <p class="text-lg text-[#36344B] mb-8">
+          Connect. Collaborate. Create.
         </p>
       </div>
       <div class="md:w-7/12 flex justify-end items-center relative mt-10 md:mt-0 -mr-6 md:-mr-12 lg:-mr-24">
@@ -164,12 +170,11 @@
         <a href="#" class="text-indigo-600 hover:underline font-medium" id="show-login-from-register">Login</a>
       </p>
       <button
-              onclick="document.getElementById('mitraModal').classList.remove('hidden')"
-              type="button"
-              class="text-sm text-blue-600 underline"
->
-              Bukan instansi kampus?
-            </button>
+        onclick="document.getElementById('mitraModal').classList.remove('hidden')"
+        type="button"
+        class="text-sm text-blue-600 underline">
+        Bukan instansi kampus?
+      </button>
     </div>
   </section>
   <!-- Login Section-->
@@ -316,46 +321,43 @@
   </section>
 
   <!-- MODAL REQUEST MITRA -->
-<div id="mitraModal" class="hidden fixed inset-0 z-[200] bg-black/50 flex items-center justify-center">
-  <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md relative">
+  <div id="mitraModal" class="hidden fixed inset-0 z-[200] bg-black/50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md relative">
 
-    <h2 class="text-xl font-bold text-gray-800 mb-4">
-      Permintaan Akun Mitra
-    </h2>
+      <h2 class="text-xl font-bold text-gray-800 mb-4">
+        Permintaan Akun Mitra
+      </h2>
 
-    <form action="<?= BASE_URL ?>/auth/request-mitra" method="POST">
-      <label class="block text-sm font-semibold text-gray-600 mb-2">
-        Email
-      </label>
+      <form action="<?= BASE_URL ?>/auth/request-mitra" method="POST">
+        <label class="block text-sm font-semibold text-gray-600 mb-2">
+          Email
+        </label>
 
-      <input
-        type="email"
-        name="email"
-        required
-        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 mb-4"
-        placeholder="@gmail.com"
-      >
+        <input
+          type="email"
+          name="email"
+          required
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 mb-4"
+          placeholder="@gmail.com">
 
-      <div class="flex justify-end gap-2">
-        <button
-          type="button"
-          onclick="document.getElementById('mitraModal').classList.add('hidden')"
-          class="px-4 py-2 border rounded-lg"
-        >
-          Batal
-        </button>
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            onclick="document.getElementById('mitraModal').classList.add('hidden')"
+            class="px-4 py-2 border rounded-lg">
+            Batal
+          </button>
 
-        <button
-          type="submit"
-          class="px-4 py-2 bg-[#5e5e8f] text-white rounded-lg"
-        >
-          Kirim
-        </button>
-      </div>
-    </form>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-[#5e5e8f] text-white rounded-lg">
+            Kirim
+          </button>
+        </div>
+      </form>
 
+    </div>
   </div>
-</div>
 
   <script src="<?= BASE_URL ?>/public/assets/js/register.js"></script>
   <script src="<?= BASE_URL ?>/public/assets/js/transitions.js"></script>
