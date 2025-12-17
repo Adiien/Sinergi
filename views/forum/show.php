@@ -417,8 +417,23 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
 
         <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-xl relative flex flex-col max-h-[90vh] overflow-y-auto custom-scroll">
 
-            <div class="flex justify-between items-center border-b pb-4 mb-4 shrink-0">
-                <h3 class="text-lg font-bold text-gray-800">Create Post</h3>
+            <div class="flex justify-between items-start border-b pb-2 mb-4 shrink-0">
+
+                <div class="flex space-x-6">
+                    <button type="button" id="tab-create-post" class="flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        <span>Create Post</span>
+                    </button>
+                    <button type="button" id="tab-create-poll" class="flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span>Create Poll</span>
+                    </button>
+                </div>
+
                 <button id="close-post-modal" class="text-gray-400 hover:text-gray-600 transition p-1 hover:bg-gray-100 rounded-full">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -426,8 +441,25 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                 </button>
             </div>
 
-            <div class="mb-4 text-sm text-gray-600">
-                Posting to <span class="font-bold text-indigo-600"><?= htmlspecialchars($forum['NAME']) ?></span>
+            <div class="mb-4 flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-sm">
+                    <?php if (isset($_SESSION['nama'])): ?>
+                        <?= strtoupper(substr($_SESSION['nama'], 0, 1)) ?>
+                    <?php else: ?>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    <?php endif; ?>
+                </div>
+                <div class="text-sm">
+                    <p class="font-bold text-gray-800"><?= htmlspecialchars($_SESSION['nama'] ?? 'User') ?></p>
+                    <div class="flex items-center text-gray-500 text-xs mt-0.5">
+                        <span>Posting to</span>
+                        <span class="font-bold text-indigo-600 ml-1 bg-indigo-50 px-2 py-0.5 rounded-md flex items-center">
+                            <?= htmlspecialchars($forum['NAME']) ?>
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <form action="<?= BASE_URL ?>/post/create" method="POST" enctype="multipart/form-data" class="flex-1 flex flex-col">
@@ -438,8 +470,22 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                 <input type="file" name="post_images[]" id="post_image_input" class="hidden" accept="image/*" multiple>
 
                 <div class="w-full mb-4">
-                    <textarea name="content" class="w-full border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-h-[120px] bg-gray-50 focus:bg-white transition resize-none text-base"
+                    <textarea name="content" class="w-full border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-h-[120px] bg-gray-50 focus:bg-white transition resize-none text-base placeholder-gray-400"
                         rows="4" placeholder="What's on your mind?"></textarea>
+                </div>
+
+                <div id="poll-creator-container" class="hidden mb-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Poll Options</label>
+                    <div id="poll-inputs" class="space-y-3">
+                        <input type="text" name="poll_options[]" placeholder="Option 1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        <input type="text" name="poll_options[]" placeholder="Option 2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <button type="button" id="btn-add-option" class="mt-3 text-sm text-indigo-600 font-bold hover:text-indigo-800 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Option
+                    </button>
                 </div>
 
                 <div id="custom-media-preview" class="hidden relative w-full bg-gray-50 rounded-xl overflow-hidden border border-gray-200 mb-4 p-2">
@@ -451,13 +497,20 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
                     </button>
                 </div>
 
-                <div class="flex justify-between items-center mt-2 pt-2">
-                    <button type="button" id="trigger-upload-btn" class="text-gray-500 hover:text-indigo-600 flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-lg transition">
-                        <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6">
-                        <span class="text-sm font-medium">Add Photo/Video</span>
-                    </button>
-                    <button type="submit" class="bg-indigo-600 text-white font-bold py-2.5 px-8 rounded-xl hover:bg-indigo-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        Post
+                <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
+
+                    <div id="media-upload-buttons" class="flex space-x-2">
+                        <button type="button" id="trigger-upload-btn" class="text-gray-500 hover:text-indigo-600 flex items-center gap-2 px-3 py-2 hover:bg-indigo-50 rounded-lg transition" title="Add Photo">
+                            <img src="<?= BASE_URL ?>/public/assets/image/postpict.png" class="w-6 h-6">
+                            <span class="text-sm font-medium hidden sm:inline">Photo/Video</span>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="bg-indigo-600 text-white font-bold py-2.5 px-8 rounded-xl hover:bg-indigo-700 transition shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center">
+                        <span>Post</span>
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
                     </button>
                 </div>
             </form>
@@ -576,6 +629,92 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
             </form>
         </div>
     </div>
+    <template id="reply-form-template">
+        <form action="<?= BASE_URL ?>/post/comment" method="POST" class="reply-form flex items-start space-x-2 mt-2 animate-fade-in-up">
+            <input type="hidden" name="post_id" value="">
+            <input type="hidden" name="parent_id" value="">
+
+            <div class="flex-1">
+                <textarea name="content" rows="1" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none resize-none" placeholder="Tulis balasan..."></textarea>
+            </div>
+
+            <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition">
+                Kirim
+            </button>
+            <button type="button" class="cancel-reply-button text-gray-400 hover:text-red-500 p-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </form>
+    </template>
+    <section id="report-modal"
+        class="h-screen flex flex-col items-center justify-center pt-2 section-fade hidden fixed inset-0 z-50 bg-[#5e5e8f]/50 transition-all duration-300"
+        role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
+
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md relative">
+
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 id="report-modal-title" class="text-xl font-bold text-gray-900">Laporkan Konten</h2>
+                <button id="close-report-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="report-form">
+                <p class="text-sm text-gray-700 mb-4">Mengapa Anda melaporkan konten ini?</p>
+
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <input type="radio" name="reason" value="Spam" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="text-gray-800 font-medium">Spam</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <input type="radio" name="reason" value="Ujaran Kebencian atau Pelecehan" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="text-gray-800 font-medium">Ujaran Kebencian atau Pelecehan</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <input type="radio" name="reason" value="Informasi Palsu" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="text-gray-800 font-medium">Informasi Palsu</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <input type="radio" name="reason" value="Konten Sensitif atau Tidak Pantas" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="text-gray-800 font-medium">Konten Sensitif atau Tidak Pantas</span>
+                    </label>
+
+                    <div>
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                            <input type="radio" name="reason" value="Lainnya" class="reason-radio focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <span class="text-gray-800 font-medium">Lainnya</span>
+                        </label>
+
+                        <div id="other-reason-container" class="hidden mt-2 ml-8 mr-2">
+                            <textarea
+                                id="other-reason-text"
+                                rows="3"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Tuliskan detail alasan laporan Anda..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="report-target-id" name="target_id" value="">
+                <input type="hidden" id="report-target-type" name="target_type" value="">
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancel-report-button" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg hover:bg-gray-300 transition duration-300">
+                        Batal
+                    </button>
+                    <button type="submit" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-indigo-700 transition duration-300">
+                        Kirim Laporan
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </section>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -728,6 +867,96 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
             }
         }
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- Referensi Elemen Tombol Forum ---
+            const forumPostBtn = document.getElementById('forum-btn-post');
+            const forumPollBtn = document.getElementById('forum-btn-poll');
+
+            // --- Referensi Elemen Modal (Sama dengan Home) ---
+            const modalTrigger = document.getElementById('create-post-trigger');
+
+            const tabPost = document.getElementById('tab-create-post');
+            const tabPoll = document.getElementById('tab-create-poll');
+
+            const pollContainer = document.getElementById('poll-creator-container');
+            const uploadBtns = document.getElementById('media-upload-buttons');
+
+            // --- Fungsi Switch Mode (Sama seperti Home) ---
+            function switchMode(mode) {
+                if (mode === 'poll') {
+                    // 1. Ubah Style Tab ke Poll
+                    if (tabPoll) tabPoll.className = "flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1 transition";
+                    if (tabPost) tabPost.className = "flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1 transition";
+
+                    // 2. Tampilkan Input Poll
+                    if (pollContainer) pollContainer.classList.remove('hidden');
+
+                    // (Baris yang membuat upload abu-abu SUDAH DIHAPUS disini)
+
+                } else {
+                    // Balik ke Mode Post Biasa
+                    if (tabPost) tabPost.className = "flex items-center space-x-2 text-indigo-600 font-bold border-b-2 border-indigo-600 pb-1 transition";
+                    if (tabPoll) tabPoll.className = "flex items-center space-x-2 text-gray-500 hover:text-gray-800 font-medium pb-1 transition";
+
+                    if (pollContainer) pollContainer.classList.add('hidden');
+                }
+            }
+
+            // --- Event Listener Tombol Forum: Create Post ---
+            if (forumPostBtn && modalTrigger) {
+                forumPostBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    modalTrigger.click(); // Buka Modal secara otomatis
+                    switchMode('post'); // Set tampilan ke Post
+                });
+            }
+
+            // --- Event Listener Tombol Forum: Create Poll ---
+            if (forumPollBtn && modalTrigger) {
+                forumPollBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    modalTrigger.click(); // Buka Modal secara otomatis
+                    switchMode('poll'); // Set tampilan ke Poll
+                });
+            }
+
+            // --- Event Listener Tab Internal Modal (Agar bisa klik manual) ---
+            if (tabPoll) {
+                tabPoll.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchMode('poll');
+                });
+            }
+
+            if (tabPost) {
+                tabPost.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchMode('post');
+                });
+            }
+
+            // --- Logika Tambah Opsi Poll (Max 5) ---
+            const btnAddOption = document.getElementById('btn-add-option');
+            const pollInputs = document.getElementById('poll-inputs');
+
+            if (btnAddOption && pollInputs) {
+                btnAddOption.addEventListener('click', () => {
+                    const currentCount = pollInputs.children.length;
+                    if (currentCount < 5) {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = 'poll_options[]';
+                        input.placeholder = 'Option ' + (currentCount + 1);
+                        input.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none';
+                        pollInputs.appendChild(input);
+                    } else {
+                        alert('Maximum 5 options allowed.');
+                    }
+                });
+            }
+        });
+    </script>
 
     <script>
         window.BASE_URL = '<?= BASE_URL ?>';
@@ -741,6 +970,7 @@ $tabInactive = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium b
     <script src="<?= BASE_URL ?>/public/assets/js/Report.js"></script>
     <script src="<?= BASE_URL ?>/public/assets/js/FollowToggle.js"></script>
     <script src="<?= BASE_URL ?>/public/assets/js/Notification.js"></script>
+    <script src="<?= BASE_URL ?>/public/assets/js/DisableComment.js"></script>
 
 </body>
 
