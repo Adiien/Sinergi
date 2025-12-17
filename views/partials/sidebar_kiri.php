@@ -50,6 +50,11 @@
                 <img src="<?= BASE_URL ?>/public/assets/image/MessageIconBiru.png" alt="Messages" class="w-6 h-6" />
                 <span>Messages</span>
             </a>
+            <a href="<?= BASE_URL ?>/announcement"
+                class="flex items-center space-x-3 text-gray-700 hover:text-indigo-600 font-medium">
+                <img src="<?= BASE_URL ?>/public/assets/image/AnnouncementIcon.png" class="w-6 h-6" />
+            <span>Announcement</span>
+            </a>
         </nav>
     </div>
 </aside>

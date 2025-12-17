@@ -75,9 +75,5 @@
                 </div>
             <?php endif; ?>
         </div>
-
-        <div class="mt-5 pt-4 border-t border-gray-100 text-center">
-            <a href="#" class="text-blue-600 font-semibold text-sm hover:text-blue-800 transition">See All Suggestions</a>
-        </div>
     </div>
 </aside>

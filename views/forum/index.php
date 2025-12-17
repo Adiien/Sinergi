@@ -106,11 +106,6 @@
                     Create New Forum
                 </button>
 
-                <div class="flex items-center justify-between mb-4 border-t pt-4 border-gray-100">
-                    <h3 class="text-sm font-bold text-gray-600">Forums you've joined</h3>
-                    <a href="#" class="text-xs text-blue-600 font-semibold hover:underline">See All</a>
-                </div>
-
                 <div class="space-y-4 overflow-y-auto custom-scroll pr-2 flex-1">
                     <?php if (!empty($joinedForums)): ?>
                         <?php foreach ($joinedForums as $jf): ?>

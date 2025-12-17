@@ -157,7 +157,7 @@
 
             <form id="editForm" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">New Value</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">New Fullname</label>
                     <input type="text"
                         id="editInput"
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition outline-none text-gray-800"

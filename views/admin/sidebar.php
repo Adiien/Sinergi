@@ -23,6 +23,13 @@
      </span>
   </a>
 
+  <a href="<?= BASE_URL ?>/admin?tab=announcements"
+   class="block px-4 py-2 rounded transition-colors duration-200
+   <?= $tab === 'announcements' ? 'bg-indigo-100 text-indigo-700 font-semibold' : 'hover:bg-gray-100 text-gray-700' ?>">
+   Pengumuman
+    </a>
+
+
 </div>
 
 <script>

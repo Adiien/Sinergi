@@ -42,6 +42,12 @@ $tab = $_GET['tab'] ?? 'users';
           default:
           require 'views/admin/users.php';
           break;
+
+        case 'announcements':
+          require_once 'src/controllers/AdminController.php';
+          $controller = new AdminController();
+          $controller->announcements();
+          break;
       }
     ?>
   </section>

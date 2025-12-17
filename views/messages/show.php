@@ -74,22 +74,22 @@
                 </div>
 
                 <div class="flex justify-between mt-4 text-sm font-medium text-gray-500">
-    <button
-        class="tab-btn text-indigo-600 border-b-2 border-indigo-600 pb-1"
-        data-tab="all">
-        All
-    </button>
-    <button
-        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
-        data-tab="unread">
-        Unread
-    </button>
-    <button
-        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
-        data-tab="groups">
-        Groups
-    </button>
-</div>
+                    <button
+                        class="tab-btn text-indigo-600 border-b-2 border-indigo-600 pb-1"
+                        data-tab="all">
+                        All
+                    </button>
+                    <button
+                        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
+                        data-tab="unread">
+                        Unread
+                    </button>
+                    <button
+                        class="tab-btn hover:text-gray-800 border-b-2 border-transparent pb-1"
+                        data-tab="groups">
+                        Groups
+                    </button>
+                </div>
 
             </div>
 
@@ -202,12 +202,6 @@
                         </p>
                     </div>
                 </div>
-                <button class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </button>
             </div>
 
             <!-- ISI CHAT -->

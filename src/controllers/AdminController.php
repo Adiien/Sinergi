@@ -422,8 +422,6 @@ public function statistik()
     exit;
 }
 
-
-
     public function listMitra()
 {
     // Guard admin (kalau belum ada di constructor)
@@ -435,6 +433,39 @@ public function statistik()
     $mitraPending = $this->userModel->getPendingMitra();
 
     require_once 'views/admin/mitra.php';
+}
+
+   public function announcements()
+{
+    // 1. Proteksi admin - Harus paling atas
+    if (!isset($_SESSION['role_name']) || $_SESSION['role_name'] !== 'admin') {
+        header('Location: ' . BASE_URL . '/home');
+        exit;
+    }
+
+    require_once __DIR__ . '/../models/Announcement.php';
+    $announcementModel = new Announcement($this->conn);
+
+    // 2. Proses POST di sini SEBELUM memuat view/HTML
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $content = trim($_POST['content'] ?? '');
+
+        if ($content !== '') {
+    $announcementModel->create($content, $_SESSION['user_id']);
+    $_SESSION['success_message'] = 'Pengumuman berhasil dipublikasikan.';
+    
+    // Gunakan ini untuk mengganti baris 458
+    echo "<script>window.location.href='" . BASE_URL . "/admin?tab=announcements';</script>";
+    exit;
+}
+        $error = 'Konten pengumuman tidak boleh kosong.';
+    }
+
+    // 3. Ambil data pengumuman untuk ditampilkan di tabel
+    $announcements = $announcementModel->getAll(); 
+
+    // 4. Baru muat view di paling bawah
+    require __DIR__ . '/../../views/admin/announcements.php';
 }
 
 }
