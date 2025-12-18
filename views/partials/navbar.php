@@ -302,11 +302,6 @@
 
            </div>
 
-           <div class="p-3 text-center bg-white border-t border-gray-100 relative z-10">
-             <a href="#" class="text-blue-600 font-bold text-sm hover:bg-blue-50 py-2 px-4 rounded-lg transition block">
-               See All
-             </a>
-           </div>
          </div>
        </div>
 
@@ -365,7 +360,7 @@
              Logout
            </a>
          </div>
-         
+
        </div>
      </div>
    </div>

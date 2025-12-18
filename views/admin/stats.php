@@ -129,55 +129,23 @@ $activeForums = $activeForums ?? [];
 
 <div class="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
 
-<div class="flex items-center justify-between mb-4">
-  <h2 class="text-sm font-semibold text-gray-700">
-    Insight & Peringatan
-  </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white p-6 rounded-xl shadow">
+        <p class="text-sm text-gray-500">Total Users</p>
+        <p class="text-3xl font-bold"><?= $stats['total_users'] ?></p>
+    </div>  
 
-  <span class="text-xs text-gray-400">
-    Update terakhir: hari ini
-  </span>
+    <div class="bg-white p-6 rounded-xl shadow">
+        <p class="text-sm text-gray-500">Total Forums</p>
+        <p class="text-3xl font-bold"><?= $stats['total_forums'] ?></p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+        <p class="text-sm text-gray-500">Total Posts</p>
+        <p class="text-3xl font-bold"><?= $stats['total_posts'] ?></p>
+    </div>
 </div>
-<div class="mb-4 flex items-start gap-3 bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-  <span class="text-yellow-600 text-sm">⚠</span>
-  <div>
-    <p class="text-sm font-medium text-yellow-800">
-      Anomali Trafik Terdeteksi
-    </p>
-    <p class="text-xs text-yellow-700 mt-1">
-      Bounce rate dari Instagram naik 32% dibanding rata-rata 7 hari.
-    </p>
-  </div>
-</div>
-<div class="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-  <div>
-    <p class="text-xs text-gray-400">Sessions (24j)</p>
-    <p class="font-semibold text-gray-800">1.240</p>
-  </div>
-  <div>
-    <p class="text-xs text-gray-400">Bounce Rate</p>
-    <p class="font-semibold text-gray-800">68%</p>
-  </div>
-  <div>
-    <p class="text-xs text-gray-400">Sumber Utama</p>
-    <p class="font-semibold text-gray-800">Instagram</p>
-  </div>
-  <div>
-    <p class="text-xs text-gray-400">Perubahan</p>
-    <p class="font-semibold text-green-600">+12%</p>
-  </div>
-</div>
-<div class="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-  <span class="text-indigo-600 text-sm">⬆</span>
-  <div>
-    <p class="text-sm font-medium text-indigo-800">
-      CTA Terbaik Minggu Ini
-    </p>
-    <p class="text-xs text-indigo-700 mt-1">
-      “Daftar Sekarang” mencatat konversi 1.2% dari trafik sosial.
-    </p>
-  </div>
-</div>
+
 
 <script>
 const usersList  = document.getElementById('usersList');
@@ -203,3 +171,5 @@ function showForums() {
   btnUsers.classList.add('text-gray-500');
 }
 </script>
+<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+

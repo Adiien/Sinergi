@@ -828,7 +828,6 @@ class User
     return true;
 }
 
-
     public function activateMitra($email, $hash)
 {
     $sql = "UPDATE users

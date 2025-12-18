@@ -132,6 +132,12 @@ switch ($route) {
         $controller->index();
         break;
 
+    case 'announcement':
+        require_once 'src/Controllers/AnnouncementController.php';
+        $controller = new AnnouncementController();
+        $controller->index();
+        break;
+
     case 'post/create':
         require_once 'src/Controllers/PostController.php';
         $controller = new PostController();
