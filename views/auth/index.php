@@ -129,7 +129,7 @@
           </div>
 
           <div class="relative">
-            <input type="password" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required>
+            <input type="password" name="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password" required minlength="8">
           </div>
 
           <div id="study-program-field" class="relative transition-all duration-300">

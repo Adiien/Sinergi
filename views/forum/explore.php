@@ -169,13 +169,37 @@
                         </a>
                     </div>
 
-                    <form action="<?= BASE_URL ?>/forum/explore" method="GET" class="mb-8 relative max-w-lg">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </span>
-                        <input type="text" name="q" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" class="w-full bg-white border border-gray-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition text-sm" placeholder="Filter explore results...">
+                    <form action="<?= BASE_URL ?>/forum/explore" method="GET" class="mb-8 max-w-2xl">
+                        <div class="flex gap-3">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input type="text" name="q" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>"
+                                    class="w-full bg-white border border-gray-200 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition text-sm"
+                                    placeholder="Cari nama forum...">
+                            </div>
+
+                            <div class="relative">
+                                <select name="visibility" onchange="this.form.submit()"
+                                    class="appearance-none bg-white border border-gray-200 text-gray-700 py-3 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm font-medium cursor-pointer">
+                                    <option value="" <?= (!isset($_GET['visibility']) || $_GET['visibility'] == '') ? 'selected' : '' ?>>Semua</option>
+                                    <option value="public" <?= (isset($_GET['visibility']) && $_GET['visibility'] == 'public') ? 'selected' : '' ?>>Public</option>
+                                    <option value="private" <?= (isset($_GET['visibility']) && $_GET['visibility'] == 'private') ? 'selected' : '' ?>>Private</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl shadow-md transition">
+                                Cari
+                            </button>
+                        </div>
                     </form>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -393,6 +417,6 @@
     <script src="<?= BASE_URL ?>/public/assets/js/Notification.js"></script>
 
 </body>
-<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+
 
 </html>

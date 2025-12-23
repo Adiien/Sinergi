@@ -177,31 +177,54 @@ class ForumModel
     /**
      * [UPDATE] Mencari forum dengan opsi Limit dan kolom Visibility
      */
-    public function searchForums($keyword, $limit = 5)
+    public function searchForums($keyword, $limit = 0, $filterVisibility = '')
     {
-        $keyword = strtolower($keyword);
+        // Base Query
+        $query = "SELECT * FROM forums WHERE 1=1";
 
-        // Tambahkan 'visibility' ke select
-        $query = "SELECT forum_id, name, description, cover_image, visibility, 
-                  (SELECT COUNT(*) FROM forum_members fm WHERE fm.forum_id = f.forum_id) as member_count
-                  FROM forums f 
-                  WHERE LOWER(name) LIKE '%' || :keyword || '%' 
-                  ORDER BY member_count DESC";
+        // Filter Keyword (Jika ada)
+        if (!empty($keyword)) {
+            $query .= " AND (LOWER(name) LIKE '%' || :keyword || '%' OR LOWER(description) LIKE '%' || :keyword || '%')";
+        }
 
-        // Jika limit > 0, batasi baris. Jika 0 atau null, ambil semua.
+        // Filter Visibility (Jika ada public/private)
+        if (!empty($filterVisibility)) {
+            $query .= " AND LOWER(visibility) = :visibility";
+        }
+
+        // Sorting
+        $query .= " ORDER BY created_at DESC";
+
+        // Limit (Jika ada)
         if ($limit > 0) {
-            $query .= " FETCH FIRST " . (int)$limit . " ROWS ONLY";
+            $query .= " FETCH FIRST :limit_rows ROWS ONLY";
         }
 
         $stmt = oci_parse($this->conn, $query);
-        oci_bind_by_name($stmt, ':keyword', $keyword);
+
+        // Binding Variables
+        if (!empty($keyword)) {
+            $kw = strtolower($keyword);
+            oci_bind_by_name($stmt, ':keyword', $kw);
+        }
+
+        if (!empty($filterVisibility)) {
+            $vis = strtolower($filterVisibility);
+            oci_bind_by_name($stmt, ':visibility', $vis);
+        }
+
+        if ($limit > 0) {
+            oci_bind_by_name($stmt, ':limit_rows', $limit);
+        }
+
         oci_execute($stmt);
 
         $forums = [];
-        while ($row = oci_fetch_array($stmt, OCI_ASSOC + OCI_RETURN_NULLS)) {
+        while ($row = oci_fetch_array($stmt, OCI_ASSOC)) {
             $forums[] = $row;
         }
         oci_free_statement($stmt);
+
         return $forums;
     }
     public function getForumsByCreator($user_id)

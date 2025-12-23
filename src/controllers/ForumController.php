@@ -317,31 +317,17 @@ class ForumController
             exit;
         }
 
-        // 1. Logika Pencarian Forum
+        // 1. Ambil Parameter
         $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
+        $visibility = isset($_GET['visibility']) ? trim($_GET['visibility']) : ''; // [BARU]
 
-        if (!empty($keyword)) {
-            $forums = $this->forumModel->searchForums($keyword, 0);
-        } else {
-            $forums = $this->forumModel->getAllForums();
-        }
+        // 2. Panggil Model dengan parameter filter baru
+        // Kita asumsikan method searchForums dimodifikasi untuk menerima parameter visibility
+        $forums = $this->forumModel->searchForums($keyword, 0, $visibility);
 
-        // 2. Cek Status Join (untuk tombol Join/Lihat)
+        // 3. Cek Status Join (Tetap sama)
         $joinedForums = $this->forumModel->getUserJoinedForums($_SESSION['user_id']);
         $joinedForumIds = array_column($joinedForums, 'FORUM_ID');
-
-        // 3. Data untuk Sidebar Kanan (Suggested Users)
-        // Kita perlu memanggil UserModel jika ingin menampilkan user suggestion
-        // Jika belum ada model User di controller ini, kita inisialisasi sementara
-        if (!class_exists('User')) {
-            require_once 'src/models/User.php';
-        }
-        $userModel = new User($this->conn);
-        // Ambil 5 user acak/terbaru sebagai saran (sesuaikan method di UserModel Anda)
-        // Jika method getSuggestedUsers belum ada, ganti dengan getAllUsers atau kosongkan
-        $suggestedUsers = method_exists($userModel, 'getSuggestedUsers')
-            ? $userModel->getSuggestedUsers($_SESSION['user_id'])
-            : [];
 
         require 'views/forum/explore.php';
     }

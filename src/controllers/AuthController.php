@@ -33,18 +33,39 @@ class AuthController
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-            // ... (Kode validasi input Anda sebelumnya TETAP SAMA) ...
+            // Ambil data
             $nama = htmlspecialchars(trim($_POST['nama'] ?? ''));
             $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
-            // ... dst ...
+            $password = $_POST['password'];
+            $confirm_password = $_POST['confirm_password'] ?? ''; // Ambil konfirmasi
 
-            // [BARU] Generate Token 32 byte hex
+            // --- [BARU] VALIDASI SERVER SIDE ---
+            if (strlen($password) < 8) {
+                $_SESSION['error_message'] = 'Password minimal 8 karakter!';
+                $_SESSION['open_modal'] = 'register';
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+            if (
+                !preg_match('/[a-z]/', $password) ||
+                !preg_match('/[A-Z]/', $password) ||
+                !preg_match('/[0-9]/', $password)
+            ) {
+
+                $_SESSION['error_message'] = 'Password harus mengandung huruf besar, huruf kecil, dan angka!';
+                $_SESSION['open_modal'] = 'register';
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+            // -----------------------------------
+
+            // Generate Token
             $token = bin2hex(random_bytes(32));
 
             $data = [
                 'nama' => $nama,
                 'email' => $email,
-                'password' => $_POST['password'],
+                'password' => $password,
                 'role_name' => $_POST['role_name'],
                 'nim-nip-input' => $_POST['nim-nip-input'] ?? '',
                 'program_studi' => $_POST['program_studi'] ?? '',
@@ -54,8 +75,7 @@ class AuthController
             try {
                 // Panggil Model dengan Token
                 if ($this->userModel->registerUser($data, $token)) {
-
-                    // Kirim Email
+                    // ... (sisa kode sama seperti sebelumnya: Kirim Email dll) ...
                     $sent = MailHelper::sendVerificationEmail($email, $nama, $token);
 
                     if ($sent) {
@@ -121,89 +141,88 @@ class AuthController
      */
     // ...
     public function login()
-{
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: ' . BASE_URL);
-        exit;
-    }
-
-    // CAPTCHA CHECK
-    if (
-        !isset($_POST['captcha']) ||
-        !isset($_SESSION['captcha_string']) ||
-        trim($_POST['captcha']) !== $_SESSION['captcha_string']
-    ) {
-        $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal.';
-        $_SESSION['open_modal'] = 'login';
-        unset($_SESSION['captcha_string']);
-        header('Location: ' . BASE_URL);
-        exit;
-    }
-    unset($_SESSION['captcha_string']);
-
-    try {
-        $identifier = trim($_POST['identifier'] ?? '');
-        $password   = $_POST['password'] ?? '';
-
-        // 1️⃣ Ambil user (email / identifier)
-        $user = $this->userModel->loginUser($identifier, $password);
-
-        // ❌ Jangan bocorin mana yang salah
-        if (!$user || !password_verify($password, $user['PASS_USER'])) {
-            $_SESSION['error_message'] = 'Login gagal. Periksa kredensial.';
-            $_SESSION['open_modal'] = 'login';
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . BASE_URL);
             exit;
         }
 
-        // 2️⃣ VALIDASI STATUS (INI KUNCI SEMUANYA)
-        if (strtolower($user['STATUS']) !== 'active') {
+        // CAPTCHA CHECK
+        if (
+            !isset($_POST['captcha']) ||
+            !isset($_SESSION['captcha_string']) ||
+            trim($_POST['captcha']) !== $_SESSION['captcha_string']
+        ) {
+            $_SESSION['error_message'] = 'Verifikasi CAPTCHA gagal.';
+            $_SESSION['open_modal'] = 'login';
+            unset($_SESSION['captcha_string']);
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+        unset($_SESSION['captcha_string']);
 
-            switch (strtolower($user['STATUS'])) {
-                case 'pending_mitra':
-                    $msg = 'Akun mitra Anda masih menunggu aktivasi.';
-                    break;
-                case 'pending_verification':
-                    $msg = 'Silakan verifikasi email Anda terlebih dahulu.';
-                    break;
-                case 'suspended':
-                    $msg = 'Akun Anda telah disuspend oleh admin.';
-                    break;
-                default:
-                    $msg = 'Akun Anda belum aktif.';
+        try {
+            $identifier = trim($_POST['identifier'] ?? '');
+            $password   = $_POST['password'] ?? '';
+
+            // 1️⃣ Ambil user (email / identifier)
+            $user = $this->userModel->loginUser($identifier, $password);
+
+            // ❌ Jangan bocorin mana yang salah
+            if (!$user || !password_verify($password, $user['PASS_USER'])) {
+                $_SESSION['error_message'] = 'Login gagal. Periksa kredensial.';
+                $_SESSION['open_modal'] = 'login';
+                header('Location: ' . BASE_URL);
+                exit;
             }
 
-            $_SESSION['error_message'] = $msg;
-            $_SESSION['open_modal'] = 'login';
+            // 2️⃣ VALIDASI STATUS (INI KUNCI SEMUANYA)
+            if (strtolower($user['STATUS']) !== 'active') {
+
+                switch (strtolower($user['STATUS'])) {
+                    case 'pending_mitra':
+                        $msg = 'Akun mitra Anda masih menunggu aktivasi.';
+                        break;
+                    case 'pending_verification':
+                        $msg = 'Silakan verifikasi email Anda terlebih dahulu.';
+                        break;
+                    case 'suspended':
+                        $msg = 'Akun Anda telah disuspend oleh admin.';
+                        break;
+                    default:
+                        $msg = 'Akun Anda belum aktif.';
+                }
+
+                $_SESSION['error_message'] = $msg;
+                $_SESSION['open_modal'] = 'login';
+                header('Location: ' . BASE_URL);
+                exit;
+            }
+
+            // 3️⃣ BARU SET SESSION (SEKARANG SAH)
+            $_SESSION['user_id']   = $user['USER_ID'];
+            $_SESSION['nama']      = $user['NAMA'];
+            $_SESSION['email']     = $user['EMAIL'];
+            $_SESSION['role_name'] = $user['ROLE_NAME'];
+
+            // 4️⃣ Redirect berbasis role
+            switch ($user['ROLE_NAME']) {
+                case 'admin':
+                    header('Location: ' . BASE_URL . '/admin');
+                    break;
+                case 'mitra':
+                    header('Location: ' . BASE_URL . '/mitra');
+                    break;
+                default:
+                    header('Location: ' . BASE_URL . '/home');
+            }
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = 'Terjadi kesalahan sistem.';
             header('Location: ' . BASE_URL);
             exit;
         }
-
-        // 3️⃣ BARU SET SESSION (SEKARANG SAH)
-        $_SESSION['user_id']   = $user['USER_ID'];
-        $_SESSION['nama']      = $user['NAMA'];
-        $_SESSION['email']     = $user['EMAIL'];
-        $_SESSION['role_name'] = $user['ROLE_NAME'];
-
-        // 4️⃣ Redirect berbasis role
-        switch ($user['ROLE_NAME']) {
-            case 'admin':
-                header('Location: ' . BASE_URL . '/admin');
-                break;
-            case 'mitra':
-                header('Location: ' . BASE_URL . '/mitra');
-                break;
-            default:
-                header('Location: ' . BASE_URL . '/home');
-        }
-        exit;
-
-    } catch (Exception $e) {
-        $_SESSION['error_message'] = 'Terjadi kesalahan sistem.';
-        header('Location: ' . BASE_URL);
-        exit;
     }
-}
 
     // ...
 
@@ -343,63 +362,60 @@ class AuthController
     }
 
     public function activateMitra($email, $hash)
-{
-    $sql = "UPDATE users
+    {
+        $sql = "UPDATE users
             SET PASS_USER = :pass, STATUS = 'active'
             WHERE EMAIL = :email
               AND ROLE_NAME = 'mitra'
               AND STATUS = 'pending_mitra'";
 
-    $stmt = oci_parse($this->conn, $sql);
-    oci_bind_by_name($stmt, ':pass', $hash);
-    oci_bind_by_name($stmt, ':email', $email);
+        $stmt = oci_parse($this->conn, $sql);
+        oci_bind_by_name($stmt, ':pass', $hash);
+        oci_bind_by_name($stmt, ':email', $email);
 
-    return oci_execute($stmt);
-}
-   public function requestMitra()
-{
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        return oci_execute($stmt);
+    }
+    public function requestMitra()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
+        if (!$email) {
+            $_SESSION['error_message'] = 'Email tidak valid.';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // Cek apakah email sudah terdaftar
+        if ($this->userModel->getUserByEmail($email)) {
+            $_SESSION['error_message'] = 'Email sudah terdaftar.';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // 1️⃣ Generate password SEBENARNYA
+        $plain = bin2hex(random_bytes(4)); // 8 karakter
+        $hash  = password_hash($plain, PASSWORD_DEFAULT);
+
+        // 2️⃣ Simpan sebagai pending mitra
+        $ok = $this->userModel->createPendingMitra($email, $hash);
+
+        if (!$ok) {
+            $_SESSION['error_message'] = 'Gagal mengirim permintaan mitra.';
+            header('Location: ' . BASE_URL);
+            exit;
+        }
+
+        // 3️⃣ Kirim email SEKARANG
+        MailHelper::sendMitraCredential($email, $plain);
+
+        $_SESSION['success_message'] =
+            'Permintaan mitra diterima. Silakan cek email Anda. Akun menunggu aktivasi admin.';
+
         header('Location: ' . BASE_URL);
         exit;
     }
-
-    $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
-    if (!$email) {
-        $_SESSION['error_message'] = 'Email tidak valid.';
-        header('Location: ' . BASE_URL);
-        exit;
-    }
-
-    // Cek apakah email sudah terdaftar
-    if ($this->userModel->getUserByEmail($email)) {
-        $_SESSION['error_message'] = 'Email sudah terdaftar.';
-        header('Location: ' . BASE_URL);
-        exit;
-    }
-
-    // 1️⃣ Generate password SEBENARNYA
-    $plain = bin2hex(random_bytes(4)); // 8 karakter
-    $hash  = password_hash($plain, PASSWORD_DEFAULT);
-
-    // 2️⃣ Simpan sebagai pending mitra
-    $ok = $this->userModel->createPendingMitra($email, $hash);
-
-    if (!$ok) {
-        $_SESSION['error_message'] = 'Gagal mengirim permintaan mitra.';
-        header('Location: ' . BASE_URL);
-        exit;
-    }
-
-    // 3️⃣ Kirim email SEKARANG
-    MailHelper::sendMitraCredential($email, $plain);
-
-    $_SESSION['success_message'] =
-        'Permintaan mitra diterima. Silakan cek email Anda. Akun menunggu aktivasi admin.';
-
-    header('Location: ' . BASE_URL);
-    exit;
-}
-
-
-
 }

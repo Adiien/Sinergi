@@ -84,4 +84,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Set default role saat load
   switchRole("mahasiswa");
+
+  const registerForm = document.querySelector('form[action*="/auth/register"]');
+  const passInput = document.getElementById("reg_password");
+  const confirmPassInput = document.getElementById("reg_confirm_password");
+  const errorText = document.getElementById("password-error");
+
+  if (registerForm && passInput && confirmPassInput) {
+    registerForm.addEventListener("submit", function (e) {
+      const password = passInput.value;
+      const confirmPassword = confirmPassInput.value;
+
+      // Reset pesan error
+      errorText.classList.add("hidden");
+      errorText.textContent = "";
+      passInput.classList.remove("border-red-500");
+      confirmPassInput.classList.remove("border-red-500");
+
+      // 1. Validasi Panjang Password
+      if (password.length < 8) {
+        e.preventDefault();
+        errorText.textContent = "Password minimal 8 karakter.";
+        errorText.classList.remove("hidden");
+        passInput.classList.add("border-red-500");
+        return;
+      }
+
+      // [BARU] 2. Validasi Kombinasi Password (Huruf Besar, Kecil, & Angka)
+      const complexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+      if (!complexityRegex.test(password)) {
+        e.preventDefault();
+        errorText.textContent =
+          "Password harus mengandung huruf besar, huruf kecil, dan angka.";
+        errorText.classList.remove("hidden");
+        passInput.classList.add("border-red-500");
+        return;
+      }
+    });
+  }
 });
